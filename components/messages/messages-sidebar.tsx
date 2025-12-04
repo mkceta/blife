@@ -10,6 +10,9 @@ interface MessagesSidebarProps {
     className?: string
 }
 
+import { PullToRefresh } from '@/components/ui/pull-to-refresh'
+import { useRouter } from 'next/navigation'
+
 export function MessagesSidebar({
     threads,
     currentUserId,
@@ -17,6 +20,12 @@ export function MessagesSidebar({
     searchQuery,
     className
 }: MessagesSidebarProps) {
+    const router = useRouter()
+
+    const handleRefresh = async () => {
+        router.refresh()
+    }
+
     return (
         <div className={`flex flex-col h-full bg-card/30 border-r border-border/50 ${className}`}>
             <div className="p-4 border-b border-border/50 shrink-0 pt-safe">
@@ -31,12 +40,16 @@ export function MessagesSidebar({
                     />
                 </form>
             </div>
-            <div className="flex-1 overflow-y-auto p-2 scrollbar-thin pb-24">
-                <ThreadList
-                    initialThreads={threads}
-                    currentUserId={currentUserId}
-                    unreadCounts={unreadCounts}
-                />
+            <div className="flex-1 overflow-hidden">
+                <PullToRefresh onRefresh={handleRefresh}>
+                    <div className="h-full overflow-y-auto p-2 scrollbar-thin pb-24">
+                        <ThreadList
+                            initialThreads={threads}
+                            currentUserId={currentUserId}
+                            unreadCounts={unreadCounts}
+                        />
+                    </div>
+                </PullToRefresh>
             </div>
         </div>
     )
