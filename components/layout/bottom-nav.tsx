@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Users, MessageSquare, Heart, User, Bell } from 'lucide-react'
+import { Home, Users, MessageSquare, Heart, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useEffect, useState } from 'react'
@@ -17,7 +17,7 @@ export function BottomNav() {
     const { notifications } = useNotifications()
     const [optimisticPath, setOptimisticPath] = useState<string | null>(null)
 
-    const unreadGeneral = notifications.filter((n) => !n.read && n.type !== 'message').length
+    const unreadCommunity = notifications.filter((n) => !n.read && (n.type === 'comment' || n.type === 'reaction')).length
     const unreadMessages = notifications.filter((n) => !n.read && n.type === 'message').length
 
     useEffect(() => {
@@ -46,10 +46,9 @@ export function BottomNav() {
 
     const items = [
         { href: '/home', icon: Home, label: 'Inicio' },
-        { href: '/community', icon: Users, label: 'Comunidad' },
+        { href: '/community', icon: Users, label: 'Comunidad', hasNotifications: true },
         { href: '/wishlist', icon: Heart, label: 'Wishlist' },
         { href: '/messages', icon: MessageSquare, label: 'Mensajes', hasNotifications: true },
-        { href: '/notifications', icon: Bell, label: 'Notif.', hasNotifications: true },
         { href: '/profile', icon: User, label: 'Perfil', isProfile: true },
     ]
 
@@ -151,7 +150,7 @@ export function BottomNav() {
                                     >
                                         {item.icon && <item.icon className="h-5 w-5" />}
                                         {item.hasNotifications && (
-                                            (item.label === 'Notif.' && unreadGeneral > 0) ||
+                                            (item.label === 'Comunidad' && unreadCommunity > 0) ||
                                             (item.label === 'Mensajes' && unreadMessages > 0)
                                         ) && (
                                                 <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive border border-background" />

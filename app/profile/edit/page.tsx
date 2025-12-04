@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Checkbox } from '@/components/ui/checkbox'
+import { NotificationPermission } from '@/components/notifications/notification-permission'
 
 const formSchema = z.object({
     bio: z.string().max(200, 'Máximo 200 caracteres').optional(),
@@ -267,6 +268,8 @@ export default function EditProfilePage() {
                             </p>
                         </div>
 
+                        <NotificationPermission />
+
                         <FormField
                             control={form.control}
                             name="degree"
@@ -385,6 +388,8 @@ export default function EditProfilePage() {
                                 </FormItem>
                             )}
                         />
+
+
 
                         <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                             {isLoading ? (

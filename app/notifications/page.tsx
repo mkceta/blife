@@ -83,6 +83,7 @@ export default function NotificationsPage() {
                     )}
                 </div>
 
+
                 <NotificationsTabs
                     allNotifications={allNotifications}
                     unreadNotifications={unreadNotifications}

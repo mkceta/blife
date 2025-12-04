@@ -23,6 +23,10 @@ import { SwipeNavigator } from '@/components/layout/swipe-navigator'
 
 // ... existing imports
 
+import { PwaRegister } from '@/components/pwa-register'
+
+// ... existing imports
+
 export default function RootLayout({
   children,
 }: {
@@ -31,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
+        <PwaRegister />
         <SwipeNavigator>
           {children}
         </SwipeNavigator>
