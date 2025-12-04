@@ -24,7 +24,7 @@ export default async function CommunityPage() {
                 </Suspense>
 
                 <Link href="/community/new">
-                    <Button className="fixed bottom-24 right-6 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 border-2 border-white/10" size="icon">
+                    <Button className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-6 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 border-2 border-white/10" size="icon">
                         <Plus className="h-8 w-8" strokeWidth={3} />
                     </Button>
                 </Link>

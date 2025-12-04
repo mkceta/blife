@@ -19,7 +19,7 @@ export function MessagesSidebar({
 }: MessagesSidebarProps) {
     return (
         <div className={`flex flex-col h-full bg-card/30 border-r border-border/50 ${className}`}>
-            <div className="p-4 border-b border-border/50 shrink-0">
+            <div className="p-4 border-b border-border/50 shrink-0 pt-safe">
                 <h2 className="text-xl font-bold mb-4 px-1">Mensajes</h2>
                 <form className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -31,7 +31,7 @@ export function MessagesSidebar({
                     />
                 </form>
             </div>
-            <div className="flex-1 overflow-y-auto p-2 scrollbar-thin">
+            <div className="flex-1 overflow-y-auto p-2 scrollbar-thin pb-24">
                 <ThreadList
                     initialThreads={threads}
                     currentUserId={currentUserId}

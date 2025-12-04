@@ -21,7 +21,7 @@ export function PageHeader({ title, icon, children, className }: PageHeaderProps
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className={cn(
-                    "sticky top-4 z-30 mx-auto w-full", // Floating positioning
+                    "sticky top-[calc(1rem+env(safe-area-inset-top))] z-30 mx-auto w-full", // Floating positioning
                     "glass-strong rounded-full border border-white/20 shadow-lg shadow-black/5", // Glass & Shape
                     "px-6 py-3 mb-8", // Spacing
                     "flex items-center justify-between gap-4", // Layout

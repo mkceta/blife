@@ -61,7 +61,7 @@ export default function MessagesLayout({
     if (!currentUserId) return null // Or a loading spinner
 
     return (
-        <div className="bg-background min-h-screen pb-0">
+        <div className="bg-background min-h-screen pb-0 pt-safe">
             <div className="max-w-7xl mx-auto h-[100dvh] md:h-[calc(100vh-4rem)] flex overflow-hidden">
                 {/* Sidebar - Visible on mobile only if we are on the main list page (handled by page.tsx logic usually, but here we want it always visible on desktop) */}
                 <div className="hidden md:block w-[350px] lg:w-[400px] shrink-0 h-full border-r border-border/50">
