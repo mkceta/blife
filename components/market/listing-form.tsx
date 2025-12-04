@@ -181,7 +181,7 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-20">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-32 pb-safe">
                 <div className="space-y-4">
                     <FormLabel>Fotos (Máximo 4)</FormLabel>
                     <ImageUpload
