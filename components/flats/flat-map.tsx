@@ -100,7 +100,21 @@ export default function FlatMap({
     // Handle fullscreen change event to update state if user presses Esc
     useEffect(() => {
         const handleFullscreenChange = () => {
-            setIsFullscreen(!!document.fullscreenElement)
+            const isFull = !!document.fullscreenElement
+            setIsFullscreen(isFull)
+
+            // Fix for mobile viewports getting messed up after fullscreen
+            if (!isFull) {
+                // Force a viewport reset
+                const viewport = document.querySelector('meta[name="viewport"]')
+                if (viewport) {
+                    const originalContent = viewport.getAttribute('content')
+                    viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1')
+                    setTimeout(() => {
+                        if (originalContent) viewport.setAttribute('content', originalContent)
+                    }, 100)
+                }
+            }
         }
         document.addEventListener('fullscreenchange', handleFullscreenChange)
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
