@@ -37,6 +37,32 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
     const pathname = usePathname()
     const [isOpen, setIsOpen] = useState(false)
 
+    // Handle back button closing the sheet
+    useEffect(() => {
+        if (isOpen) {
+            window.history.pushState({ modal: 'flat-filters' }, '')
+
+            const handlePopState = () => {
+                setIsOpen(false)
+            }
+
+            window.addEventListener('popstate', handlePopState)
+
+            return () => {
+                window.removeEventListener('popstate', handlePopState)
+            }
+        }
+    }, [isOpen])
+
+    const handleOpenChange = (open: boolean) => {
+        if (!open && isOpen) {
+            if (window.history.state?.modal === 'flat-filters') {
+                window.history.back()
+            }
+        }
+        setIsOpen(open)
+    }
+
     const [filters, setFilters] = useState({
         minRent: searchParams.get('min_rent') || '',
         maxRent: searchParams.get('max_rent') || '',
@@ -95,7 +121,7 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
         }
 
         router.push(`${pathname}?${params.toString()}`)
-        setIsOpen(false)
+        handleOpenChange(false)
     }
 
     const clearFilters = () => {
@@ -121,7 +147,7 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
         })
 
         router.push(`${pathname}?${params.toString()}`)
-        setIsOpen(false)
+        handleOpenChange(false)
     }
 
     const activeFiltersCount = [
@@ -136,7 +162,7 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
     ].filter(Boolean).length
 
     return (
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <Sheet open={isOpen} onOpenChange={handleOpenChange}>
             <SheetTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" className="relative rounded-full h-10 w-10 hover:bg-white/10 transition-colors">
                     <SlidersHorizontal className="h-5 w-5" />
@@ -146,7 +172,7 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
                 </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full sm:max-w-md border-l border-white/10 bg-background/80 backdrop-blur-xl p-6">
-                <SheetHeader className="text-left">
+                <SheetHeader className="text-left flex flex-row items-center justify-between">
                     <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
                         Filtros de Pisos
                     </SheetTitle>

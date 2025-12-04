@@ -51,6 +51,40 @@ export function MarketFilters() {
     const pathname = usePathname()
     const [isOpen, setIsOpen] = useState(false)
 
+    // Handle back button closing the sheet
+    useEffect(() => {
+        if (isOpen) {
+            // Push a state when opening
+            window.history.pushState({ modal: 'market-filters' }, '')
+
+            const handlePopState = () => {
+                setIsOpen(false)
+            }
+
+            window.addEventListener('popstate', handlePopState)
+
+            return () => {
+                window.removeEventListener('popstate', handlePopState)
+                // If we are unmounting and it's still open (e.g. navigation), we might want to clean up
+                // but usually popstate handles the "back" action.
+                // If we close manually, we need to go back.
+            }
+        }
+    }, [isOpen])
+
+    const handleOpenChange = (open: boolean) => {
+        if (!open && isOpen) {
+            // Closing manually (clicking backdrop or X)
+            // We need to revert the pushState if it wasn't a popstate event
+            // This is tricky to distinguish.
+            // A simple way is to just go back if we are closing and history state matches.
+            if (window.history.state?.modal === 'market-filters') {
+                window.history.back()
+            }
+        }
+        setIsOpen(open)
+    }
+
     const [filters, setFilters] = useState({
         category: searchParams.get('category') || 'Todos',
         degree: searchParams.get('degree') || 'Todos',
@@ -109,7 +143,8 @@ export function MarketFilters() {
         }
 
         router.push(`${pathname}?${params.toString()}`)
-        setIsOpen(false)
+        // Close handles the history back
+        handleOpenChange(false)
     }
 
     const clearFilters = () => {
@@ -129,7 +164,8 @@ export function MarketFilters() {
         })
 
         router.push(`${pathname}?${params.toString()}`)
-        setIsOpen(false)
+        // Close handles the history back
+        handleOpenChange(false)
     }
 
     const activeFiltersCount = [
@@ -141,7 +177,7 @@ export function MarketFilters() {
     ].filter(Boolean).length
 
     return (
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <Sheet open={isOpen} onOpenChange={handleOpenChange}>
             <SheetTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" className="relative rounded-full h-10 w-10 hover:bg-white/10 transition-colors">
                     <SlidersHorizontal className="h-5 w-5" />
@@ -151,10 +187,11 @@ export function MarketFilters() {
                 </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full sm:max-w-md border-l border-white/10 bg-background/80 backdrop-blur-xl p-6">
-                <SheetHeader className="text-left">
+                <SheetHeader className="text-left flex flex-row items-center justify-between">
                     <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
                         Filtros y Ordenación
                     </SheetTitle>
+                    {/* Close button is automatically added by SheetContent usually, but we can add explicit one if needed or rely on default X */}
                 </SheetHeader>
 
                 <div className="flex flex-col gap-8 h-[calc(100vh-10rem)] overflow-y-auto pr-2">
