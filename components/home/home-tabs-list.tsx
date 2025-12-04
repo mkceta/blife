@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 
 export function HomeTabsList({ activeTab }: { activeTab: string }) {
     return (
-        <div className="sticky top-[calc(1rem+env(safe-area-inset-top))] z-30 flex justify-center mb-2 pointer-events-none px-4">
+        <div className="sticky top-[calc(1rem+env(safe-area-inset-top))] z-30 flex justify-center pointer-events-none px-4">
             <TabsList className="grid grid-cols-2 w-full max-w-2xl glass-strong rounded-full border border-white/10 p-1.5 pointer-events-auto shadow-xl shadow-primary/5 h-14 relative">
                 <TabsTrigger
                     value="market"
