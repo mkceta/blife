@@ -99,7 +99,7 @@ function MarketFeedContent() {
     return (
         <PullToRefresh onRefresh={handleRefresh}>
             <div className="space-y-2 min-h-[calc(100vh-10rem)]">
-                <form action="/home" method="GET" className="sticky top-0 z-20 mx-auto max-w-2xl w-full px-4 md:px-0 pt-2 pb-2 bg-black/95 backdrop-blur-sm border-b border-white/5">
+                <form action="/home" method="GET" className="sticky top-0 z-20 mx-auto max-w-2xl w-full px-4 md:px-0 pt-2 pb-2">
                     <input type="hidden" name="tab" value="market" />
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -51,37 +51,33 @@ export function MarketFilters() {
     const pathname = usePathname()
     const [isOpen, setIsOpen] = useState(false)
 
-    // Handle back button closing the sheet
+    // Handle back button closing the sheet using Hash
     useEffect(() => {
-        if (isOpen) {
-            // Push a state when opening
-            window.history.pushState({ modal: 'market-filters' }, '')
-
-            const handlePopState = () => {
+        const handleHashChange = () => {
+            if (window.location.hash !== '#filters') {
                 setIsOpen(false)
             }
+        }
 
-            window.addEventListener('popstate', handlePopState)
+        window.addEventListener('hashchange', handleHashChange)
+        return () => window.removeEventListener('hashchange', handleHashChange)
+    }, [])
 
-            return () => {
-                window.removeEventListener('popstate', handlePopState)
-                // If we are unmounting and it's still open (e.g. navigation), we might want to clean up
-                // but usually popstate handles the "back" action.
-                // If we close manually, we need to go back.
+    // Sync open state with hash
+    useEffect(() => {
+        if (isOpen) {
+            if (window.location.hash !== '#filters') {
+                window.location.hash = 'filters'
+            }
+        } else {
+            if (window.location.hash === '#filters') {
+                // If we closed it programmatically, go back to remove hash
+                window.history.back()
             }
         }
     }, [isOpen])
 
     const handleOpenChange = (open: boolean) => {
-        if (!open && isOpen) {
-            // Closing manually (clicking backdrop or X)
-            // We need to revert the pushState if it wasn't a popstate event
-            // This is tricky to distinguish.
-            // A simple way is to just go back if we are closing and history state matches.
-            if (window.history.state?.modal === 'market-filters') {
-                window.history.back()
-            }
-        }
         setIsOpen(open)
     }
 

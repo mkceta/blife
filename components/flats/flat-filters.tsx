@@ -37,29 +37,32 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
     const pathname = usePathname()
     const [isOpen, setIsOpen] = useState(false)
 
-    // Handle back button closing the sheet
+    // Handle back button closing the sheet using Hash
     useEffect(() => {
-        if (isOpen) {
-            window.history.pushState({ modal: 'flat-filters' }, '')
-
-            const handlePopState = () => {
+        const handleHashChange = () => {
+            if (window.location.hash !== '#filters') {
                 setIsOpen(false)
             }
+        }
 
-            window.addEventListener('popstate', handlePopState)
+        window.addEventListener('hashchange', handleHashChange)
+        return () => window.removeEventListener('hashchange', handleHashChange)
+    }, [])
 
-            return () => {
-                window.removeEventListener('popstate', handlePopState)
+    // Sync open state with hash
+    useEffect(() => {
+        if (isOpen) {
+            if (window.location.hash !== '#filters') {
+                window.location.hash = 'filters'
+            }
+        } else {
+            if (window.location.hash === '#filters') {
+                window.history.back()
             }
         }
     }, [isOpen])
 
     const handleOpenChange = (open: boolean) => {
-        if (!open && isOpen) {
-            if (window.history.state?.modal === 'flat-filters') {
-                window.history.back()
-            }
-        }
         setIsOpen(open)
     }
 
