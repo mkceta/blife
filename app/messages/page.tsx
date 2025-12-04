@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { MessageSquare } from 'lucide-react'
 import { MessagesSidebar } from '@/components/messages/messages-sidebar'
+import { Button } from '@/components/ui/button'
 // We'll need to fetch data directly here instead of using server-side data functions
 // import { getThreads, getUnreadCounts } from './data' 
 
@@ -18,6 +19,8 @@ export default function MessagesPage() {
     const supabase = createClient()
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
+    const [error, setError] = useState<string | null>(null)
+
     useEffect(() => {
         async function fetchData() {
             const { data: { user } } = await supabase.auth.getUser()
@@ -28,7 +31,6 @@ export default function MessagesPage() {
             setCurrentUserId(user.id)
 
             // Fetch threads
-            // Logic adapted from getThreads
             let threadQuery = supabase
                 .from('threads')
                 .select(`
@@ -42,10 +44,13 @@ export default function MessagesPage() {
                 .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
                 .order('updated_at', { ascending: false })
 
-            const { data: threadsData, error } = await threadQuery
+            const { data: threadsData, error: threadsError } = await threadQuery
 
-            if (error) {
-                console.error('Error fetching threads:', error)
+            if (threadsError) {
+                console.error('Error fetching threads:', threadsError)
+                setError(threadsError.message)
+                setLoading(false)
+                return
             } else {
                 // Client-side filtering for search query if needed, or improve Supabase query
                 // For now, simple client-side filter if query exists
@@ -85,6 +90,16 @@ export default function MessagesPage() {
     }, [router, supabase, query])
 
     if (loading) return <div className="h-full flex items-center justify-center">Cargando mensajes...</div>
+
+    if (error) return (
+        <div className="h-full flex flex-col items-center justify-center p-4 text-center">
+            <p className="text-destructive mb-2">Error al cargar mensajes</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+                Reintentar
+            </Button>
+        </div>
+    )
 
     return (
         <>
