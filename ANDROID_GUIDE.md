@@ -5,7 +5,12 @@ La compilación automática del APK falló debido a problemas de configuración 
 Sigue estos pasos para generar el APK en tu máquina:
 
 ## Requisitos Previos
-1.  Tener **Android Studio** instalado.
+> [!IMPORTANT]
+> **No se ha encontrado el Android SDK en tu sistema.** Debes instalarlo para poder generar el APK.
+
+1.  **Instalar Android Studio**: [Descargar aquí](https://developer.android.com/studio).
+    *   Durante la instalación, asegúrate de marcar "Android SDK" y "Android SDK Platform-Tools".
+    *   Abre Android Studio al menos una vez para completar la configuración inicial.
 2.  Tener el código actualizado (ya he aplicado las correcciones en `app/market` y `app/actions`).
 
 ## Pasos para generar el APK

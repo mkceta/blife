@@ -11,6 +11,18 @@ export const metadata: Metadata = {
   description: 'Marketplace y comunidad para estudiantes UDC',
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+}
+
+import { SwipeNavigator } from '@/components/layout/swipe-navigator'
+
+// ... existing imports
+
 export default function RootLayout({
   children,
 }: {
@@ -19,7 +31,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
-        {children}
+        <SwipeNavigator>
+          {children}
+        </SwipeNavigator>
         <BottomNav />
         <Toaster />
       </body>
