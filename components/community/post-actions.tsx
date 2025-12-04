@@ -85,7 +85,8 @@ export function PostActions({
                 const { error } = await supabase
                     .from('reactions')
                     .delete()
-                    .eq('post_id', postId)
+                    .eq('target_id', postId)
+                    .eq('target_type', 'post')
                     .eq('user_id', currentUserId)
 
                 if (error) throw error
@@ -97,9 +98,10 @@ export function PostActions({
                 const { error } = await supabase
                     .from('reactions')
                     .insert({
-                        post_id: postId,
+                        target_id: postId,
+                        target_type: 'post',
                         user_id: currentUserId,
-                        kind: 'like'
+                        emoji: '❤️'
                     })
 
                 if (error) throw error

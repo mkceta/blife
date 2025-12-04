@@ -47,10 +47,11 @@ export function CommunityFeed() {
             const postIds = postsData.map(p => p.id)
             const { data: reactions } = await supabase
                 .from('reactions')
-                .select('post_id')
+                .select('target_id')
                 .eq('user_id', user.id)
-                .in('post_id', postIds)
-            setUserReactions(new Set(reactions?.map(r => r.post_id) || []))
+                .eq('target_type', 'post')
+                .in('target_id', postIds)
+            setUserReactions(new Set(reactions?.map((r: any) => r.target_id) || []))
         }
         setLoading(false)
     }, [supabase])
