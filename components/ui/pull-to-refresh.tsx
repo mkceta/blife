@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { motion, useAnimation, PanInfo } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 
@@ -14,10 +14,16 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const controls = useAnimation()
     const [pullY, setPullY] = useState(0)
+    const [isAtTop, setIsAtTop] = useState(true)
     const THRESHOLD = 80
 
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.currentTarget
+        setIsAtTop(target.scrollTop === 0)
+    }
+
     const handleDragEnd = async (_: any, info: PanInfo) => {
-        if (info.offset.y > THRESHOLD && !isRefreshing) {
+        if (info.offset.y > THRESHOLD && !isRefreshing && isAtTop) {
             setIsRefreshing(true)
             setPullY(THRESHOLD)
             await controls.start({ y: THRESHOLD })
@@ -36,7 +42,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
     }
 
     const handleDrag = (_: any, info: PanInfo) => {
-        if (!isRefreshing && info.offset.y > 0) {
+        if (!isRefreshing && info.offset.y > 0 && isAtTop) {
             setPullY(info.offset.y)
         }
     }
@@ -58,14 +64,15 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
             </motion.div>
 
             <motion.div
-                drag="y"
+                drag={isAtTop ? "y" : false}
                 dragConstraints={{ top: 0, bottom: 0 }}
                 dragElastic={0.2}
                 onDragEnd={handleDragEnd}
                 onDrag={handleDrag}
                 animate={controls}
                 className="h-full overflow-y-auto"
-                style={{ touchAction: 'pan-y' }} // Important for native scroll
+                onScroll={handleScroll}
+                ref={containerRef}
             >
                 {children}
             </motion.div>

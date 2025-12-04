@@ -129,7 +129,7 @@ export function MarketSearchBar() {
     const searchParams = useSearchParams()
 
     return (
-        <div className="sticky top-[calc(5.5rem+env(safe-area-inset-top))] z-30 flex justify-center pointer-events-none px-4">
+        <div className="sticky top-[calc(5.5rem+env(safe-area-inset-top))] z-50 flex justify-center pointer-events-none px-4">
             <div className="w-full max-w-2xl pointer-events-auto pb-6">
                 <form action="/home" method="GET" className="glass-strong rounded-2xl border border-white/10 p-3 shadow-lg">
                     <input type="hidden" name="tab" value="market" />
