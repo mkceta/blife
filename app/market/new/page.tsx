@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default function NewListingPage() {
     return (
-        <div className="container max-w-md mx-auto p-4">
+        <div className="container max-w-md mx-auto p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
             <div className="flex items-center gap-2 mb-6">
                 <Button asChild variant="ghost" size="icon">
                     <Link href="/market">
