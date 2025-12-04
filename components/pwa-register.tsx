@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useFcmToken } from '@/hooks/use-fcm-token'
 
 export function PwaRegister() {
+    useFcmToken()
+
     useEffect(() => {
         if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').then(
