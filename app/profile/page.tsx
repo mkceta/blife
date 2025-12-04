@@ -117,7 +117,7 @@ export default function ProfilePage() {
     return (
         <div className="pb-20">
             {/* Profile Header */}
-            <div className="relative bg-gradient-to-b from-primary/10 via-primary/5 to-background p-4 md:p-6 space-y-6 border-b border-border/50 overflow-hidden">
+            <div className="relative bg-gradient-to-b from-primary/10 via-primary/5 to-background p-4 md:p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-6 border-b border-border/50 overflow-hidden">
                 <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <Link href="/profile/edit" className="relative group">

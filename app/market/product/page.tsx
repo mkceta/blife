@@ -79,7 +79,7 @@ function ProductContent() {
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-12">
             {/* Mobile Header (Floating) */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-50 p-4 flex justify-between items-center pointer-events-none">
+            <div className="md:hidden fixed top-0 left-0 right-0 z-50 p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex justify-between items-center pointer-events-none">
                 <Button asChild variant="secondary" size="icon" className="pointer-events-auto rounded-full h-10 w-10 bg-background/80 backdrop-blur-md border shadow-sm">
                     <Link href="/market">
                         <ChevronLeft className="h-6 w-6" />
