@@ -40,6 +40,10 @@ export function useFcmToken() {
 
                     if (error) {
                         console.error('Error saving FCM token:', error)
+                        // toast.error('Error guardando token de notificaciones')
+                    } else {
+                        console.log('FCM token saved to profile')
+                        // toast.success('Dispositivo registrado para notificaciones')
                     }
                 }
             })
