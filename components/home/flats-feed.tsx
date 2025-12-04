@@ -100,7 +100,7 @@ function FlatsFeedContent() {
                 {loading ? (
                     <div className="text-center py-20 text-muted-foreground">Cargando pisos...</div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20 pt-4">
                         {flats.map((flat, index) => (
                             <div key={flat.id} className={index < 4 ? "" : "stagger-item"}>
                                 <FlatCard

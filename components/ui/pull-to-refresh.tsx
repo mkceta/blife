@@ -112,7 +112,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
             {/* Content Wrapper - This moves down */}
             <motion.div
                 animate={contentControls}
-                className="relative z-10 bg-background min-h-screen"
+                className="relative z-10 bg-transparent min-h-screen"
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
                 {children}

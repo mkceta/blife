@@ -101,7 +101,7 @@ function MarketFeedContent() {
                 {loading ? (
                     <div className="text-center py-20 text-muted-foreground">Cargando anuncios...</div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20 pt-4">
                         {listings.map((listing, index) => (
                             <div key={listing.id} className={index < 4 ? "" : "stagger-item"}>
                                 <ListingCard
