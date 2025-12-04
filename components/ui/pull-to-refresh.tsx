@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, useAnimation, PanInfo } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 
@@ -11,16 +11,18 @@ interface PullToRefreshProps {
 
 export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
     const [isRefreshing, setIsRefreshing] = useState(false)
-    const containerRef = useRef<HTMLDivElement>(null)
     const controls = useAnimation()
     const [pullY, setPullY] = useState(0)
     const [isAtTop, setIsAtTop] = useState(true)
     const THRESHOLD = 80
 
-    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-        const target = e.currentTarget
-        setIsAtTop(target.scrollTop === 0)
-    }
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsAtTop(window.scrollY === 0)
+        }
+        window.addEventListener('scroll', handleScroll)
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
 
     const handleDragEnd = async (_: any, info: PanInfo) => {
         if (info.offset.y > THRESHOLD && !isRefreshing && isAtTop) {
@@ -48,7 +50,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
     }
 
     return (
-        <div className="relative h-full overflow-hidden">
+        <div className="relative min-h-screen">
             <motion.div
                 className="absolute top-0 left-0 right-0 flex justify-center items-center h-20 -mt-20 z-10"
                 style={{ y: pullY > 0 ? pullY / 2 : 0 }}
@@ -70,9 +72,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
                 onDragEnd={handleDragEnd}
                 onDrag={handleDrag}
                 animate={controls}
-                className="h-full overflow-y-auto"
-                onScroll={handleScroll}
-                ref={containerRef}
+                style={{ touchAction: 'pan-y' }}
             >
                 {children}
             </motion.div>

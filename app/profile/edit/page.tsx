@@ -174,7 +174,7 @@ export default function EditProfilePage() {
                 <h1 className="text-xl font-bold">Editar Perfil</h1>
             </div>
 
-            <div className="p-4 space-y-6 pb-32 pb-[calc(8rem+env(safe-area-inset-bottom))]">
+            <div className="p-4 space-y-6 pb-24">
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center gap-4 py-6">
                     <div className="relative group cursor-pointer" onClick={() => !isLoading && document.getElementById('avatar-upload')?.click()}>
