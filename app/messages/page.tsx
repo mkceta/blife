@@ -35,7 +35,7 @@ export default function MessagesPage() {
                     *,
                     listing:listings(id, title, photos, price_cents, status, user_id),
                     flat:flats(id, title, photos, rent_cents, status, user_id),
-                    messages!messages_thread_id_fkey(id, content, created_at, read, sender_id),
+                    messages!messages_thread_id_fkey(id, body, created_at, read, from_user),
                     buyer:users!threads_buyer_id_fkey(id, alias_inst, avatar_url),
                     seller:users!threads_seller_id_fkey(id, alias_inst, avatar_url)
                 `)
@@ -70,7 +70,7 @@ export default function MessagesPage() {
                 .from('messages')
                 .select('thread_id')
                 .eq('read', false)
-                .neq('sender_id', user.id)
+                .neq('from_user', user.id)
 
             const counts: Record<string, number> = {}
             unreadData?.forEach((msg: any) => {
