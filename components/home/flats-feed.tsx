@@ -19,7 +19,6 @@ function FlatsFeedContent() {
     const supabase = createClient()
 
     const fetchData = useCallback(async () => {
-        // setLoading(true)
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUser(user)
 
@@ -97,23 +96,7 @@ function FlatsFeedContent() {
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
-            <div className="space-y-2 min-h-[calc(100vh-10rem)]">
-                <form action="/home" method="GET" className="sticky top-[calc(4.5rem+env(safe-area-inset-top))] z-20 mx-auto max-w-2xl w-full px-4 md:px-0 pt-2 pb-2">
-                    <input type="hidden" name="tab" value="flats" />
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <div className="flex gap-2">
-                            <Input
-                                name="q"
-                                defaultValue={searchParams.get('q') || ''}
-                                placeholder="Buscar pisos..."
-                                className="pl-9 bg-card/50 border-white/10"
-                            />
-                            <FlatFilters flats={flats || []} />
-                        </div>
-                    </div>
-                </form>
-
+            <div className="min-h-[calc(100vh-10rem)]">
                 {loading ? (
                     <div className="text-center py-20 text-muted-foreground">Cargando pisos...</div>
                 ) : (
@@ -137,6 +120,32 @@ function FlatsFeedContent() {
                 )}
             </div>
         </PullToRefresh>
+    )
+}
+
+export function FlatsSearchBar({ flats }: { flats: any[] }) {
+    const searchParams = useSearchParams()
+
+    return (
+        <div className="sticky top-[calc(5.5rem+env(safe-area-inset-top))] z-30 flex justify-center pointer-events-none px-4">
+            <div className="w-full max-w-2xl pointer-events-auto py-3">
+                <form action="/home" method="GET" className="glass-strong rounded-2xl border border-white/10 p-3 shadow-lg">
+                    <input type="hidden" name="tab" value="flats" />
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                            <Input
+                                name="q"
+                                defaultValue={searchParams.get('q') || ''}
+                                placeholder="Buscar pisos..."
+                                className="pl-10 border-white/10 bg-background/70 focus-visible:ring-primary/20"
+                            />
+                        </div>
+                        <FlatFilters flats={flats || []} />
+                    </div>
+                </form>
+            </div>
+        </div>
     )
 }
 

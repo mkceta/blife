@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { HomeTabsList } from '@/components/home/home-tabs-list'
 import { FadeIn } from '@/components/ui/fade-in'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { MarketSearchBar } from '@/components/home/market-feed'
+import { FlatsSearchBar } from '@/components/home/flats-feed'
 
 interface HomeClientProps {
     marketFeed: React.ReactNode
@@ -28,17 +30,23 @@ export function HomeClient({ marketFeed, flatsFeed, initialTab }: HomeClientProp
 
     return (
         <div className="pb-20 bg-gradient-to-b from-primary/10 via-primary/5 to-background min-h-screen">
-            <div className="p-4 space-y-0">
+            <div className="p-4 space-y-0 max-w-7xl mx-auto">
                 <Tabs defaultValue={initialTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <HomeTabsList activeTab={activeTab} />
 
                     <TabsContent value="market" className="min-h-[50vh] outline-none">
+                        <Suspense fallback={null}>
+                            <MarketSearchBar />
+                        </Suspense>
                         <FadeIn>
                             {marketFeed}
                         </FadeIn>
                     </TabsContent>
 
                     <TabsContent value="flats" className="min-h-[50vh] outline-none">
+                        <Suspense fallback={null}>
+                            <FlatsSearchBar flats={[]} />
+                        </Suspense>
                         <FadeIn>
                             {flatsFeed}
                         </FadeIn>
