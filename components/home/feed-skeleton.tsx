@@ -4,7 +4,7 @@ export function FeedSkeleton() {
     return (
         <div className="space-y-6">
             {/* Search Bar Skeleton */}
-            <div className="sticky top-20 z-10 mx-auto max-w-2xl w-full mb-6 px-4 md:px-0">
+            <div className="sticky top-[calc(4.5rem+env(safe-area-inset-top))] z-20 mx-auto max-w-2xl w-full mb-6 px-4 md:px-0 pt-2 bg-black/95 backdrop-blur-sm pb-2 rounded-b-xl shadow-sm">
                 <div className="flex gap-2">
                     <Skeleton className="h-10 w-full rounded-md bg-card/50" />
                     <Skeleton className="h-10 w-10 rounded-md bg-card/50" />
