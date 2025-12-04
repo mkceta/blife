@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Capacitor } from '@capacitor/core'
 import { PushNotifications } from '@capacitor/push-notifications'
+import { LocalNotifications } from '@capacitor/local-notifications'
 
 export function NotificationPermission() {
     const [permission, setPermission] = useState<NotificationPermission>('default')
@@ -19,11 +20,12 @@ export function NotificationPermission() {
     const checkPermission = async () => {
         if (Capacitor.isNativePlatform()) {
             try {
-                const status = await PushNotifications.checkPermissions()
-                // Map Capacitor permission to Web NotificationPermission
-                if (status.receive === 'granted') {
+                // Check both, but prioritize Local for the UI state as it's what we'll use for immediate feedback
+                const localStatus = await LocalNotifications.checkPermissions()
+
+                if (localStatus.display === 'granted') {
                     setPermission('granted')
-                } else if (status.receive === 'denied') {
+                } else if (localStatus.display === 'denied') {
                     setPermission('denied')
                 } else {
                     setPermission('default')
@@ -46,18 +48,50 @@ export function NotificationPermission() {
 
         if (Capacitor.isNativePlatform()) {
             try {
-                const result = await PushNotifications.requestPermissions()
-                if (result.receive === 'granted') {
-                    await PushNotifications.register()
+                // Request Local Notifications permission
+                const result = await LocalNotifications.requestPermissions()
+
+                if (result.display === 'granted') {
                     setPermission('granted')
                     toast.success('Notificaciones activadas')
+
+                    // Schedule test notification
+                    try {
+                        await LocalNotifications.schedule({
+                            notifications: [
+                                {
+                                    title: 'BLife',
+                                    body: 'Has activado las notificaciones correctamente',
+                                    id: 1,
+                                    schedule: { at: new Date(Date.now() + 1000) }, // 1 second delay
+                                    sound: undefined,
+                                    attachments: undefined,
+                                    actionTypeId: "",
+                                    extra: null
+                                }
+                            ]
+                        })
+                    } catch (e) {
+                        console.error('Error scheduling test notification:', e)
+                    }
+
+                    // Also try to register for Push if possible (best effort)
+                    try {
+                        const pushResult = await PushNotifications.requestPermissions()
+                        if (pushResult.receive === 'granted') {
+                            await PushNotifications.register()
+                        }
+                    } catch (e) {
+                        console.log('Push registration skipped or failed')
+                    }
+
                 } else {
                     setPermission('denied')
                     toast.error('Permiso denegado. Actívalo en Ajustes.')
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error requesting native permission:', error)
-                toast.error('Error al solicitar permisos')
+                toast.error(`Error: ${error.message || 'No se pudieron solicitar permisos'}`)
             }
         } else {
             // Web logic

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { getUnreadCount } from '@/app/notifications/actions'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { Capacitor } from '@capacitor/core'
+import { LocalNotifications } from '@capacitor/local-notifications'
 
 interface Notification {
     id: string
@@ -81,6 +83,28 @@ export function useNotifications() {
                         console.log('useNotifications: Adding notification for current user')
                         setNotifications((prev) => [newNotification, ...prev])
                         setUnreadCount((prev) => prev + 1)
+
+                        // Trigger local notification on native devices
+                        if (Capacitor.isNativePlatform()) {
+                            try {
+                                await LocalNotifications.schedule({
+                                    notifications: [
+                                        {
+                                            title: 'BLife',
+                                            body: newNotification.message || 'Tienes una nueva notificación',
+                                            id: Date.now(),
+                                            schedule: { at: new Date(Date.now() + 100) },
+                                            sound: undefined,
+                                            attachments: undefined,
+                                            actionTypeId: "",
+                                            extra: { url: newNotification.link }
+                                        }
+                                    ]
+                                })
+                            } catch (e) {
+                                console.error('Error scheduling local notification:', e)
+                            }
+                        }
                     }
                 )
                 .on(
