@@ -112,7 +112,14 @@ export function BottomNav() {
                                         </AvatarFallback>
                                     </Avatar>
                                 ) : (
-                                    <item.icon className={cn("h-6 w-6 transition-all", isActive ? "stroke-[2.5]" : "stroke-2")} />
+                                    <item.icon className={cn(
+                                        "h-6 w-6 transition-all",
+                                        isActive
+                                            ? item.icon === Search
+                                                ? "stroke-2"
+                                                : "stroke-0 fill-primary"
+                                            : "stroke-2"
+                                    )} />
                                 )}
 
                                 {item.hasNotifications && (
