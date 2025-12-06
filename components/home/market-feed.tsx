@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { ListingCard } from '@/components/market/listing-card'
 import { MarketFilters } from '@/components/market/market-filters'
 import { Input } from '@/components/ui/input'
-import { Search, Camera } from 'lucide-react'
+import { Search } from 'lucide-react'
 import Link from 'next/link'
 
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
@@ -182,12 +182,9 @@ export function MarketSearchBar() {
                             placeholder="Busca artículos o miembros"
                             className="h-11 w-full bg-muted/30 pl-10 pr-10 border-none focus-visible:ring-0 rounded-lg text-base"
                         />
-                        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <Camera className="h-5 w-5 text-primary" />
-                        </button>
                     </div>
                 </form>
-
+                <MarketFilters />
                 {/* Category Pills */}
                 <div className="flex gap-2 overflow-x-auto pb-3 -mx-3 px-3 scrollbar-hide">
                     {categories.map((cat) => {
