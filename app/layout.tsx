@@ -28,6 +28,8 @@ import { PwaRegister } from '@/components/pwa-register'
 
 // ... existing imports
 
+import { Suspense } from 'react'
+
 export default function RootLayout({
   children,
 }: {
@@ -37,7 +39,9 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
         <PwaRegister />
-        <DesktopHeader />
+        <Suspense>
+          <DesktopHeader />
+        </Suspense>
         <SwipeNavigator>
           {children}
         </SwipeNavigator>
