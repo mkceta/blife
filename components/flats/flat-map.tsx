@@ -152,47 +152,51 @@ export default function FlatMap({
 
     return (
         <div ref={containerRef} className={cn("relative h-full w-full rounded-xl overflow-hidden group isolate", className)}>
-            {/* Search Bar */}
-            {interactive && (
-                <div className="absolute top-4 left-4 z-[1000] w-[calc(100%-6rem)] max-w-sm">
-                    <div className="relative flex items-center shadow-lg rounded-xl overflow-hidden bg-background/90 backdrop-blur-sm border border-border/50">
-                        <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault()
-                                    handleSearch()
-                                }
-                            }}
-                            placeholder="Buscar calle o zona..."
-                            className="pl-9 pr-4 h-10 border-0 bg-transparent focus-visible:ring-0"
-                        />
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleSearch}
-                            className="h-10 px-3 rounded-none hover:bg-primary/10 hover:text-primary"
-                            disabled={isSearching}
-                        >
-                            {isSearching ? '...' : 'Ir'}
-                        </Button>
+            {/* UI Controls Container (Safe Area Aware) */}
+            <div className="absolute top-0 left-0 right-0 z-[1000] pt-safe p-4 flex justify-between items-start gap-4 pointer-events-none">
+                {/* Search Bar */}
+                {interactive && (
+                    <div className="pointer-events-auto flex-1 max-w-sm">
+                        <div className="relative flex items-center shadow-lg rounded-xl overflow-hidden bg-background/90 backdrop-blur-sm border border-border/50">
+                            <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault()
+                                        handleSearch()
+                                    }
+                                }}
+                                placeholder="Buscar calle o zona..."
+                                className="pl-9 pr-4 h-10 border-0 bg-transparent focus-visible:ring-0"
+                            />
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleSearch}
+                                className="h-10 px-3 rounded-none hover:bg-primary/10 hover:text-primary"
+                                disabled={isSearching}
+                            >
+                                {isSearching ? '...' : 'Ir'}
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+                {!interactive && <div />} {/* Spacer if search is hidden */}
 
-            {/* Fullscreen Toggle */}
-            <Button
-                type="button"
-                variant="secondary"
-                size="icon"
-                className="absolute top-4 right-4 z-[1000] shadow-lg bg-background/90 backdrop-blur-sm hover:bg-background"
-                onClick={toggleFullscreen}
-            >
-                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
+                {/* Fullscreen Toggle */}
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="pointer-events-auto shrink-0 shadow-lg bg-background/90 backdrop-blur-sm hover:bg-background"
+                    onClick={toggleFullscreen}
+                >
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </Button>
+            </div>
 
             <MapContainer
                 key="flat-map-container"

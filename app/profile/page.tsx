@@ -71,8 +71,10 @@ export default function ProfilePage() {
     return (
         <div className="pb-20 bg-background min-h-screen text-foreground">
             {/* Header */}
-            <div className="flex items-center p-4 border-b border-border">
-                <h1 className="text-xl font-bold">Perfil</h1>
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md pt-safe border-b border-border shadow-sm">
+                <div className="flex items-center p-4">
+                    <h1 className="text-xl font-bold">Perfil</h1>
+                </div>
             </div>
 
             {/* User Card */}
