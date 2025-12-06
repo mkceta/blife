@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { DesktopHeader } from '@/components/layout/desktop-header'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -36,6 +37,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
         <PwaRegister />
+        <DesktopHeader />
         <SwipeNavigator>
           {children}
         </SwipeNavigator>

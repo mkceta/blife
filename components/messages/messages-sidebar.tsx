@@ -27,18 +27,22 @@ export function MessagesSidebar({
     }
 
     return (
-        <div className={`flex flex-col h-full bg-card/30 border-r border-border/50 ${className}`}>
-            <div className="p-4 border-b border-border/50 shrink-0 pt-safe">
-                <h2 className="text-xl font-bold mb-4 px-1">Mensajes</h2>
-                <form className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        name="q"
-                        placeholder="Buscar chats..."
-                        className="pl-9 bg-card/50 border-white/10 h-10"
-                        defaultValue={searchQuery}
-                    />
-                </form>
+        <div className={`flex flex-col h-full bg-background border-r border-border/50 ${className}`}>
+            <div className="flex flex-col border-b border-border/50 bg-background pt-safe">
+                <div className="p-4 pb-2">
+                    <h2 className="text-xl font-bold">Bandeja de entrada</h2>
+                </div>
+                <div className="flex px-4">
+                    <button className="flex-1 pb-3 text-sm font-medium border-b-2 border-primary text-foreground">
+                        Mensajes
+                    </button>
+                    <button
+                        className="flex-1 pb-3 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => router.push('/notifications')}
+                    >
+                        Notificaciones
+                    </button>
+                </div>
             </div>
             <div className="flex-1 overflow-hidden">
                 <PullToRefresh onRefresh={handleRefresh}>

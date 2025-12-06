@@ -19,10 +19,16 @@ interface HomeClientProps {
 export function HomeClient({ marketFeed, flatsFeed, initialTab }: HomeClientProps) {
     const [activeTab, setActiveTab] = useState(initialTab)
 
-    // Optional: Update URL without navigation for shareability
+    // Sync state with prop changes (when DesktopHeader navigates)
+    useEffect(() => {
+        setActiveTab(initialTab)
+    }, [initialTab])
+
+    // Update URL when state changes manually (e.g. clicking tabs on mobile)
     useEffect(() => {
         const url = new URL(window.location.href)
-        if (url.searchParams.get('tab') !== activeTab) {
+        const currentTab = url.searchParams.get('tab')
+        if (currentTab !== activeTab) {
             url.searchParams.set('tab', activeTab)
             window.history.replaceState(null, '', url.toString())
         }
@@ -30,39 +36,54 @@ export function HomeClient({ marketFeed, flatsFeed, initialTab }: HomeClientProp
 
     return (
         <div className="pb-20 bg-gradient-to-b from-primary/10 via-primary/5 to-background min-h-screen">
-            <div className="p-4 space-y-0 max-w-7xl mx-auto">
+            <div className="p-0 md:p-4 space-y-0 max-w-7xl mx-auto">
                 <Tabs defaultValue={initialTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <HomeTabsList activeTab={activeTab} />
+                    <div className="md:hidden p-4 pb-0">
+                        <HomeTabsList activeTab={activeTab} />
+                    </div>
 
-                    <TabsContent value="market" className="min-h-[50vh] outline-none">
-                        <Suspense fallback={null}>
-                            <MarketSearchBar />
-                        </Suspense>
-                        <FadeIn>
-                            {marketFeed}
-                        </FadeIn>
-                    </TabsContent>
-
-                    <TabsContent value="flats" className="min-h-[50vh] outline-none">
-                        <Suspense fallback={null}>
-                            <FlatsSearchBar flats={[]} />
-                        </Suspense>
-                        <FadeIn>
-                            {flatsFeed}
-                        </FadeIn>
-                    </TabsContent>
+                    <div className="mt-0">
+                        {activeTab === 'market' ? (
+                            <div className="min-h-[50vh] outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <Suspense fallback={null}>
+                                    <MarketSearchBar />
+                                </Suspense>
+                                <FadeIn>
+                                    {marketFeed}
+                                </FadeIn>
+                            </div>
+                        ) : (
+                            <div className="min-h-[50vh] outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <Suspense fallback={null}>
+                                    {/* Hide FlatsSearchBar on desktop as requested implicitly by Vinted design? 
+                                         Actually user didn't ask to hide it, but Vinted has main search bar. 
+                                         DesktopHeader search bar handles flats search ('Buscar pisos...').
+                                         So we should HIDE FlatsSearchBar on Desktop too.
+                                     */}
+                                    <div className="md:hidden">
+                                        <FlatsSearchBar flats={[]} />
+                                    </div>
+                                </Suspense>
+                                <FadeIn>
+                                    {flatsFeed}
+                                </FadeIn>
+                            </div>
+                        )}
+                    </div>
                 </Tabs>
             </div>
 
-            {/* Floating Action Button */}
-            <Link href={activeTab === 'market' ? '/market/new' : '/flats/new'} aria-label="Crear nueva publicación">
-                <Button
-                    className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-6 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 border-2 border-white/10"
-                    size="icon"
-                >
-                    <Plus className="h-8 w-8" strokeWidth={3} />
-                </Button>
-            </Link>
+            {/* Floating Action Button (Mobile Only) */}
+            <div className="md:hidden">
+                <Link href={activeTab === 'market' ? '/market/new' : '/flats/new'} aria-label="Crear nueva publicación">
+                    <Button
+                        className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-6 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 border-2 border-white/10"
+                        size="icon"
+                    >
+                        <Plus className="h-8 w-8" strokeWidth={3} />
+                    </Button>
+                </Link>
+            </div>
         </div>
     )
 }

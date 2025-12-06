@@ -1,0 +1,6 @@
+create or replace function increment_favorites(listing_id uuid)
+returns void as $$
+begin
+  update public.listings set favorites_count = coalesce(favorites_count, 0) + 1 where id = listing_id;
+end;
+$$ language plpgsql security definer;

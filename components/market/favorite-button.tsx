@@ -11,7 +11,7 @@ interface FavoriteButtonProps {
     listingId: string
     initialIsFavorite: boolean
     favoritesCount?: number
-    variant?: 'outline' | 'default' | 'secondary'
+    variant?: 'outline' | 'default' | 'secondary' | 'ghost'
     size?: 'default' | 'sm' | 'lg' | 'icon'
     className?: string
     showCount?: boolean
@@ -58,7 +58,7 @@ export function FavoriteButton({
 
                     if (error) throw error
 
-                    await (supabase as any).rpc('increment_favorites', { listing_id: listingId }).catch(() => { })
+                    await (supabase as any).rpc('increment_favorites', { listing_id: listingId })
                     toast.success('Añadido a favoritos')
                 } else {
                     // Remove from favorites
@@ -70,12 +70,12 @@ export function FavoriteButton({
 
                     if (error) throw error
 
-                    await (supabase as any).rpc('decrement_favorites', { listing_id: listingId }).catch(() => { })
+                    await (supabase as any).rpc('decrement_favorites', { listing_id: listingId })
                     toast.success('Eliminado de favoritos')
                 }
             } catch (error: any) {
                 console.error('Error toggling favorite:', error)
-                toast.error('Error al actualizar favoritos')
+                toast.error(error.message || 'Error al actualizar favoritos')
                 // Revert
                 setIsFavorite(!newState)
                 setCount(prev => !newState ? prev + 1 : Math.max(0, prev - 1))

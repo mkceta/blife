@@ -74,13 +74,24 @@ function FlatsFeedContent() {
                 flatsQuery = flatsQuery.order('rent_cents', { ascending: false })
                 break
             default:
-                flatsQuery = flatsQuery.order('created_at', { ascending: false })
+                // "Discovery" shuffle for default view
+                flatsQuery = flatsQuery.order('created_at', { ascending: false }).limit(50)
         }
 
         const { data: flatsData } = await flatsQuery
 
         if (flatsData) {
-            setFlats(flatsData)
+            let finalFlats = flatsData
+            // Shuffle if default sort (Discovery mode)
+            const isDiscovery = !sort || sort === 'recommended'
+
+            if (isDiscovery) {
+                for (let i = finalFlats.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [finalFlats[i], finalFlats[j]] = [finalFlats[j], finalFlats[i]];
+                }
+            }
+            setFlats(finalFlats)
         }
         setLoading(false)
     }, [searchParams, supabase])
@@ -96,11 +107,11 @@ function FlatsFeedContent() {
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
-            <div className="min-h-[calc(100vh-10rem)]">
+            <div className="min-h-[calc(100vh-10rem)] bg-background">
                 {loading ? (
                     <div className="text-center py-20 text-muted-foreground">Cargando pisos...</div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 pb-24 pt-4">
                         {flats.map((flat, index) => (
                             <div key={flat.id} className={index < 4 ? "" : "stagger-item"}>
                                 <FlatCard
@@ -127,23 +138,23 @@ export function FlatsSearchBar({ flats }: { flats: any[] }) {
     const searchParams = useSearchParams()
 
     return (
-        <div className="sticky top-[calc(5.5rem+env(safe-area-inset-top))] z-50 flex justify-center pointer-events-none px-4">
-            <div className="w-full max-w-2xl pointer-events-auto pb-6">
-                <form action="/home" method="GET" className="glass-strong rounded-2xl border border-white/10 p-3 shadow-lg">
+        <div className="sticky top-0 z-40 w-full border-b border-border/5 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-14 items-center px-4 gap-2">
+                <form action="/home" method="GET" className="flex-1">
                     <input type="hidden" name="tab" value="flats" />
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-                            <Input
-                                name="q"
-                                defaultValue={searchParams.get('q') || ''}
-                                placeholder="Buscar pisos..."
-                                className="pl-10 border-white/10 bg-background/70 focus-visible:ring-primary/20"
-                            />
-                        </div>
-                        <FlatFilters flats={flats || []} />
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            name="q"
+                            defaultValue={searchParams.get('q') || ''}
+                            placeholder="Buscar pisos..."
+                            className="h-9 w-full bg-muted/50 pl-9 border-none focus-visible:ring-0 rounded-md"
+                        />
                     </div>
                 </form>
+                <div className="flex-none">
+                    <FlatFilters flats={flats || []} />
+                </div>
             </div>
         </div>
     )

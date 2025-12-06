@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
-import { ChevronLeft, ExternalLink } from 'lucide-react'
+import Image from 'next/image'
+import { ChevronLeft, ExternalLink, MoreVertical, Euro, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/page-header'
 import { formatRelativeTime } from '@/lib/format'
@@ -17,8 +18,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Euro } from 'lucide-react'
 import { MakeOfferDialog } from '@/components/market/make-offer-dialog'
+import { toast } from 'sonner'
 
 interface ChatHeaderProps {
     otherUser: {
@@ -31,6 +32,7 @@ interface ChatHeaderProps {
         id: string
         title: string
         price: string | null
+        photo?: string | null
     } | null
     itemType?: 'market' | 'flats'
     thread: any
@@ -73,84 +75,121 @@ export function ChatHeader({ otherUser: initialOtherUser, item, itemType, thread
     }, [initialOtherUser])
 
     const isOnline = otherUser?.last_seen && new Date(otherUser.last_seen).getTime() > Date.now() - 5 * 60 * 1000
+    const isOwner = thread.listing?.user_id === currentUser.id
+    const isActive = thread.listing?.status === 'active'
+
+    const handleBuy = () => {
+        toast.info('Compra directa próximamente')
+    }
 
     return (
-        <PageHeader title="" className="shrink-0 border-b border-border/50 bg-background/80 backdrop-blur-md z-10">
-            <div className="flex items-center gap-3 w-full">
+        <div className="flex flex-col border-b border-border/50 bg-background/95 backdrop-blur-md z-10 w-full shadow-sm">
+            {/* Row 1: User Info & Navigation */}
+            <div className="flex items-center p-2 gap-3">
                 <Link href="/messages" className="md:hidden">
-                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
+                    <Button variant="ghost" size="icon" className="-ml-1 rounded-full hover:bg-muted">
                         <ChevronLeft className="h-6 w-6" />
                     </Button>
                 </Link>
-                <Link href={`/user/@${otherUser?.alias_inst}`} className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity min-w-0">
+
+                <Link href={`/user/@${otherUser?.alias_inst}`} className="flex items-center gap-3 flex-1 min-w-0 group">
                     <div className="relative">
-                        <Avatar className="h-10 w-10 border border-white/10 shrink-0">
+                        <Avatar className="h-10 w-10 border border-border group-hover:border-primary/50 transition-colors">
                             <AvatarImage src={otherUser?.avatar_url || undefined} />
                             <AvatarFallback>{otherUser?.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         {isOnline && (
-                            <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
+                            <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
                         )}
                     </div>
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                        <h2 className="font-semibold text-lg leading-none truncate">@{otherUser?.alias_inst}</h2>
-                        {item && (
-                            <p className="text-xs text-muted-foreground mt-1 truncate">
-                                {item.title} • {item.price}
-                            </p>
-                        )}
-                        {otherUser?.last_seen && (
-                            <p className={cn(
-                                "text-xs mt-0.5 truncate",
-                                isOnline ? "text-green-500 font-medium" : "text-muted-foreground/80"
-                            )}>
-                                {isOnline ? 'En línea' : `Última vez: ${formatRelativeTime(otherUser.last_seen)}`}
-                            </p>
-                        )}
+                    <div className="flex-1 min-w-0">
+                        <h2 className="font-semibold text-sm leading-none truncate group-hover:text-primary transition-colors">
+                            @{otherUser?.alias_inst}
+                        </h2>
+                        <p className={cn(
+                            "text-xs mt-1 truncate",
+                            isOnline ? "text-green-500 font-medium" : "text-muted-foreground"
+                        )}>
+                            {isOnline ? 'En línea' : formatRelativeTime(otherUser?.last_seen || '')}
+                        </p>
                     </div>
                 </Link>
-                {item && (
-                    <div className="flex gap-2 shrink-0">
-                        {itemType === 'market' && thread.listing?.user_id === currentUser.id && thread.listing.status === 'active' && (
-                            <SaleQRDialog listingId={item.id} listingTitle={item.title} />
-                        )}
-                        {itemType === 'market' && thread.listing?.user_id !== currentUser.id && thread.listing.status === 'active' && (
-                            <EnterSaleCodeDialog />
-                        )}
-                        <Link href={`/${itemType}/${item.id}`}>
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
-                                <ExternalLink className="h-5 w-5" />
+
+                <div className="flex items-center gap-1">
+                    {/* Simplified Header Actions */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full">
+                                <MoreVertical className="h-5 w-5" />
                             </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                                <Link href={`/user/@${otherUser?.alias_inst}`}>
+                                    Ver perfil
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">
+                                <AlertCircle className="mr-2 h-4 w-4" />
+                                Reportar
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </div>
+
+            {/* Row 2: Product Context (Vinted Style) */}
+            {item && (
+                <div className="flex items-center p-3 gap-3 bg-muted/30 border-t border-border/50">
+                    <Link href={`/${itemType}/${item.id}`} className="relative h-12 w-12 rounded-md overflow-hidden bg-muted border border-border shrink-0">
+                        {item.photo ? (
+                            <Image src={item.photo} alt={item.title} fill className="object-cover" />
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-secondary">
+                                <span className="text-xs text-muted-foreground">Img</span>
+                            </div>
+                        )}
+                    </Link>
+
+                    <div className="flex-1 min-w-0">
+                        <Link href={`/${itemType}/${item.id}`} className="block">
+                            <h3 className="text-sm font-medium truncate">{item.title}</h3>
+                            <p className="text-sm font-bold text-foreground">{item.price}</p>
                         </Link>
+                    </div>
 
-                        {itemType === 'market' && thread.listing?.user_id !== currentUser.id && thread.listing.status === 'active' && (
+                    <div className="flex items-center gap-2">
+                        {!isOwner && isActive && itemType === 'market' && (
                             <>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
-                                            <MoreVertical className="h-5 w-5" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => setIsOfferDialogOpen(true)}>
-                                            <Euro className="mr-2 h-4 w-4" />
-                                            Hacer contraoferta
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-
-                                <MakeOfferDialog
-                                    listingId={item.id}
-                                    threadId={thread.id}
-                                    currentPrice={thread.listing.price_cents / 100}
-                                    isOpen={isOfferDialogOpen}
-                                    onOpenChange={setIsOfferDialogOpen}
-                                />
+                                <Button size="sm" variant="outline" onClick={() => setIsOfferDialogOpen(true)}>
+                                    Oferta
+                                </Button>
+                                <Button size="sm" onClick={handleBuy}>
+                                    Comprar
+                                </Button>
                             </>
                         )}
+
+                        {/* QR Code Actions for Owner/Buyer when Active */}
+                        {itemType === 'market' && isOwner && isActive && (
+                            <SaleQRDialog listingId={item.id} listingTitle={item.title} />
+                        )}
+                        {itemType === 'market' && !isOwner && isActive && (
+                            <EnterSaleCodeDialog />
+                        )}
+
+                        {itemType === 'market' && thread.listing && (
+                            <MakeOfferDialog
+                                listingId={item.id}
+                                threadId={thread.id}
+                                currentPrice={(thread.listing.price_cents || 0) / 100}
+                                isOpen={isOfferDialogOpen}
+                                onOpenChange={setIsOfferDialogOpen}
+                            />
+                        )}
                     </div>
-                )}
-            </div>
-        </PageHeader>
+                </div>
+            )}
+        </div>
     )
 }

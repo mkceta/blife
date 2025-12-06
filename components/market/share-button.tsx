@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 interface ShareButtonProps {
     url: string
     title: string
-    variant?: 'outline' | 'default' | 'secondary' | 'ghost'
+    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
     size?: 'default' | 'sm' | 'lg' | 'icon'
     className?: string
     children?: React.ReactNode

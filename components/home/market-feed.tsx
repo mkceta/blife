@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase'
 import { ListingCard } from '@/components/market/listing-card'
 import { MarketFilters } from '@/components/market/market-filters'
 import { Input } from '@/components/ui/input'
-import { Search } from 'lucide-react'
+import { Search, Camera } from 'lucide-react'
+import Link from 'next/link'
 
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useCallback } from 'react'
@@ -63,13 +64,38 @@ function MarketFeedContent() {
                 marketQuery = marketQuery.order('price_cents', { ascending: false })
                 break
             default:
-                marketQuery = marketQuery.order('created_at', { ascending: false })
+                // Default 'Discovery' Algorithm:
+                // Fetch latest 50 items and shuffle them client-side to ensure freshness
+                // and "distinct feeds each time".
+                marketQuery = marketQuery.order('created_at', { ascending: false }).limit(50)
         }
 
         const { data: listingsData } = await marketQuery
 
         if (listingsData) {
-            setListings(listingsData)
+            let finalListings = listingsData
+
+            // If default sort, shuffle the results for 'Discovery' feel
+            if (sort === 'newest') { // 'newest' is the default if param is missing? No, param is missing.
+                // Actually the default in switch is for missing sort.
+                // Let's check searchParams again.
+            }
+
+            // If we are in the default "Discovery" mode (no explicit sort or 'recommended')
+            // We shuffle. 
+            // Note: The switch case 'default' handles the query.
+            // But we need to know if we should shuffle.
+            const isDiscovery = !sort || sort === 'recommended'
+
+            if (isDiscovery) {
+                // Fisher-Yates Shuffle
+                for (let i = finalListings.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [finalListings[i], finalListings[j]] = [finalListings[j], finalListings[i]];
+                }
+            }
+
+            setListings(finalListings)
 
             if (user) {
                 const { data: favorites } = await supabase
@@ -97,11 +123,12 @@ function MarketFeedContent() {
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
-            <div className="min-h-[calc(100vh-10rem)]">
+            <div className="min-h-[calc(100vh-10rem)] bg-background">
                 {loading ? (
                     <div className="text-center py-20 text-muted-foreground">Cargando anuncios...</div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20 pt-4">
+                    // Vinted style grid: tighter gaps, 2 cols on mobile, 5 on desktop
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-6 gap-x-4 px-3 pb-24 pt-4 auto-rows-max">
                         {listings.map((listing, index) => (
                             <div key={listing.id} className={index < 4 ? "" : "stagger-item"}>
                                 <ListingCard
@@ -127,25 +154,61 @@ function MarketFeedContent() {
 
 export function MarketSearchBar() {
     const searchParams = useSearchParams()
+    const currentCategory = searchParams.get('category')
+
+    const categories = [
+        { id: null, label: 'Todo' },
+        { id: 'Electronica', label: 'Electrónica' },
+        { id: 'LibrosApuntes', label: 'Libros' },
+        { id: 'Material', label: 'Material' },
+        { id: 'Ropa', label: 'Ropa' },
+        { id: 'Muebles', label: 'Muebles' },
+        { id: 'Transporte', label: 'Transporte' },
+        { id: 'Servicios', label: 'Servicios' },
+        { id: 'Ocio', label: 'Ocio' },
+        { id: 'Otros', label: 'Otros' },
+    ]
 
     return (
-        <div className="sticky top-[calc(5.5rem+env(safe-area-inset-top))] z-50 flex justify-center pointer-events-none px-4">
-            <div className="w-full max-w-2xl pointer-events-auto pb-6">
-                <form action="/home" method="GET" className="glass-strong rounded-2xl border border-white/10 p-3 shadow-lg">
+        <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm">
+            <div className="flex flex-col gap-2 p-3 pb-0">
+                <form action="/home" method="GET" className="w-full relative">
                     <input type="hidden" name="tab" value="market" />
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-                            <Input
-                                name="q"
-                                defaultValue={searchParams.get('q') || ''}
-                                placeholder="Buscar productos..."
-                                className="pl-10 border-white/10 bg-background/70 focus-visible:ring-primary/20"
-                            />
-                        </div>
-                        <MarketFilters />
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input
+                            name="q"
+                            defaultValue={searchParams.get('q') || ''}
+                            placeholder="Busca artículos o miembros"
+                            className="h-11 w-full bg-muted/30 pl-10 pr-10 border-none focus-visible:ring-0 rounded-lg text-base"
+                        />
+                        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Camera className="h-5 w-5 text-primary" />
+                        </button>
                     </div>
                 </form>
+
+                {/* Category Pills */}
+                <div className="flex gap-2 overflow-x-auto pb-3 -mx-3 px-3 scrollbar-hide">
+                    {categories.map((cat) => {
+                        const isActive = currentCategory === cat.id || (cat.id === null && !currentCategory)
+                        return (
+                            <Link
+                                key={cat.label}
+                                href={cat.id ? `/home?tab=market&category=${cat.id}` : '/home?tab=market'}
+                                className={`
+                                    whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors border
+                                    ${isActive
+                                        ? 'bg-primary text-primary-foreground border-primary'
+                                        : 'bg-transparent text-muted-foreground border-border hover:border-primary/50'
+                                    }
+                                `}
+                            >
+                                {cat.label}
+                            </Link>
+                        )
+                    })}
+                </div>
             </div>
         </div>
     )

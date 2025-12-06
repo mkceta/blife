@@ -56,7 +56,7 @@ export function WishlistButton({
                             listing_id: listingId
                         })
                     if (error) throw error
-                    await (supabase as any).rpc('increment_favorites', { listing_id: listingId }).catch(() => { })
+                    await (supabase as any).rpc('increment_favorites', { listing_id: listingId })
                 } else {
                     // Remove from favorites
                     const { error } = await supabase
@@ -65,11 +65,11 @@ export function WishlistButton({
                         .eq('user_id', currentUserId)
                         .eq('listing_id', listingId)
                     if (error) throw error
-                    await (supabase as any).rpc('decrement_favorites', { listing_id: listingId }).catch(() => { })
+                    await (supabase as any).rpc('decrement_favorites', { listing_id: listingId })
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error toggling favorite:', error)
-                toast.error('Error al actualizar favoritos')
+                toast.error(error.message || 'Error al actualizar favoritos')
                 // Revert on error
                 setIsFavorited(!newState)
                 setCount(prev => !newState ? prev + 1 : Math.max(0, prev - 1))

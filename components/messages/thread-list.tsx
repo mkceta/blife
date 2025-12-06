@@ -92,72 +92,79 @@ export function ThreadList({ initialThreads, currentUserId, unreadCounts: initia
                 const unreadCount = unreadCounts[thread.id] || 0
                 const isSelected = selectedThreadId === thread.id
 
+                // Get latest message logic if available
+                const latestMessage = thread.messages && thread.messages.length > 0
+                    ? thread.messages.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+                    : null
+
+                const snippet = latestMessage ? latestMessage.body : (item?.title || 'Producto eliminado')
+
                 // Check if online (last seen within 5 minutes)
                 const isOnline = otherUser?.last_seen && new Date(otherUser.last_seen).getTime() > Date.now() - 5 * 60 * 1000
 
                 return (
+
                     <Link
                         key={thread.id}
                         href={`/messages/chat?id=${thread.id}`}
                         onClick={() => handleThreadClick(thread.id)}
                         className={cn(
-                            "relative block p-4 rounded-xl border transition-all hover:shadow-lg hover:-translate-y-1",
-                            isSelected
-                                ? "bg-primary/20 border-primary/50 shadow-[0_0_20px_rgba(var(--primary-rgb),0.2)] scale-[1.02]"
-                                : unreadCount > 0
-                                    ? "bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(var(--primary-rgb),0.15)]"
-                                    : "bg-card/80 backdrop-blur-sm border-white/5 hover:border-primary/20"
+                            "relative flex items-start gap-3 p-4 border-b border-border/40 hover:bg-muted/30 transition-colors",
+                            isSelected && "bg-muted/50"
                         )}
                     >
-                        {/* Badge for unread messages */}
-                        {unreadCount > 0 && (
-                            <div className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground border-2 border-background shadow-md animate-pulse-slow">
-                                {unreadCount}
-                            </div>
-                        )}
-                        <div className="flex items-center gap-4">
-                            <div className="relative">
-                                <Avatar className={cn(
-                                    "h-12 w-12 border transition-all",
-                                    unreadCount > 0 ? "border-primary ring-2 ring-primary/20" : "border-white/10"
+                        {/* Avatar */}
+                        <div className="relative shrink-0">
+                            <Avatar className="h-12 w-12 border border-border/50">
+                                <AvatarImage src={otherUser?.avatar_url || undefined} />
+                                <AvatarFallback>{otherUser?.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            {unreadCount > 0 && (
+                                <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
+                            )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                            {/* Header: Name + Time */}
+                            <div className="flex justify-between items-baseline mb-0.5">
+                                <span className={cn(
+                                    "font-medium truncate pr-2 text-[15px]",
+                                    unreadCount > 0 ? "text-foreground font-bold" : "text-foreground"
                                 )}>
-                                    <AvatarImage src={otherUser?.avatar_url || undefined} />
-                                    <AvatarFallback>{otherUser?.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                {isOnline ? (
-                                    <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
-                                ) : (
-                                    <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-gray-400 border-2 border-background" />
-                                )}
+                                    {otherUser?.alias_inst}
+                                </span>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+                                    {latestMessage ? formatRelativeTime(latestMessage.created_at) : ''}
+                                </span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex flex-col">
-                                        <h3 className={cn(
-                                            "truncate transition-all text-base",
-                                            unreadCount > 0 ? "font-bold text-primary" : "font-semibold"
-                                        )}>@{otherUser?.alias_inst}</h3>
-                                        {otherUser?.last_seen && (
-                                            <span className="text-xs text-muted-foreground">
-                                                {isOnline
-                                                    ? 'En línea'
-                                                    : `Última vez: ${formatRelativeTime(otherUser.last_seen)}`}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {/* Date removed as requested */}
-                                </div>
-                                <div className="flex items-center gap-2 mt-1">
-                                    {itemImage && (
-                                        <img src={itemImage} alt="" className="h-8 w-8 rounded object-cover bg-muted" />
-                                    )}
+
+                            {/* Body: Snippet + Product Image */}
+                            <div className="flex gap-3 justify-between">
+                                <div className="flex-1 min-w-0 flex flex-col justify-center">
                                     <p className={cn(
-                                        "text-sm truncate transition-colors",
+                                        "text-sm truncate leading-snug",
                                         unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"
                                     )}>
-                                        {item?.title || 'Producto eliminado'}
+                                        {snippet}
                                     </p>
+                                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                                        {item?.title}
+                                    </p>
+                                    {item && 'price_cents' in item && (
+                                        <p className="text-sm font-medium mt-0.5">
+                                            {(item.price_cents / 100).toFixed(2)} €
+                                        </p>
+                                    )}
                                 </div>
+
+                                {itemImage && (
+                                    <img
+                                        src={itemImage}
+                                        alt=""
+                                        className="h-12 w-12 rounded-md object-cover bg-muted shrink-0 border border-border/50"
+                                    />
+                                )}
                             </div>
                         </div>
                     </Link>

@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
@@ -8,17 +9,16 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ChevronLeft, Calendar, MapPin, ShieldCheck, Star, Share2, Flag, MoreVertical } from 'lucide-react'
+import { ChevronLeft, Share2, ShieldCheck, Heart, MoreVertical, ChevronRight } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { ListingStatusControls } from '@/components/market/listing-status-controls'
 import { FavoriteButton } from '@/components/market/favorite-button'
 import { ShareButton } from '@/components/market/share-button'
-import { ProductActions } from '@/components/market/product-actions'
-import { Separator } from '@/components/ui/separator'
 import { ListingMapWrapper } from '@/components/market/listing-map-wrapper'
 import { RelatedListings } from '@/components/market/related-listings'
+import { ProductActions } from '@/components/market/product-actions'
 
 function ProductContent() {
     const searchParams = useSearchParams()
@@ -44,7 +44,6 @@ function ProductContent() {
                 .single()
 
             if (error || !listingData) {
-                // Handle 404 or error
                 console.error('Error fetching listing:', error)
                 return
             }
@@ -76,238 +75,216 @@ function ProductContent() {
     const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
     const isOwner = user?.id === listing.user_id
 
+    // Vinted Attribute Row Component
+    const AttributeRow = ({ label, value, isLink = false }: { label: string, value: string | React.ReactNode, isLink?: boolean }) => (
+        <div className="flex justify-between py-3 border-b border-border/40 last:border-0">
+            <span className="text-muted-foreground">{label}</span>
+            <span className={`font-medium ${isLink ? 'text-primary' : 'text-foreground'}`}>{value}</span>
+        </div>
+    )
+
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-12">
-            {/* Mobile Header (Floating) */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-50 p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex justify-between items-center pointer-events-none">
-                <Button asChild variant="secondary" size="icon" className="pointer-events-auto rounded-full h-10 w-10 bg-background/80 backdrop-blur-md border shadow-sm">
-                    <Link href="/market">
-                        <ChevronLeft className="h-6 w-6" />
-                    </Link>
+            {/* Mobile Header (Floating Transparent) */}
+            <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex justify-between items-center p-2 pt-[calc(0.5rem+env(safe-area-inset-top))] pointer-events-none">
+                <Button onClick={() => router.back()} variant="ghost" size="icon" className="pointer-events-auto rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40 h-10 w-10">
+                    <ChevronLeft className="h-6 w-6" />
                 </Button>
 
-                <div className="pointer-events-auto">
+                <div className="flex gap-2 pointer-events-auto">
                     <ShareButton
                         url={currentUrl}
                         title={listing.title}
-                        variant="secondary"
-                        className="rounded-full h-10 w-10 bg-background/80 backdrop-blur-md border shadow-sm"
+                        variant="ghost"
+                        className="rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40 h-10 w-10 p-2"
                     />
+                    {!isOwner && (
+                        <FavoriteButton
+                            listingId={id!}
+                            initialIsFavorite={isFavorite}
+                            favoritesCount={listing.favorites_count}
+                            variant="ghost"
+                            size="icon"
+                            className="rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40 h-10 w-10"
+                            showCount={false}
+                        />
+                    )}
+                    {isOwner && (
+                        <div className="rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40 h-10 w-10 flex items-center justify-center">
+                            <ListingStatusControls
+                                listingId={listing.id}
+                                listingTitle={listing.title}
+                                currentStatus={listing.status}
+                                currentUrl={currentUrl}
+                                variant="ghost"
+                                className="h-full w-full p-2 text-white hover:text-white hover:bg-transparent"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Desktop Header (Breadcrumbs) */}
-            <div className="hidden md:flex h-16 items-center px-8 border-b sticky top-0 bg-background/80 backdrop-blur-md z-40">
-                <div className="max-w-7xl mx-auto w-full flex items-center gap-2 text-sm text-muted-foreground">
-                    <Link href="/market" className="hover:text-foreground transition-colors">Marketplace</Link>
-                    <ChevronLeft className="h-4 w-4 rotate-180" />
-                    <span className="text-foreground font-medium truncate">{listing.title}</span>
+            {/* Desktop Header */}
+            <div className="hidden md:flex h-16 items-center px-8 border-b sticky top-0 bg-background/95 backdrop-blur z-40">
+                <div className="max-w-5xl mx-auto w-full flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+                            <ChevronLeft className="mr-1 h-4 w-4" />
+                            Volver
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <ShareButton url={currentUrl} title={listing.title} variant="ghost" size="sm" />
+                        {!isOwner && <FavoriteButton listingId={id!} initialIsFavorite={isFavorite} favoritesCount={listing.favorites_count} variant="outline" size="sm" />}
+                    </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto md:px-8 md:py-8">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div className="max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8 bg-background">
 
-                    {/* Left Column: Images */}
-                    <div className="md:col-span-7 lg:col-span-8 space-y-4">
-                        {/* Mobile Carousel / Desktop Main Image */}
-                        <div className="relative aspect-square md:aspect-[4/3] lg:aspect-[16/9] bg-muted md:rounded-3xl overflow-hidden shadow-sm border-b md:border">
+                    {/* Image Section */}
+                    <div className="relative bg-muted">
+                        <div className="aspect-[3/4] md:aspect-square relative w-full overflow-hidden">
                             {photos.length > 0 ? (
                                 <Carousel className="w-full h-full [&_[data-slot=carousel-content]]:h-full">
-                                    <CarouselContent className="-ml-0 h-full">
+                                    <CarouselContent className="h-full ml-0">
                                         {photos.map((photo, index) => (
-                                            <CarouselItem key={index} className="pl-0 relative w-full h-full basis-full">
-                                                <div className="relative w-full h-full">
-                                                    <Image
-                                                        src={photo.url}
-                                                        alt={listing.title}
-                                                        fill
-                                                        className="object-cover"
-                                                        priority={index === 0}
-                                                    />
-                                                </div>
+                                            <CarouselItem key={index} className="pl-0 h-full w-full basis-full relative bg-black">
+                                                <Image
+                                                    src={photo.url}
+                                                    alt={listing.title}
+                                                    fill
+                                                    className="object-contain"
+                                                    priority={index === 0}
+                                                />
                                             </CarouselItem>
                                         ))}
                                     </CarouselContent>
                                     {photos.length > 1 && (
-                                        <>
-                                            <CarouselPrevious className="left-4" />
-                                            <CarouselNext className="right-4" />
-                                        </>
+                                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-20">
+                                            {photos.map((_, idx) => (
+                                                <div key={idx} className="h-1.5 w-1.5 rounded-full bg-white/50 data-[active=true]:bg-white" />
+                                            ))}
+                                        </div>
                                     )}
                                 </Carousel>
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Image src="/placeholder.svg" width={48} height={48} alt="No image" className="opacity-20" />
-                                        <p>Sin imágenes</p>
-                                    </div>
+                                <div className="flex h-full items-center justify-center text-muted-foreground">
+                                    Sin imágenes
                                 </div>
                             )}
                         </div>
+                    </div>
 
-                        {/* Desktop Thumbnails Grid (Visible only on large screens if multiple photos) */}
-                        {photos.length > 1 && (
-                            <div className="hidden md:grid grid-cols-4 gap-4">
-                                {photos.slice(0, 4).map((photo, index) => (
-                                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden border cursor-pointer hover:opacity-80 transition-opacity">
-                                        <Image
-                                            src={photo.url}
-                                            alt={`Thumbnail ${index + 1}`}
-                                            fill
-                                            className="object-cover"
-                                        />
+                    {/* Details Section */}
+                    <div className="p-5 space-y-6 md:py-8">
+                        <div>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h1 className="text-xl font-medium text-foreground">{listing.title}</h1>
+                                    <div className="text-2xl font-bold mt-1 text-foreground">{price} €</div>
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
+                                    {listing.status !== 'active' && (
+                                        <Badge variant={listing.status === 'sold' ? 'destructive' : 'secondary'}>
+                                            {listing.status === 'sold' ? 'Vendido' : 'Reservado'}
+                                        </Badge>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Vinted Style Attributes */}
+                        <div className="border-t border-b border-border/40">
+                            {/* Mock Data for Brand/Size if missing */}
+                            <AttributeRow label="Marca" value={listing.brand || "Sin marca"} isLink />
+                            <AttributeRow label="Talla" value={listing.size || "M / 38 / 10"} />
+                            <AttributeRow label="Estado" value={listing.condition || "Muy bueno"} />
+                            <AttributeRow label="Color" value="Multicolor" />
+                            <AttributeRow label="Subido" value={formatDistanceToNow(new Date(listing.created_at), { locale: es })} />
+                            <AttributeRow label="Pagos" value={<div className="flex gap-1 text-[10px] text-muted-foreground">VISA, PayPal</div>} />
+                        </div>
+
+                        {/* Buyer Protection */}
+                        <div className="flex items-center gap-3 p-3 rounded-lg border border-border/40 bg-card/30">
+                            <ShieldCheck className="h-6 w-6 text-green-500" />
+                            <div className="flex-1">
+                                <p className="text-sm font-medium">Protección al comprador</p>
+                                <p className="text-xs text-muted-foreground">Te devolvemos el dinero si el artículo no es como se describe.</p>
+                            </div>
+                        </div>
+
+                        <div className="h-px bg-border/40" />
+
+                        {/* Description */}
+                        <div>
+                            <h3 className="text-sm font-semibold uppercase text-muted-foreground mb-2">Descripción</h3>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{listing.description}</p>
+                        </div>
+
+                        {listing.location && (
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Share2 className="h-3 w-3" />
+                                {listing.location.address || "Ubicación aproximada"}
+                            </div>
+                        )}
+
+                        <div className="h-px bg-border/40" />
+
+                        {/* User Card */}
+                        <Link href={`/user/profile?alias=${listing.user?.alias_inst}`} className="flex items-center justify-between group">
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-12 w-12 border">
+                                    <AvatarImage src={listing.user?.avatar_url} />
+                                    <AvatarFallback>{listing.user?.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold text-sm">@{listing.user?.alias_inst}</p>
+                                    <div className="flex items-center text-xs text-muted-foreground">
+                                        <div className="flex text-yellow-500">
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <Star key={i} className={`h-3 w-3 ${i <= (listing.user?.rating_avg || 0) ? 'fill-current' : 'text-muted/30'}`} />
+                                            ))}
+                                        </div>
+                                        <span className="ml-1">({listing.user?.rating_count || 0})</span>
                                     </div>
-                                ))}
+                                </div>
+                            </div>
+                            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground" />
+                        </Link>
+
+                        {/* Desktop Actions */}
+                        {!isOwner && (
+                            <div className="hidden md:block">
+                                <ProductActions
+                                    listingId={listing.id}
+                                    sellerId={listing.user_id}
+                                    currentUserId={user?.id}
+                                    price={listing.price_cents / 100}
+                                    isOwner={isOwner}
+                                />
                             </div>
                         )}
                     </div>
-
-                    {/* Right Column: Details */}
-                    <div className="md:col-span-5 lg:col-span-4">
-                        <div className="px-5 md:px-0 space-y-8 md:sticky md:top-24">
-
-                            {/* Header Info */}
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-start gap-4">
-                                    <div>
-                                        <h1 className="text-2xl md:text-3xl font-bold leading-tight">{listing.title}</h1>
-                                        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="h-3.5 w-3.5" />
-                                                {formatDistanceToNow(new Date(listing.created_at), { locale: es })}
-                                            </span>
-                                            <span>•</span>
-                                            <span>{listing.category}</span>
-                                        </div>
-                                    </div>
-                                    {isOwner ? (
-                                        <ListingStatusControls
-                                            listingId={listing.id}
-                                            listingTitle={listing.title}
-                                            currentStatus={listing.status}
-                                            currentUrl={currentUrl}
-                                            variant="outline"
-                                            className="h-10 w-10 rounded-full shrink-0"
-                                        />
-                                    ) : (
-                                        user && (
-                                            <FavoriteButton
-                                                listingId={id!}
-                                                initialIsFavorite={isFavorite}
-                                                favoritesCount={listing.favorites_count}
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-10 w-10 rounded-full shrink-0"
-                                                showCount={false}
-                                            />
-                                        )
-                                    )}
-                                </div>
-
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-bold text-primary">{price}€</span>
-                                    {listing.original_price && (
-                                        <span className="text-xl text-muted-foreground line-through decoration-muted-foreground/50">
-                                            {listing.original_price}€
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div className="flex flex-wrap gap-2">
-                                    {listing.status === 'reserved' && (
-                                        <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20">
-                                            Reservado
-                                        </Badge>
-                                    )}
-                                    {listing.status === 'sold' && (
-                                        <Badge className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">
-                                            Vendido
-                                        </Badge>
-                                    )}
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Seller Info */}
-                            <Link href={`/user/profile?alias=${listing.user.alias_inst}`} className="flex items-center gap-4 group p-4 rounded-2xl border bg-card hover:bg-accent/50 transition-colors">
-                                <div className="relative">
-                                    <Avatar className="h-12 w-12 border">
-                                        <AvatarImage src={listing.user.avatar_url} />
-                                        <AvatarFallback>{listing.user.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    {listing.user.last_seen && new Date(listing.user.last_seen).getTime() > Date.now() - 20 * 60 * 1000 && (
-                                        <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-semibold truncate">@{listing.user.alias_inst}</p>
-                                        {listing.user.is_verified && (
-                                            <ShieldCheck className="h-4 w-4 text-blue-400" />
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                            <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
-                                            <span>{listing.user.rating_avg || 'New'}</span>
-                                        </div>
-                                        <span>•</span>
-                                        <span className="truncate">{listing.user.uni}</span>
-                                    </div>
-                                </div>
-                                <ChevronLeft className="h-5 w-5 rotate-180 text-muted-foreground group-hover:text-foreground transition-colors" />
-                            </Link>
-
-                            {/* Description */}
-                            <div className="space-y-3">
-                                <h3 className="font-semibold text-lg">Descripción</h3>
-                                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                                    {listing.description}
-                                </p>
-                            </div>
-
-                            {/* Location */}
-                            {listing.location && (
-                                <div className="space-y-3">
-                                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                                        <MapPin className="h-5 w-5 text-primary" />
-                                        Ubicación
-                                    </h3>
-                                    <ListingMapWrapper location={listing.location} />
-                                </div>
-                            )}
-
-                            {/* Desktop Actions */}
-                            {!isOwner && (
-                                <div className="hidden md:block pt-4">
-                                    <ProductActions
-                                        listingId={listing.id}
-                                        sellerId={listing.user_id}
-                                        currentUserId={user?.id}
-                                        price={listing.price_cents / 100}
-                                        isOwner={isOwner}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
                 </div>
 
-                {/* Related Listings */}
-                <div className="mt-12">
-                    <RelatedListings
-                        currentListingId={listing.id}
-                        category={listing.category}
-                        currentUserId={user?.id}
-                    />
+                {/* Related Items (Horizontal Scroll) */}
+                <div className="p-5 md:p-0 mt-8 mb-24">
+                    <h2 className="font-semibold text-lg mb-4">Artículos similares</h2>
+                    <div className="overflow-x-auto pb-4 snap-x snap-mandatory">
+                        <RelatedListings
+                            currentListingId={listing.id}
+                            category={listing.category}
+                            currentUserId={user?.id}
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Mobile Bottom Action Bar */}
+            {/* Mobile Sticky Footer - Action Bar */}
             {!isOwner && (
-                <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t z-50 pb-safe">
+                <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.2)]">
                     <ProductActions
                         listingId={listing.id}
                         sellerId={listing.user_id}
@@ -318,6 +295,23 @@ function ProductContent() {
                 </div>
             )}
         </div>
+    )
+}
+
+function Star({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
     )
 }
 

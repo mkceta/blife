@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Package, Star, Home } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Package, Star, Home, Grid3X3 } from 'lucide-react'
 import { ListingCard } from '@/components/market/listing-card'
 import { FlatCard } from '@/components/flats/flat-card'
 import { cn } from '@/lib/utils'
@@ -20,139 +19,104 @@ export function ProfileTabs({ activeListings, soldListings, flats, profile, curr
     const hasActiveListings = activeListings.length > 0
     const hasSoldListings = soldListings.length > 0
     const hasFlats = flats.length > 0
+    const hasAnyContent = hasActiveListings || hasSoldListings || hasFlats
 
     const defaultTab = hasActiveListings ? 'active' : (hasSoldListings ? 'sold' : 'flats')
-    const [activeTab, setActiveTab] = useState(defaultTab)
 
-    const tabCount = [hasActiveListings, hasSoldListings, hasFlats].filter(Boolean).length
+    // If no content, show empty state in 'active' tab
+    const [activeTab, setActiveTab] = useState(hasAnyContent ? defaultTab : 'active')
 
     return (
-        <Tabs defaultValue={defaultTab} value={activeTab} onValueChange={setActiveTab} className="p-4">
-            <TabsList className={cn(
-                "grid w-full relative glass-strong rounded-xl p-1",
-                tabCount === 3 ? 'grid-cols-3' : tabCount === 2 ? 'grid-cols-2' : 'grid-cols-1'
-            )}>
-                {hasActiveListings && (
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="sticky top-16 md:top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b w-full">
+                <TabsList className="w-full justify-start h-12 bg-transparent p-0 rounded-none container max-w-5xl mx-auto px-4">
                     <TabsTrigger
                         value="active"
-                        className="relative z-10 data-[state=active]:bg-transparent transition-colors duration-200"
+                        className="flex-1 h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none transition-none"
                     >
-                        {activeTab === 'active' && (
-                            <motion.div
-                                layoutId="profile-tab-indicator"
-                                className="absolute inset-0 bg-background shadow-sm rounded-md"
-                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                            />
-                        )}
-                        <span className="relative z-10 flex items-center gap-2">
-                            <Package className="h-4 w-4" />
-                            Activos
+                        <span className="flex items-center gap-2">
+                            <Grid3X3 className="h-4 w-4" />
+                            Armario
+                            <span className="text-xs text-muted-foreground ml-1">({activeListings.length})</span>
                         </span>
                     </TabsTrigger>
-                )}
-                {hasSoldListings && (
+
                     <TabsTrigger
                         value="sold"
-                        className="relative z-10 data-[state=active]:bg-transparent transition-colors duration-200"
+                        className="flex-1 h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none transition-none"
                     >
-                        {activeTab === 'sold' && (
-                            <motion.div
-                                layoutId="profile-tab-indicator"
-                                className="absolute inset-0 bg-background shadow-sm rounded-md"
-                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                            />
-                        )}
-                        <span className="relative z-10 flex items-center gap-2">
+                        <span className="flex items-center gap-2">
                             <Star className="h-4 w-4" />
                             Vendidos
+                            <span className="text-xs text-muted-foreground ml-1">({soldListings.length})</span>
                         </span>
                     </TabsTrigger>
-                )}
-                {hasFlats && (
-                    <TabsTrigger
-                        value="flats"
-                        className="relative z-10 data-[state=active]:bg-transparent transition-colors duration-200"
-                    >
-                        {activeTab === 'flats' && (
-                            <motion.div
-                                layoutId="profile-tab-indicator"
-                                className="absolute inset-0 bg-background shadow-sm rounded-md"
-                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+
+                    {hasFlats && (
+                        <TabsTrigger
+                            value="flats"
+                            className="flex-1 h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none transition-none"
+                        >
+                            <span className="flex items-center gap-2">
+                                <Home className="h-4 w-4" />
+                                Pisos
+                                <span className="text-xs text-muted-foreground ml-1">({flats.length})</span>
+                            </span>
+                        </TabsTrigger>
+                    )}
+                </TabsList>
+            </div>
+
+            <div className="container max-w-5xl mx-auto px-2 py-4 min-h-[50vh]">
+                <TabsContent value="active" className="mt-0 outline-none">
+                    {activeListings.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {activeListings.map((listing) => (
+                                <ListingCard
+                                    key={listing.id}
+                                    listing={{ ...listing, user: profile }}
+                                    currentUserId={currentUserId}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                            <Package className="h-12 w-12 mb-4 opacity-20" />
+                            <p>El armario está vacío</p>
+                        </div>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="sold" className="mt-0 outline-none">
+                    {soldListings.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {soldListings.map((listing) => (
+                                <ListingCard
+                                    key={listing.id}
+                                    listing={{ ...listing, user: profile }}
+                                    currentUserId={currentUserId}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                            <p>No hay artículos vendidos</p>
+                        </div>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="flats" className="mt-0 outline-none">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {flats.map((flat) => (
+                            <FlatCard
+                                key={flat.id}
+                                flat={{ ...flat, user: profile }}
+                                currentUserId={currentUserId}
                             />
-                        )}
-                        <span className="relative z-10 flex items-center gap-2">
-                            <Home className="h-4 w-4" />
-                            Pisos
-                        </span>
-                    </TabsTrigger>
-                )}
-            </TabsList>
-
-            <AnimatePresence mode="wait">
-                {activeTab === 'active' && hasActiveListings && (
-                    <TabsContent value="active" className="mt-4 outline-none" asChild>
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                {activeListings.map((listing) => (
-                                    <ListingCard
-                                        key={listing.id}
-                                        listing={{ ...listing, user: profile }}
-                                        currentUserId={currentUserId}
-                                        isFavorited={false} // We don't have this info here easily, but it's own profile so maybe not needed
-                                    />
-                                ))}
-                            </div>
-                        </motion.div>
-                    </TabsContent>
-                )}
-
-                {activeTab === 'sold' && hasSoldListings && (
-                    <TabsContent value="sold" className="mt-4 outline-none" asChild>
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                {soldListings.map((listing) => (
-                                    <ListingCard
-                                        key={listing.id}
-                                        listing={{ ...listing, user: profile }}
-                                        currentUserId={currentUserId}
-                                    />
-                                ))}
-                            </div>
-                        </motion.div>
-                    </TabsContent>
-                )}
-
-                {activeTab === 'flats' && hasFlats && (
-                    <TabsContent value="flats" className="mt-4 outline-none" asChild>
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {flats.map((flat) => (
-                                    <FlatCard
-                                        key={flat.id}
-                                        flat={{ ...flat, user: profile }}
-                                        currentUserId={currentUserId}
-                                    />
-                                ))}
-                            </div>
-                        </motion.div>
-                    </TabsContent>
-                )}
-            </AnimatePresence>
+                        ))}
+                    </div>
+                </TabsContent>
+            </div>
         </Tabs>
     )
 }

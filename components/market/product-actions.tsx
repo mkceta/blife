@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Euro, MessageCircle } from 'lucide-react'
+import { Euro, MessageCircle, ShoppingBag } from 'lucide-react'
 import { MakeOfferDialog } from '@/components/market/make-offer-dialog'
-import { ContactButton } from '@/components/market/contact-button'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -24,7 +23,7 @@ export function ProductActions({ listingId, sellerId, currentUserId, price, isOw
     const router = useRouter()
     const supabase = createClient()
 
-    const handleMakeOffer = async () => {
+    const handleChat = async () => {
         if (!currentUserId) {
             router.push('/auth/login')
             return
@@ -43,8 +42,7 @@ export function ProductActions({ listingId, sellerId, currentUserId, price, isOw
             const { data: existingThread } = await query.maybeSingle()
 
             if (existingThread) {
-                setThreadId(existingThread.id)
-                setIsOfferDialogOpen(true)
+                router.push(`/messages/chat?id=${existingThread.id}`)
                 return
             }
 
@@ -63,8 +61,7 @@ export function ProductActions({ listingId, sellerId, currentUserId, price, isOw
 
             if (error) throw error
 
-            setThreadId(newThread.id)
-            setIsOfferDialogOpen(true)
+            router.push(`/messages/chat?id=${newThread.id}`)
 
         } catch (error) {
             console.error('Error starting conversation:', error)
@@ -74,30 +71,31 @@ export function ProductActions({ listingId, sellerId, currentUserId, price, isOw
         }
     }
 
+    const handleBuy = () => {
+        toast.info("Próximamente", { description: "El sistema de pagos estará disponible pronto." })
+    }
+
     if (isOwner) return null
 
     return (
         <div className="flex gap-3 w-full">
             <Button
                 variant="outline"
-                className="flex-1 h-12 rounded-full border-primary/20 hover:bg-primary/5 text-primary font-semibold"
-                onClick={handleMakeOffer}
+                className="flex-1 h-12 rounded-sm border-primary/20 hover:bg-primary/5 text-primary font-semibold active-press"
+                onClick={handleChat}
                 disabled={loading}
             >
-                <Euro className="mr-2 h-5 w-5" />
-                Contraoferta
+                <MessageCircle className="mr-2 h-5 w-5" />
+                Mensaje
             </Button>
 
-            <ContactButton
-                itemId={listingId}
-                itemType="listing"
-                sellerId={sellerId}
-                currentUserId={currentUserId}
-                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg shadow-primary/20"
+            <Button
+                className="flex-[2] h-12 rounded-sm bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg shadow-primary/20 active-press"
+                onClick={handleBuy}
             >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                Contactar
-            </ContactButton>
+                <ShoppingBag className="mr-2 h-5 w-5" />
+                Comprar
+            </Button>
 
             {threadId && (
                 <MakeOfferDialog
