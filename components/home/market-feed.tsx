@@ -172,19 +172,23 @@ export function MarketSearchBar() {
     return (
         <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm">
             <div className="flex flex-col gap-2 px-3 pt-2 pb-0">
-                <form action="/home" method="GET" className="w-full relative">
-                    <input type="hidden" name="tab" value="market" />
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input
-                            name="q"
-                            defaultValue={searchParams.get('q') || ''}
-                            placeholder="Busca artículos o miembros"
-                            className="h-11 w-full bg-muted/30 pl-10 pr-10 border-none focus-visible:ring-0 rounded-lg text-base"
-                        />
+                <div className="flex gap-2 items-center">
+                    <form action="/home" method="GET" className="flex-1 relative">
+                        <input type="hidden" name="tab" value="market" />
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                name="q"
+                                defaultValue={searchParams.get('q') || ''}
+                                placeholder="Busca artículos o miembros"
+                                className="h-11 w-full bg-muted/30 pl-10 pr-10 border-none focus-visible:ring-0 rounded-lg text-base"
+                            />
+                        </div>
+                    </form>
+                    <div className="flex-none">
+                        <MarketFilters />
                     </div>
-                </form>
-                <MarketFilters />
+                </div>
                 {/* Category Pills */}
                 <div className="flex gap-2 overflow-x-auto pb-3 -mx-3 px-3 scrollbar-hide">
                     {categories.map((cat) => {
