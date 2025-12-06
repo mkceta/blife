@@ -138,22 +138,24 @@ export function FlatsSearchBar({ flats }: { flats: any[] }) {
     const searchParams = useSearchParams()
 
     return (
-        <div className="sticky top-0 z-40 w-full border-b border-border/5 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center px-4 gap-2">
-                <form action="/home" method="GET" className="flex-1">
-                    <input type="hidden" name="tab" value="flats" />
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            name="q"
-                            defaultValue={searchParams.get('q') || ''}
-                            placeholder="Buscar pisos..."
-                            className="h-9 w-full bg-muted/50 pl-9 border-none focus-visible:ring-0 rounded-md"
-                        />
+        <div className="sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm">
+            <div className="flex flex-col gap-2 px-3 pb-2 pt-2">
+                <div className="flex gap-2 items-center">
+                    <form action="/home" method="GET" className="flex-1 relative">
+                        <input type="hidden" name="tab" value="flats" />
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                name="q"
+                                defaultValue={searchParams.get('q') || ''}
+                                placeholder="Buscar pisos..."
+                                className="h-11 w-full bg-muted/30 pl-10 pr-10 border-none focus-visible:ring-0 rounded-lg text-base"
+                            />
+                        </div>
+                    </form>
+                    <div className="flex-none">
+                        <FlatFilters flats={flats || []} />
                     </div>
-                </form>
-                <div className="flex-none">
-                    <FlatFilters flats={flats || []} />
                 </div>
             </div>
         </div>

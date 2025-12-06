@@ -171,7 +171,7 @@ export function MarketSearchBar() {
 
     return (
         <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm">
-            <div className="flex flex-col gap-2 p-3 pb-0">
+            <div className="flex flex-col gap-2 px-3 pt-2 pb-0">
                 <form action="/home" method="GET" className="w-full relative">
                     <input type="hidden" name="tab" value="market" />
                     <div className="relative">
