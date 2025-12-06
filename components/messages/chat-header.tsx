@@ -83,7 +83,7 @@ export function ChatHeader({ otherUser: initialOtherUser, item, itemType, thread
     }
 
     return (
-        <div className="flex flex-col border-b border-border/50 bg-background/95 backdrop-blur-md z-10 w-full shadow-sm">
+        <div className="flex flex-col border-b border-border/50 bg-background/95 backdrop-blur-md z-10 w-full shadow-sm pt-safe">
             {/* Row 1: User Info & Navigation */}
             <div className="flex items-center p-2 gap-3">
                 <Link href="/messages" className="md:hidden">

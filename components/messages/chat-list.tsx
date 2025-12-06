@@ -143,7 +143,7 @@ export function ChatList({
     }, [threadId, currentUser.id, supabase])
 
     return (
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20 md:pb-4 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4 scrollbar-thin">
             {showRateDialog && sellerId && sellerName && listingId && (
                 <div className="mb-4">
                     <RateUserDialog sellerId={sellerId} sellerName={sellerName} listingId={listingId} />

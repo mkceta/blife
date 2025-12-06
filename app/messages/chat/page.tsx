@@ -125,7 +125,7 @@ function ChatContent() {
                 listingId={thread.listing?.id}
             />
 
-            <div className="fixed bottom-0 left-0 right-0 md:static p-4 bg-background/80 backdrop-blur-md border-t border-border z-20 pb-safe">
+            <div className="flex-none p-4 bg-background/80 backdrop-blur-md border-t border-border z-20 pb-safe">
                 <ChatInput threadId={thread.id} />
             </div>
         </div>
