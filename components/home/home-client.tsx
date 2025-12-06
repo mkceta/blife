@@ -60,9 +60,7 @@ export function HomeClient({ marketFeed, flatsFeed, initialTab }: HomeClientProp
                                          DesktopHeader search bar handles flats search ('Buscar pisos...').
                                          So we should HIDE FlatsSearchBar on Desktop too.
                                      */}
-                                    <div className="md:hidden">
-                                        <FlatsSearchBar flats={[]} />
-                                    </div>
+                                    <FlatsSearchBar flats={[]} />
                                 </Suspense>
                                 <FadeIn>
                                     {flatsFeed}
