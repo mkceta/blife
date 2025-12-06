@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { Search, Camera, Shirt, User, Baby, Lamp, Smartphone, Book, Coins, Trophy, ChevronRight, Car, Briefcase, Package, Pencil } from 'lucide-react'
+import { Search, Camera, Home, Shirt, User, Baby, Lamp, Smartphone, Book, Coins, Trophy, ChevronRight, Car, Briefcase, Package, Pencil } from 'lucide-react'
 import Link from 'next/link'
 
 const CATEGORIES = [
