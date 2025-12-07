@@ -166,7 +166,7 @@ export default function EditProfilePage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <div className="sticky top-0 z-10 bg-background border-b border-border p-4 flex items-center gap-3">
+            <div className="sticky top-0 z-10 bg-background border-b border-border p-4 pt-[calc(1rem+env(safe-area-inset-top))] flex items-center gap-3">
                 <Link href="/profile">
                     <Button variant="ghost" size="icon">
                         <ChevronLeft className="h-6 w-6" />

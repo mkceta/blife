@@ -44,7 +44,7 @@ export function ProfileTabs({ activeListings, soldListings, flats, profile, curr
 
     return (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 w-full bg-background/80 backdrop-blur-xl border-b border-border/50">
+            <div className="w-full border-b border-border/50">
                 <div className="container max-w-5xl mx-auto px-4">
                     <TabsList className="flex w-full h-12 bg-transparent p-0 rounded-none shadow-none space-x-0 justify-start gap-8">
                         {tabs.map((tab) => (
