@@ -6,12 +6,11 @@ import { Search, Camera, Home, Shirt, User, Baby, Lamp, Smartphone, Book, Coins,
 import Link from 'next/link'
 
 const CATEGORIES = [
+    { id: 'Pisos', label: 'Pisos', icon: Home, color: 'text-primary' },
     { id: 'Electronica', label: 'Electrónica', icon: Smartphone, color: 'text-primary' },
     { id: 'LibrosApuntes', label: 'Libros y Apuntes', icon: Book, color: 'text-primary' },
     { id: 'Material', label: 'Material', icon: Pencil, color: 'text-primary' },
     { id: 'Ropa', label: 'Ropa', icon: Shirt, color: 'text-primary' },
-    { id: 'Muebles', label: 'Muebles', icon: Lamp, color: 'text-primary' },
-    { id: 'Transporte', label: 'Transporte', icon: Car, color: 'text-primary' },
     { id: 'Servicios', label: 'Servicios', icon: Briefcase, color: 'text-primary' },
     { id: 'Ocio', label: 'Ocio', icon: Trophy, color: 'text-primary' },
     { id: 'Otros', label: 'Otros', icon: Package, color: 'text-primary' },
@@ -37,7 +36,7 @@ export default function SearchPage() {
                 {CATEGORIES.map((cat) => (
                     <Link
                         key={cat.id}
-                        href={`/home?category=${cat.id}`}
+                        href={cat.id === 'Pisos' ? '/home?tab=flats' : `/home?category=${cat.id}`}
                         className="group relative h-28 bg-card rounded-lg border p-4 flex flex-col justify-between hover:border-primary/50 transition-colors active:scale-[0.98] duration-100"
                     >
                         <span className="font-medium text-foreground">{cat.label}</span>
