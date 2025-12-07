@@ -38,7 +38,7 @@ export function HomeClient({ marketFeed, flatsFeed, initialTab }: HomeClientProp
         <div className="pb-20 bg-gradient-to-b from-primary/10 via-primary/5 to-background min-h-screen">
             <div className="p-0 md:p-4 space-y-0 max-w-7xl mx-auto">
                 <Tabs defaultValue={initialTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <div className="md:hidden">
+                    <div className="md:hidden sticky top-0 z-40 bg-background/95 backdrop-blur-md pt-safe">
                         <HomeTabsList activeTab={activeTab} />
                     </div>
 
