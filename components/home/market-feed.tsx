@@ -196,7 +196,10 @@ export function MarketSearchBar() {
                         return (
                             <Link
                                 key={cat.label}
-                                href={cat.id ? `/home?tab=market&category=${cat.id}` : '/home?tab=market'}
+                                href={isActive
+                                    ? '/home?tab=market'
+                                    : (cat.id ? `/home?tab=market&category=${cat.id}` : '/home?tab=market')
+                                }
                                 className={`
                                     whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors border
                                     ${isActive
