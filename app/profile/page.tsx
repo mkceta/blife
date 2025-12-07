@@ -108,11 +108,6 @@ export default function ProfilePage() {
         { icon: Award, label: 'Insignias ganadas', count: `${badgeStats.earned} de ${badgeStats.total}` },
         { icon: Heart, label: 'Artículos Favoritos', href: '/wishlist' },
         { icon: Users, label: 'Invitar amigos' },
-        { icon: Wallet, label: 'Mi saldo', value: '0,00 €' },
-        { icon: Package, label: 'Mis pedidos' },
-        { icon: Rocket, label: 'Herramientas de promoción' },
-        { icon: SlidersHorizontal, label: 'Personalización', href: '/profile/edit' },
-        { icon: Percent, label: 'Descuento por lote', value: 'hasta el 20 %' },
         { icon: LogOut, label: 'Cerrar sesión', action: 'logout', variant: 'destructive' },
         { icon: Shield, label: 'Admin', href: '/admin', show: profile?.role === 'admin', variant: 'destructive' }
     ]
@@ -155,9 +150,8 @@ export default function ProfilePage() {
                         )}>
                             <item.icon className="h-6 w-6" strokeWidth={1.5} />
                             <span className="flex-1 font-medium">{item.label}</span>
-                            {item.value && <span className="text-muted-foreground text-sm">{item.value}</span>}
                             {item.count && <span className="text-muted-foreground text-sm">{item.count}</span>}
-                            {!item.value && !item.count && <ChevronRight className="h-5 w-5 text-muted-foreground/50" />}
+                            {!item.count && <ChevronRight className="h-5 w-5 text-muted-foreground/50" />}
                         </div>
                     )
 
