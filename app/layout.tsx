@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'BLife - Universidad de Coruña',
   description: 'Marketplace y comunidad para estudiantes UDC',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon',
+    apple: '/icon',
+  }
 }
 
 export const viewport = {
