@@ -19,6 +19,7 @@ import { ShareButton } from '@/components/market/share-button'
 import { ListingMapWrapper } from '@/components/market/listing-map-wrapper'
 import { RelatedListings } from '@/components/market/related-listings'
 import { ProductActions } from '@/components/market/product-actions'
+import { calculateTotalWithFees } from '@/lib/pricing'
 
 function ProductContent() {
     const searchParams = useSearchParams()
@@ -184,6 +185,14 @@ function ProductContent() {
                                 <div>
                                     <h1 className="text-xl font-medium text-foreground">{listing.title}</h1>
                                     <div className="text-2xl font-bold mt-1 text-foreground">{price} €</div>
+
+                                    {/* Buyer Protection */}
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <ShieldCheck className="h-4 w-4 text-green-600" />
+                                        <span className="text-sm text-muted-foreground">
+                                            <span className="font-bold text-green-700">{(calculateTotalWithFees(listing.price_cents) / 100).toFixed(2)} €</span> con Protección al comprador
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
                                     {listing.status !== 'active' && (
@@ -197,23 +206,15 @@ function ProductContent() {
 
                         {/* Vinted Style Attributes */}
                         <div className="border-t border-b border-border/40">
-                            {/* Mock Data for Brand/Size if missing */}
-                            <AttributeRow label="Marca" value={listing.brand || "Sin marca"} isLink />
-                            <AttributeRow label="Talla" value={listing.size || "M / 38 / 10"} />
-                            <AttributeRow label="Estado" value={listing.condition || "Muy bueno"} />
-                            <AttributeRow label="Color" value="Multicolor" />
+                            {/* Attributes - Only show if present */}
+                            {listing.brand && <AttributeRow label="Marca" value={listing.brand} isLink />}
+                            {listing.size && <AttributeRow label="Talla" value={listing.size} />}
+                            {listing.condition && <AttributeRow label="Estado" value={listing.condition} />}
                             <AttributeRow label="Subido" value={formatDistanceToNow(new Date(listing.created_at), { locale: es })} />
                             <AttributeRow label="Pagos" value={<div className="flex gap-1 text-[10px] text-muted-foreground">VISA, PayPal</div>} />
                         </div>
 
-                        {/* Buyer Protection */}
-                        <div className="flex items-center gap-3 p-3 rounded-lg border border-border/40 bg-card/30">
-                            <ShieldCheck className="h-6 w-6 text-green-500" />
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">Protección al comprador</p>
-                                <p className="text-xs text-muted-foreground">Te devolvemos el dinero si el artículo no es como se describe.</p>
-                            </div>
-                        </div>
+
 
                         <div className="h-px bg-border/40" />
 

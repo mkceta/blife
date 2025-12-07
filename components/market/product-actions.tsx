@@ -7,6 +7,7 @@ import { MakeOfferDialog } from '@/components/market/make-offer-dialog'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { CheckoutModal } from '@/components/payment/checkout-modal'
 
 interface ProductActionsProps {
     listingId: string
@@ -20,6 +21,7 @@ export function ProductActions({ listingId, sellerId, currentUserId, price, isOw
     const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [threadId, setThreadId] = useState<string | null>(null)
+    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
     const router = useRouter()
     const supabase = createClient()
 
@@ -72,7 +74,7 @@ export function ProductActions({ listingId, sellerId, currentUserId, price, isOw
     }
 
     const handleBuy = () => {
-        toast.info("Próximamente", { description: "El sistema de pagos estará disponible pronto." })
+        setIsCheckoutOpen(true)
     }
 
     if (isOwner) return null
@@ -106,6 +108,13 @@ export function ProductActions({ listingId, sellerId, currentUserId, price, isOw
                     onOpenChange={setIsOfferDialogOpen}
                 />
             )}
+
+            <CheckoutModal
+                open={isCheckoutOpen}
+                onOpenChange={setIsCheckoutOpen}
+                listingId={listingId}
+                priceCents={Math.round(price * 100)}
+            />
         </div>
     )
 }

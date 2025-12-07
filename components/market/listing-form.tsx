@@ -25,6 +25,9 @@ const formSchema = z.object({
     description: z.string().min(20, 'Describe un poco mejor el producto').max(1200),
     price: z.preprocess((val) => Number(val), z.number().min(0, 'El precio no puede ser negativo')),
     category: z.string().min(1, 'Selecciona una categoría'),
+    brand: z.string().optional(),
+    size: z.string().optional(),
+    condition: z.string().optional(),
 })
 
 interface ListingFormProps {
@@ -48,6 +51,9 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
             description: initialData?.description || '',
             price: initialData ? initialData.price_cents / 100 : '',
             category: initialData?.category || '',
+            brand: initialData?.brand || '',
+            size: initialData?.size || '',
+            condition: initialData?.condition || '',
         },
     })
 
@@ -73,6 +79,13 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
             return
         }
 
+        // Clean up optional fields if category is not 'Ropa'
+        if (values.category !== 'Ropa') {
+            values.brand = undefined
+            values.size = undefined
+            values.condition = undefined
+        }
+
         setIsLoading(true)
         try {
             const { data: { user } } = await supabase.auth.getUser()
@@ -90,6 +103,9 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                         description: values.description,
                         price_cents: Math.round(Number(values.price) * 100),
                         category: values.category,
+                        brand: values.brand,
+                        size: values.size,
+                        condition: values.condition,
                         status: 'active',
                     })
                     .select()
@@ -107,6 +123,9 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                         description: values.description,
                         price_cents: Math.round(Number(values.price) * 100),
                         category: values.category,
+                        brand: values.brand,
+                        size: values.size,
+                        condition: values.condition,
                     })
                     .eq('id', targetListingId)
 
@@ -251,6 +270,73 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                         )}
                     />
                 </div>
+
+                {/* Conditional Fields for 'Ropa' */}
+                {form.watch('category') === 'Ropa' && (
+                    <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border/50 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <FormField
+                            control={form.control}
+                            name="brand"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col p-4">
+                                    <FormLabel className="text-base font-normal text-muted-foreground mb-1">Marca</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Ej. Zara, Nike..."
+                                            className="border-none bg-transparent p-0 h-auto text-base placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="size"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4">
+                                    <FormLabel className="text-base font-normal text-muted-foreground flex-1">Talla</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Ej. M, 38..."
+                                            className="w-32 text-right border-none bg-transparent p-0 h-auto text-base placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="condition"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                                    <FormLabel className="text-base font-normal text-muted-foreground cursor-pointer flex-1">Estado</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger className="w-[180px] border-none bg-transparent shadow-none p-0 h-auto justify-end focus:ring-0 text-right text-base font-medium">
+                                                <SelectValue placeholder="Seleccionar" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent align="end">
+                                            {['Nuevo con etiquetas', 'Nuevo sin etiquetas', 'Muy bueno', 'Bueno', 'Satisfactorio'].map((cond) => (
+                                                <SelectItem key={cond} value={cond}>
+                                                    {cond}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <ChevronRight className="h-5 w-5 text-muted-foreground ml-2" />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                )}
 
                 {/* Price Section */}
                 <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border/50">

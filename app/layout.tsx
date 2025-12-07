@@ -31,6 +31,7 @@ import { PwaRegister } from '@/components/pwa-register'
 import { Suspense } from 'react'
 
 import { PresenceUpdater } from '@/components/presence-updater'
+import { BackButtonHandler } from '@/components/back-button-handler'
 
 // ... existing imports
 
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <PresenceUpdater />
         <PwaRegister />
+        <BackButtonHandler />
         <Suspense>
           <DesktopHeader />
         </Suspense>

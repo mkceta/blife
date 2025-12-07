@@ -9,6 +9,7 @@ import { LogoutButton } from '@/components/auth/logout-button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { BadgesSheet } from '@/components/profile/badges-sheet'
+import { SellerDashboardButton } from '@/components/profile/seller-dashboard-button'
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null)
@@ -140,6 +141,9 @@ export default function ProfilePage() {
 
             {/* Menu List */}
             <div className="px-4 space-y-1">
+                {/* Stripe Connect Section */}
+                <SellerDashboardButton userId={profile.id} />
+                <div className="h-px bg-border/40 my-2 mx-4" />
                 {menuItems.map((item, index) => {
                     if (item.show === false) return null
 

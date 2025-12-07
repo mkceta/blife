@@ -21,6 +21,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { calculateTotalWithFees } from '@/lib/pricing'
 
 interface Listing {
     id: string
@@ -156,15 +157,21 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                     >
                         {listing.user?.alias_inst || 'usuario'}
                     </Link>
-                    <p className="text-xs text-muted-foreground/60 truncate">
-                        {listing.size || 'M'} • {listing.condition || 'Muy bueno'}
+                    <p className="text-xs text-muted-foreground/60 truncate h-4">
+                        {[listing.size, listing.condition].filter(Boolean).join(' • ')}
                     </p>
                     <div className="flex flex-col mt-1">
                         <span className="text-sm font-bold text-foreground">
                             {(listing.price_cents / 100).toFixed(2)} €
                         </span>
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                            {listing.size || 'M'}
+                        <div className="flex items-center gap-1">
+                            <ShieldCheck className="h-3 w-3 text-green-600" />
+                            <span className="text-[10px] items-center gap-1 font-semibold text-green-700">
+                                {(calculateTotalWithFees(listing.price_cents) / 100).toFixed(2)} €
+                            </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-medium h-3 block">
+                            {listing.size}
                         </span>
                     </div>
                 </div>
@@ -175,13 +182,19 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                         <span className="text-sm font-bold text-foreground leading-tight">
                             {(listing.price_cents / 100).toFixed(2)} €
                         </span>
+                        <div className="flex items-center gap-0.5 mt-0.5">
+                            <ShieldCheck className="h-2.5 w-2.5 text-green-600" />
+                            <span className="text-[10px] font-semibold text-green-700 leading-none">
+                                {(calculateTotalWithFees(listing.price_cents) / 100).toFixed(2)} €
+                            </span>
+                        </div>
                         <div className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wide">
-                            {listing.size || 'M'}
+                            {listing.size}
                         </div>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <p className="text-xs text-muted-foreground truncate font-medium">
-                            {listing.brand || 'Zara'}
+                        <p className="text-xs text-muted-foreground truncate font-medium h-4">
+                            {listing.brand}
                         </p>
                     </div>
                 </div>
