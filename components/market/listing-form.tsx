@@ -172,14 +172,6 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-32 pb-safe">
 
-                {/* Banner */}
-                <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex gap-3 text-sm text-primary">
-                    <Camera className="h-5 w-5 shrink-0" />
-                    <p>
-                        Atrae la atención de los compradores: sube fotos de calidad. <span className="font-semibold underline cursor-pointer">Saber más</span>
-                    </p>
-                </div>
-
                 {/* Visual Section: Photos */}
                 <div className="space-y-4">
                     <ImageUpload

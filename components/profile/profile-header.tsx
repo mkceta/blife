@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, Star, ShieldCheck, Settings, Loader2 } from 'lucide-react'
+import { MapPin, Star, ShieldCheck, Settings, Loader2, Award, Shield, Trophy, Lock, HelpCircle, Store, BookOpen, Cpu, Shirt, Rocket, Crown, Key } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -24,7 +24,40 @@ export function ProfileHeader({ profile, currentUser, stats }: ProfileHeaderProp
     const isOwner = currentUser?.id === profile.id
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
+    const [userBadges, setUserBadges] = useState<any[]>([])
     const supabase = createClient()
+
+    useState(() => {
+        async function fetchBadges() {
+            const { data } = await supabase
+                .from('user_badges')
+                .select('*, badges(*)')
+                .eq('user_id', profile.id)
+            if (data) {
+                setUserBadges(data.map((ub: any) => ub.badges))
+            }
+        }
+        fetchBadges()
+    })
+
+    const BadgeIcon = ({ name, className }: { name: string, className?: string }) => {
+        const Icons: any = {
+            'ShieldCheck': ShieldCheck,
+            'Trophy': Trophy,
+            'Award': Award,
+            'Shield': Shield,
+            'Store': Store,
+            'Rocket': Rocket,
+            'Crown': Crown,
+            'Key': Key,
+            'BookOpen': BookOpen,
+            'Cpu': Cpu,
+            'Shirt': Shirt,
+            'Star': Star,
+        }
+        const Icon = Icons[name] || Award
+        return <Icon className={className} />
+    }
 
     async function handleMessage() {
         if (!currentUser) {
@@ -113,6 +146,18 @@ export function ProfileHeader({ profile, currentUser, stats }: ProfileHeaderProp
                     </div>
                 )}
             </div>
+
+            {/* Badges Row */}
+            {userBadges.length > 0 && (
+                <div className="flex gap-2 mt-4 justify-center flex-wrap max-w-xs">
+                    {userBadges.map((badge) => (
+                        <div key={badge.id} className="relative group p-2 bg-muted/40 rounded-full border border-border/50" title={badge.name}>
+                            <BadgeIcon name={badge.icon_name} className="h-5 w-5 text-foreground/80" />
+                            {/* Mobile tooltip check */}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {profile.bio && (
                 <p className="mt-4 text-center text-sm text-foreground/80 max-w-sm leading-relaxed">

@@ -6,9 +6,25 @@ import { createClient } from '@/lib/supabase'
 import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileTabs } from '@/components/profile/profile-tabs'
 
-function ProfileContent() {
-    const searchParams = useSearchParams()
-    const alias = searchParams.get('alias')
+// app/user/[username]/page.tsx
+interface PageProps {
+    params: Promise<{
+        username: string
+    }>
+}
+
+export default async function PublicProfilePage(props: PageProps) {
+    const params = await props.params;
+    const { username } = params;
+
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <ProfileContent alias={username} />
+        </Suspense>
+    )
+}
+
+function ProfileContent({ alias }: { alias: string }) {
     const [profile, setProfile] = useState<any>(null)
     const [activeListings, setActiveListings] = useState<any[]>([])
     const [soldListings, setSoldListings] = useState<any[]>([])
@@ -104,10 +120,4 @@ function ProfileContent() {
     )
 }
 
-export default function PublicProfilePage() {
-    return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-            <ProfileContent />
-        </Suspense>
-    )
-}
+
