@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-const TABS = ['/home', '/community', '/wishlist', '/messages', '/profile']
+const TABS = ['/home', '/search', '/market/new', '/messages', '/profile']
 
 export function SwipeNavigator({ children }: { children: React.ReactNode }) {
     const router = useRouter()
