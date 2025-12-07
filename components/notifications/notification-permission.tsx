@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase'
 export function NotificationPermission() {
     const [permission, setPermission] = useState<NotificationPermission>('default')
     const [mounted, setMounted] = useState(false)
+    const [debugInfo, setDebugInfo] = useState<string>('')
     const supabase = createClient()
 
     useEffect(() => {
@@ -125,7 +126,7 @@ export function NotificationPermission() {
         }
     }
 
-    const [debugInfo, setDebugInfo] = useState<string>('')
+
 
     const testServerPush = async () => {
         try {
