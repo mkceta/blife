@@ -170,7 +170,7 @@ export function MarketSearchBar() {
     ]
 
     return (
-        <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm pt-safe">
+        <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm">
             <div className="flex flex-col gap-2 px-3 pt-2 pb-0">
                 <div className="flex gap-2 items-center">
                     <form action="/home" method="GET" className="flex-1 relative">
