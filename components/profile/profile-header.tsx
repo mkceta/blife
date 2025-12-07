@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { MapPin, Star, ShieldCheck, Settings, Loader2, Award, Shield, Trophy, Lock, HelpCircle, Store, BookOpen, Cpu, Shirt, Rocket, Crown, Key, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
 
@@ -27,7 +27,7 @@ export function ProfileHeader({ profile, currentUser, stats }: ProfileHeaderProp
     const [userBadges, setUserBadges] = useState<any[]>([])
     const supabase = createClient()
 
-    useState(() => {
+    useEffect(() => {
         async function fetchBadges() {
             const { data } = await supabase
                 .from('user_badges')
@@ -38,7 +38,7 @@ export function ProfileHeader({ profile, currentUser, stats }: ProfileHeaderProp
             }
         }
         fetchBadges()
-    })
+    }, [profile.id, supabase])
 
     const BadgeIcon = ({ name, className }: { name: string, className?: string }) => {
         const Icons: any = {
@@ -107,7 +107,7 @@ export function ProfileHeader({ profile, currentUser, stats }: ProfileHeaderProp
     }
 
     return (
-        <div className="max-w-5xl mx-auto pt-8 pb-8 px-4 bg-background">
+        <div className="max-w-5xl mx-auto pt-[calc(env(safe-area-inset-top)+2rem)] pb-8 px-4 bg-background">
             <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-start">
 
                 {/* Left Side: Avatar */}

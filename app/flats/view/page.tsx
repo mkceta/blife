@@ -193,7 +193,7 @@ function FlatDetailContent() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Link href={`/user/profile?alias=${landlord.alias_inst}`} className="flex-1 flex items-center gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
+                    <Link href={`/user/${landlord.alias_inst}`} className="flex-1 flex items-center gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
                         <Avatar className="h-12 w-12 border border-border">
                             <AvatarImage src={landlord.avatar_url} />
                             <AvatarFallback>{landlord.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>

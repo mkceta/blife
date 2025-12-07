@@ -150,7 +150,7 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                 {/* Desktop Vinted Style: No Avatar, Just Text info */}
                 <div className="hidden md:block">
                     <Link
-                        href={`/user/profile?alias=${listing.user?.alias_inst}`}
+                        href={`/user/${listing.user?.alias_inst}`}
                         className="text-xs text-muted-foreground truncate hover:underline cursor-pointer inline-block"
                         onClick={(e) => e.stopPropagation()} // Although it's a link, good to be safe if nested inside div with click handler
                     >

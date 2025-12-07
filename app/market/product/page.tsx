@@ -233,7 +233,7 @@ function ProductContent() {
                         <div className="h-px bg-border/40" />
 
                         {/* User Card */}
-                        <Link href={`/user/profile?alias=${listing.user?.alias_inst}`} className="flex items-center justify-between group">
+                        <Link href={`/user/${listing.user?.alias_inst}`} className="flex items-center justify-between group">
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-12 w-12 border">
                                     <AvatarImage src={listing.user?.avatar_url} />

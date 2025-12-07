@@ -30,6 +30,10 @@ import { PwaRegister } from '@/components/pwa-register'
 
 import { Suspense } from 'react'
 
+import { PresenceUpdater } from '@/components/presence-updater'
+
+// ... existing imports
+
 export default function RootLayout({
   children,
 }: {
@@ -38,6 +42,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
+        <PresenceUpdater />
         <PwaRegister />
         <Suspense>
           <DesktopHeader />

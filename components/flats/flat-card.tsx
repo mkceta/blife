@@ -201,7 +201,7 @@ export function FlatCard({ flat, currentUserId, priority = false }: { flat: Flat
                                 {flat.area_m2 && <span>{flat.area_m2}m²</span>}
                             </div>
                             <div className="flex items-center gap-2 pt-1 pointer-events-auto">
-                                <Link href={`/user/profile?alias=${flat.user?.alias_inst}`} className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors group/user z-30 min-w-0">
+                                <Link href={`/user/${flat.user?.alias_inst}`} className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors group/user z-30 min-w-0">
                                     <Avatar className="h-4 w-4 sm:h-5 sm:w-5 border border-border/50 shrink-0">
                                         <AvatarImage src={flat.user?.avatar_url || undefined} />
                                         <AvatarFallback className="text-[8px] sm:text-[9px] bg-secondary">
