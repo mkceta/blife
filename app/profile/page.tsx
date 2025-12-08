@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Award, Heart, Users, Wallet, Package, Rocket, SlidersHorizontal, Percent, LogOut, Shield, ChevronRight, Trophy, BookOpen, Cpu, Shirt, Star, Key, Crown } from 'lucide-react'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { ThemeSelector } from '@/components/profile/theme-selector'
+import { Award, Heart, Users, Wallet, Package, Rocket, SlidersHorizontal, Percent, LogOut, Shield, ChevronRight, Trophy, BookOpen, Cpu, Shirt, Star, Key, Crown, Settings, Palette } from 'lucide-react'
 import { LogoutButton } from '@/components/auth/logout-button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -14,7 +16,6 @@ import { SellerDashboardButton } from '@/components/profile/seller-dashboard-but
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null)
     const [loading, setLoading] = useState(true)
-    const [userBadgesList, setUserBadgesList] = useState<any[]>([])
     const [badgeStats, setBadgeStats] = useState({ total: 0, earned: 0 })
     const router = useRouter()
     const supabase = createClient()
@@ -52,7 +53,7 @@ export default function ProfilePage() {
             setProfile(userProfile)
             setLoading(false)
 
-            // Fetch Badges Stats & List
+            // Fetch Badges Stats
             try {
                 // Try to auto-award if function exists
                 await supabase.rpc('check_and_award_badges', { target_user_id: user.id })
@@ -69,11 +70,6 @@ export default function ProfilePage() {
                     earned: myBadges?.length || 0
                 })
 
-                // Set list for display
-                if (myBadges) {
-                    setUserBadgesList(myBadges.map((ub: any) => ub.badges))
-                }
-
             } catch (e) {
                 console.error("Error fetching badges", e)
             }
@@ -85,30 +81,12 @@ export default function ProfilePage() {
     if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando perfil...</div>
     if (!profile) return null
 
-    // Helper specific for Profile Page Badges Display
-    const BadgeIcon = ({ name, className }: { name: string, className?: string }) => {
-        const Icons: any = {
-            'ShieldCheck': Shield,
-            'Trophy': Trophy,
-            'Award': Award,
-            'Shield': Shield,
-            'Store': Package,
-            'Rocket': Rocket,
-            'Crown': Crown,
-            'Key': Key,
-            'BookOpen': BookOpen,
-            'Cpu': Cpu,
-            'Shirt': Shirt,
-            'Star': Star,
-        }
-        const Icon = Icons[name] || Award
-        return <Icon className={className} />
-    }
-
     const menuItems = [
         { icon: Award, label: 'Insignias ganadas', count: `${badgeStats.earned} de ${badgeStats.total}` },
         { icon: Heart, label: 'Artículos Favoritos', href: '/wishlist' },
         { icon: Users, label: 'Invitar amigos' },
+        { icon: Palette, label: 'Apariencia' },
+        { icon: Settings, label: 'Ajustes y Perfil', href: '/profile/edit' },
         { icon: LogOut, label: 'Cerrar sesión', action: 'logout', variant: 'destructive' },
         { icon: Shield, label: 'Admin', href: '/admin', show: profile?.role === 'admin', variant: 'destructive' }
     ]
@@ -166,6 +144,26 @@ export default function ProfilePage() {
                                     <Content />
                                 </div>
                             </BadgesSheet>
+                        )
+                    }
+
+                    if (item.label === 'Apariencia') {
+                        return (
+                            <Sheet key={index}>
+                                <SheetTrigger asChild>
+                                    <div>
+                                        <Content />
+                                    </div>
+                                </SheetTrigger>
+                                <SheetContent side="bottom" className="h-[90vh] sm:h-auto rounded-t-[20px]">
+                                    <SheetHeader className="mb-6">
+                                        <SheetTitle>Apariencia</SheetTitle>
+                                    </SheetHeader>
+                                    <div className="pb-10">
+                                        <ThemeSelector />
+                                    </div>
+                                </SheetContent>
+                            </Sheet>
                         )
                     }
 

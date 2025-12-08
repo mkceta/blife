@@ -160,7 +160,7 @@ export function DesktopHeader() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => router.push('/profile')}>Mi perfil</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => router.push('/user/profile/edit')}>Ajustes</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => router.push('/profile/edit')}>Ajustes</DropdownMenuItem>
                                         <DropdownMenuItem className="text-destructive">Cerrar sesión</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>

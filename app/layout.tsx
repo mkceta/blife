@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { DesktopHeader } from '@/components/layout/desktop-header'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -48,17 +49,25 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
-        <PresenceUpdater />
-        <PwaRegister />
-        <BackButtonHandler />
-        <Suspense>
-          <DesktopHeader />
-        </Suspense>
-        <SwipeNavigator>
-          {children}
-        </SwipeNavigator>
-        <BottomNav />
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          themes={['light', 'dark', 'midnight', 'gold']}
+        >
+          <PresenceUpdater />
+          <PwaRegister />
+          <BackButtonHandler />
+          <Suspense>
+            <DesktopHeader />
+          </Suspense>
+          <SwipeNavigator>
+            {children}
+          </SwipeNavigator>
+          <BottomNav />
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   )

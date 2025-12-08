@@ -73,7 +73,7 @@ export function BottomNav() {
             "fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border pb-safe md:hidden",
             (isChatDetail || isMarketDetail) ? "hidden" : ""
         )}>
-            <nav className="flex justify-between items-center h-14 max-w-screen-xl mx-auto px-4">
+            <nav className="grid grid-cols-5 items-center h-14 max-w-screen-xl mx-auto px-0 w-full">
                 {blifeItems.map((item) => {
                     const isActive = pathname.startsWith(item.href)
 
@@ -83,7 +83,7 @@ export function BottomNav() {
                                 key={item.href}
                                 href={item.href}
                                 aria-label={item.label}
-                                className="flex flex-col items-center justify-center -mt-4 bg-background rounded-full p-2 border border-border/50"
+                                className="flex flex-col items-center justify-center -mt-4"
                             >
                                 <div className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-3 shadow-lg hover:shadow-primary/25 transition-all">
                                     <item.icon className="h-6 w-6 stroke-[2.5]" />
@@ -99,7 +99,7 @@ export function BottomNav() {
                             href={item.href}
                             aria-label={item.label}
                             className={cn(
-                                "flex flex-col items-center justify-center space-y-0.5 px-2 active-press",
+                                "flex flex-col items-center justify-center space-y-0.5 active-press w-full h-full",
                                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground/80"
                             )}
                         >
