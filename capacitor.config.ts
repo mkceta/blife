@@ -7,7 +7,17 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://blife-udc.vercel.app',
     cleartext: true
-  }
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: "#000000",
+      showSpinner: false,
+      androidScaleType: "FIT_CENTER",
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+  },
 };
 
 export default config;

@@ -32,8 +32,11 @@ export function NotificationPermission() {
                 } else {
                     setPermission('default')
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error('Error checking native permissions:', e)
+                if (e.message?.includes('not implemented')) {
+                    setDebugInfo('Error: Plugin no implementado. Reconstruye la app (npx cap sync).')
+                }
             }
         } else if (typeof window !== 'undefined' && 'Notification' in window) {
             setPermission(Notification.permission)
@@ -176,6 +179,14 @@ export function NotificationPermission() {
                     disabled={permission === 'denied'}
                 />
             </div>
+
+            {/* Warning for dev environment/build issues */}
+            {debugInfo && debugInfo.includes('sync') && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg text-xs">
+                    <p className="font-bold">⚠️ Configuración Requerida</p>
+                    <p>{debugInfo}</p>
+                </div>
+            )}
 
             {permission === 'granted' && (
                 <div className="p-4 bg-muted rounded-lg text-xs font-mono space-y-2">
