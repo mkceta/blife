@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Send } from 'lucide-react'
+import { Send, X, Loader2, Paperclip } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase'
 
@@ -16,13 +16,52 @@ interface ChatInputProps {
 export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) {
     const [message, setMessage] = useState('')
     const [isSending, setIsSending] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
+    const [imageUrl, setImageUrl] = useState<string | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const supabase = createClient()
 
+    async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(true)
+        try {
+            const fileExt = file.name.split('.').pop()
+            const fileName = `${Math.random()}.${fileExt}`
+            const filePath = `${threadId}/${fileName}`
+
+            const { error: uploadError } = await supabase.storage
+                .from('chat-images')
+                .upload(filePath, file)
+
+            if (uploadError) throw uploadError
+
+            const { data: publicUrlData } = supabase.storage
+                .from('chat-images')
+                .getPublicUrl(filePath)
+
+            setImageUrl(publicUrlData.publicUrl)
+            toast.success('Imagen subida')
+        } catch (error) {
+            console.error('Error uploading image:', error)
+            toast.error('Error al subir la imagen')
+        } finally {
+            setIsUploading(false)
+            // Clear input so same file can be selected again if needed
+            if (fileInputRef.current) fileInputRef.current.value = ''
+        }
+    }
+
     async function handleSend() {
-        if (!message.trim()) return
+        if ((!message.trim() && !imageUrl) || isUploading) return
 
         const currentMessage = message
+        const currentImage = imageUrl
+
         setMessage('') // Optimistic clear
+        setImageUrl(null)
+
         if (onCancelReply) onCancelReply()
         setIsSending(true)
 
@@ -36,7 +75,8 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                     thread_id: threadId,
                     from_user: user.id,
                     body: currentMessage.trim(),
-                    reply_to_id: replyTo?.id
+                    reply_to_id: replyTo?.id,
+                    image_url: currentImage
                 })
 
             if (error) throw error
@@ -52,6 +92,7 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
             const errorMessage = error.message || 'Error al enviar mensaje'
             toast.error(errorMessage)
             setMessage(currentMessage) // Restore message on error
+            setImageUrl(currentImage)
         } finally {
             setIsSending(false)
         }
@@ -71,16 +112,52 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                         className="h-6 w-6 shrink-0"
                         onClick={onCancelReply}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        <X className="h-4 w-4" />
                     </Button>
                 </div>
             )}
+
+            {imageUrl && (
+                <div className="relative mb-2 inline-block">
+                    <img src={imageUrl} alt="Preview" className="h-20 w-auto rounded-lg border border-border" />
+                    <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md"
+                        onClick={() => setImageUrl(null)}
+                    >
+                        <X className="h-3 w-3" />
+                    </Button>
+                </div>
+            )}
+
             <div className="flex items-end gap-2 w-full">
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                />
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                >
+                    {isUploading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                        <Paperclip className="h-5 w-5" />
+                    )}
+                </Button>
+
                 <Textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Escribe un mensaje..."
-                    className="min-h-[50px] max-h-[150px] resize-none bg-background/50 focus:bg-background transition-colors"
+                    className="min-h-[50px] max-h-[150px] resize-none bg-background/50 focus:bg-background transition-colors rounded-2xl"
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()
@@ -90,9 +167,9 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                 />
                 <Button
                     onClick={handleSend}
-                    disabled={!message.trim() || isSending}
+                    disabled={(!message.trim() && !imageUrl) || isSending || isUploading}
                     size="icon"
-                    className="h-[50px] w-[50px] shrink-0 rounded-xl"
+                    className="h-[50px] w-[50px] shrink-0 rounded-full"
                 >
                     <Send className="h-5 w-5" />
                 </Button>

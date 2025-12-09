@@ -21,6 +21,7 @@ interface Message {
         from_user: string
     }
     reply_to_id?: string
+    image_url?: string
 }
 
 interface ChatListProps {
@@ -50,6 +51,7 @@ export function ChatList({
 }: ChatListProps) {
     const [messages, setMessages] = useState<Message[]>(initialMessages)
     const bottomRef = useRef<HTMLDivElement>(null)
+    const containerRef = useRef<HTMLDivElement>(null)
     const supabase = createClient()
 
     useEffect(() => {
@@ -80,7 +82,7 @@ export function ChatList({
                     if (newMessage['reply_to_id']) {
                         const { data } = await supabase
                             .from('messages')
-                            .select('id, body, from_user')
+                            .select('id, body, from_user, image_url')
                             .eq('id', newMessage['reply_to_id'])
                             .single()
                         replyInfo = data
@@ -165,8 +167,19 @@ export function ChatList({
         }
     }, [threadId, currentUser.id, supabase])
 
+    const scrollToMessage = (messageId: string) => {
+        const element = document.getElementById(`message-${messageId}`)
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            element.classList.add('bg-primary/10')
+            setTimeout(() => {
+                element.classList.remove('bg-primary/10')
+            }, 2000)
+        }
+    }
+
     return (
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4 scrollbar-thin">
+        <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 pb-4 scrollbar-thin min-h-0">
             {showRateDialog && sellerId && sellerName && listingId && (
                 <div className="mb-4">
                     <RateUserDialog sellerId={sellerId} sellerName={sellerName} listingId={listingId} />
@@ -179,13 +192,15 @@ export function ChatList({
                 const isFirstInSequence = !prevMsg || prevMsg.from_user !== msg.from_user
 
                 return (
-                    <ChatBubble
-                        key={msg.id}
-                        message={msg as any}
-                        isCurrentUser={isCurrentUser}
-                        showTail={isFirstInSequence}
-                        onReply={onReply}
-                    />
+                    <div key={msg.id} id={`message-${msg.id}`} className="transition-colors duration-500 rounded-lg">
+                        <ChatBubble
+                            message={msg as any}
+                            isCurrentUser={isCurrentUser}
+                            showTail={isFirstInSequence}
+                            onReply={onReply}
+                            onScrollToMessage={scrollToMessage}
+                        />
+                    </div>
                 )
             })}
 

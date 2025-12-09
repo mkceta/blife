@@ -69,9 +69,9 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
     }
 
     return (
-        <div className="group relative flex flex-col gap-2">
+        <div className="group relative flex flex-col gap-2 bg-card/40 p-2.5 rounded-xl border border-border/40 hover:bg-card/60 transition-colors duration-300">
             {/* Image Container */}
-            <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-muted/30">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted/30">
                 <Link href={`/market/product?id=${listing.id}`} className="absolute inset-0 z-10 active-press">
                     <span className="sr-only">Ver {listing.title}</span>
                 </Link>

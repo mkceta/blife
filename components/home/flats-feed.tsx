@@ -107,7 +107,7 @@ function FlatsFeedContent() {
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
-            <div className="min-h-[calc(100vh-10rem)] bg-background">
+            <div className="min-h-[calc(100vh-10rem)] bg-transparent">
                 {loading ? (
                     <div className="text-center py-20 text-muted-foreground">Cargando pisos...</div>
                 ) : (

@@ -10,7 +10,7 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
 
     // Swipe functionality disabled as per user request
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen md:min-h-[calc(100vh-4rem)]">
             {children}
         </div>
     )

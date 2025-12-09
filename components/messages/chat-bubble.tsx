@@ -33,14 +33,17 @@ interface ChatBubbleProps {
             id: string
             body: string
             from_user: string
+            image_url?: string
         }
+        image_url?: string
     }
     isCurrentUser: boolean
     showTail?: boolean
     onReply?: (message: any) => void
+    onScrollToMessage?: (messageId: string) => void
 }
 
-export function ChatBubble({ message, isCurrentUser, showTail = true, onReply }: ChatBubbleProps) {
+export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, onScrollToMessage }: ChatBubbleProps) {
     const [loading, setLoading] = useState(false)
 
     const handleRespond = async (accept: boolean) => {
@@ -61,55 +64,6 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply }:
             onReply(message)
         }
     }
-
-    const content = (
-        <div className={cn(
-            "max-w-[80%] rounded-xl px-3 py-1.5 text-sm shadow-sm relative group/bubble",
-            isCurrentUser
-                ? cn("bg-primary text-primary-foreground", showTail && "rounded-tr-none")
-                : cn("bg-muted/50 backdrop-blur-sm border border-white/10 text-foreground", showTail && "rounded-tl-none")
-        )}>
-            {message.reply_to && (
-                <div className={cn(
-                    "mb-2 p-2 rounded bg-black/10 text-xs border-l-2 border-white/50 truncate max-w-full",
-                    isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"
-                )}>
-                    <span className="font-semibold block opacity-70">Respuesta</span>
-                    <span className="opacity-90">{message.reply_to.body}</span>
-                </div>
-            )}
-
-            <span className="whitespace-pre-wrap leading-relaxed break-words">
-                {message.body}
-            </span>
-            <span className={cn(
-                "float-right ml-2 mt-1.5 align-bottom text-[10px] flex items-center gap-0.5 opacity-70 select-none h-3",
-                isCurrentUser ? "text-primary-foreground/90" : "text-muted-foreground"
-            )}>
-                {formatMessageTime(message.created_at)}
-                {isCurrentUser && (
-                    <CheckCheck className={cn(
-                        "h-3 w-3 transition-colors",
-                        message.read ? "text-blue-500" : "text-current"
-                    )} />
-                )}
-            </span>
-
-            {!isCurrentUser && onReply && (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover/bubble:opacity-100 transition-opacity h-6 w-6 text-muted-foreground hover:text-foreground hidden sm:flex"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onReply(message)
-                    }}
-                >
-                    <Reply className="h-4 w-4" />
-                </Button>
-            )}
-        </div>
-    )
 
     if (message.type === 'offer' && message.offer) {
         const { amount_cents, status } = message.offer
@@ -230,12 +184,38 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply }:
                                 : cn("bg-muted/50 backdrop-blur-sm border border-white/10 text-foreground", showTail && "rounded-tl-none")
                         )}>
                             {message.reply_to && (
-                                <div className={cn(
-                                    "mb-2 p-2 rounded bg-black/10 text-xs border-l-2 border-white/50 truncate max-w-full",
-                                    isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"
-                                )}>
+                                <div
+                                    className={cn(
+                                        "mb-2 p-2 rounded bg-black/10 text-xs border-l-2 border-white/50 truncate max-w-full cursor-pointer hover:bg-black/20 transition-colors",
+                                        isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"
+                                    )}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (onScrollToMessage && message.reply_to) {
+                                            onScrollToMessage(message.reply_to.id)
+                                        }
+                                    }}
+                                >
                                     <span className="font-semibold block opacity-70">Respuesta</span>
-                                    <span className="opacity-90">{message.reply_to.body}</span>
+                                    {message.reply_to.image_url ? (
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <img src={message.reply_to.image_url} alt="Imagen" className="h-8 w-8 object-cover rounded" />
+                                            <span className="opacity-90 italic">Imagen</span>
+                                        </div>
+                                    ) : (
+                                        <span className="opacity-90">{message.reply_to.body}</span>
+                                    )}
+                                </div>
+                            )}
+
+                            {message.image_url && (
+                                <div className="mb-2 relative rounded-lg overflow-hidden max-w-full">
+                                    <img
+                                        src={message.image_url}
+                                        alt="Imagen adjunta"
+                                        className="max-h-[300px] w-auto object-contain rounded-lg bg-black/20"
+                                        loading="lazy"
+                                    />
                                 </div>
                             )}
 
