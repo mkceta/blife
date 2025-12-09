@@ -2,11 +2,18 @@
 
 import { cn } from '@/lib/utils'
 import { formatMessageTime } from '@/lib/format'
-import { CheckCheck, Euro, Check, X } from 'lucide-react'
+import { CheckCheck, Euro, Check, X, Reply } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { respondToOffer } from '@/app/market/offer-actions'
 import { toast } from 'sonner'
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu"
+import { motion, PanInfo } from "framer-motion"
 
 interface ChatBubbleProps {
     message: {
@@ -22,12 +29,18 @@ interface ChatBubbleProps {
             status: 'pending' | 'accepted' | 'rejected'
         }
         thread_id: string
+        reply_to?: {
+            id: string
+            body: string
+            from_user: string
+        }
     }
     isCurrentUser: boolean
     showTail?: boolean
+    onReply?: (message: any) => void
 }
 
-export function ChatBubble({ message, isCurrentUser, showTail = true }: ChatBubbleProps) {
+export function ChatBubble({ message, isCurrentUser, showTail = true, onReply }: ChatBubbleProps) {
     const [loading, setLoading] = useState(false)
 
     const handleRespond = async (accept: boolean) => {
@@ -42,6 +55,61 @@ export function ChatBubble({ message, isCurrentUser, showTail = true }: ChatBubb
             setLoading(false)
         }
     }
+
+    const onDragEnd = (event: any, info: PanInfo) => {
+        if (info.offset.x > 50 && onReply) {
+            onReply(message)
+        }
+    }
+
+    const content = (
+        <div className={cn(
+            "max-w-[80%] rounded-xl px-3 py-1.5 text-sm shadow-sm relative group/bubble",
+            isCurrentUser
+                ? cn("bg-primary text-primary-foreground", showTail && "rounded-tr-none")
+                : cn("bg-muted/50 backdrop-blur-sm border border-white/10 text-foreground", showTail && "rounded-tl-none")
+        )}>
+            {message.reply_to && (
+                <div className={cn(
+                    "mb-2 p-2 rounded bg-black/10 text-xs border-l-2 border-white/50 truncate max-w-full",
+                    isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"
+                )}>
+                    <span className="font-semibold block opacity-70">Respuesta</span>
+                    <span className="opacity-90">{message.reply_to.body}</span>
+                </div>
+            )}
+
+            <span className="whitespace-pre-wrap leading-relaxed break-words">
+                {message.body}
+            </span>
+            <span className={cn(
+                "float-right ml-2 mt-1.5 align-bottom text-[10px] flex items-center gap-0.5 opacity-70 select-none h-3",
+                isCurrentUser ? "text-primary-foreground/90" : "text-muted-foreground"
+            )}>
+                {formatMessageTime(message.created_at)}
+                {isCurrentUser && (
+                    <CheckCheck className={cn(
+                        "h-3 w-3 transition-colors",
+                        message.read ? "text-blue-500" : "text-current"
+                    )} />
+                )}
+            </span>
+
+            {!isCurrentUser && onReply && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover/bubble:opacity-100 transition-opacity h-6 w-6 text-muted-foreground hover:text-foreground hidden sm:flex"
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onReply(message)
+                    }}
+                >
+                    <Reply className="h-4 w-4" />
+                </Button>
+            )}
+        </div>
+    )
 
     if (message.type === 'offer' && message.offer) {
         const { amount_cents, status } = message.offer
@@ -125,33 +193,92 @@ export function ChatBubble({ message, isCurrentUser, showTail = true }: ChatBubb
     }
 
     return (
-        <div className={cn(
-            "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
-            isCurrentUser ? "justify-end" : "justify-start",
-            showTail ? "mb-2" : "mb-1"
-        )}>
-            <div className={cn(
-                "max-w-[80%] rounded-xl px-3 py-1.5 text-sm shadow-sm relative",
-                isCurrentUser
-                    ? cn("bg-primary text-primary-foreground", showTail && "rounded-tr-none")
-                    : cn("bg-muted/50 backdrop-blur-sm border border-white/10 text-foreground", showTail && "rounded-tl-none")
-            )}>
-                <span className="whitespace-pre-wrap leading-relaxed break-words">
-                    {message.body}
-                </span>
-                <span className={cn(
-                    "float-right ml-2 mt-1.5 align-bottom text-[10px] flex items-center gap-0.5 opacity-70 select-none h-3",
-                    isCurrentUser ? "text-primary-foreground/90" : "text-muted-foreground"
+        <ContextMenu>
+            <ContextMenuTrigger asChild>
+                <div className={cn(
+                    "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 relative group",
+                    isCurrentUser ? "justify-end" : "justify-start",
+                    showTail ? "mb-2" : "mb-1"
                 )}>
-                    {formatMessageTime(message.created_at)}
-                    {isCurrentUser && (
-                        <CheckCheck className={cn(
-                            "h-3 w-3 transition-colors",
-                            message.read ? "text-blue-500" : "text-current"
-                        )} />
+                    {/* Desktop Reply Button (Left of sent message, Right of received message) */}
+                    {isCurrentUser && onReply && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pr-2 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-full"
+                                onClick={() => onReply && onReply(message)}
+                            >
+                                <Reply className="h-4 w-4" />
+                            </Button>
+                        </div>
                     )}
-                </span>
-            </div>
-        </div>
+
+                    <motion.div
+                        drag={!isCurrentUser ? "x" : false}
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={{ right: 0.1 }}
+                        onDragEnd={onDragEnd}
+                        className={cn("max-w-full", !isCurrentUser && "cursor-grab active:cursor-grabbing")}
+                        whileDrag={{ x: 20 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    >
+                        <div className={cn(
+                            "max-w-[80vw] sm:max-w-[350px] rounded-xl px-3 py-1.5 text-sm shadow-sm relative group/bubble",
+                            isCurrentUser
+                                ? cn("bg-primary text-primary-foreground", showTail && "rounded-tr-none")
+                                : cn("bg-muted/50 backdrop-blur-sm border border-white/10 text-foreground", showTail && "rounded-tl-none")
+                        )}>
+                            {message.reply_to && (
+                                <div className={cn(
+                                    "mb-2 p-2 rounded bg-black/10 text-xs border-l-2 border-white/50 truncate max-w-full",
+                                    isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"
+                                )}>
+                                    <span className="font-semibold block opacity-70">Respuesta</span>
+                                    <span className="opacity-90">{message.reply_to.body}</span>
+                                </div>
+                            )}
+
+                            <span className="whitespace-pre-wrap leading-relaxed break-words">
+                                {message.body}
+                            </span>
+                            <span className={cn(
+                                "float-right ml-2 mt-1.5 align-bottom text-[10px] flex items-center gap-0.5 opacity-70 select-none h-3",
+                                isCurrentUser ? "text-primary-foreground/90" : "text-muted-foreground"
+                            )}>
+                                {formatMessageTime(message.created_at)}
+                                {isCurrentUser && (
+                                    <CheckCheck className={cn(
+                                        "h-3 w-3 transition-colors",
+                                        message.read ? "text-blue-500" : "text-current"
+                                    )} />
+                                )}
+                            </span>
+                        </div>
+                    </motion.div>
+
+                    {/* Desktop Reply Button (Right of received message) */}
+                    {!isCurrentUser && onReply && (
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full pl-2 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-full"
+                                onClick={() => onReply && onReply(message)}
+                            >
+                                <Reply className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </ContextMenuTrigger>
+
+            <ContextMenuContent>
+                <ContextMenuItem onClick={() => onReply && onReply(message)}>
+                    <Reply className="mr-2 h-4 w-4" />
+                    Responder
+                </ContextMenuItem>
+            </ContextMenuContent>
+        </ContextMenu>
     )
 }

@@ -15,6 +15,7 @@ function ChatContent() {
     const [messages, setMessages] = useState<any[]>([])
     const [currentUser, setCurrentUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+    const [replyTo, setReplyTo] = useState<any>(null)
     const supabase = createClient()
 
     useEffect(() => {
@@ -77,7 +78,7 @@ function ChatContent() {
             // Fetch messages for this thread
             const { data: messagesData } = await supabase
                 .from('messages')
-                .select('*, offer:product_offers(*)')
+                .select('*, offer:product_offers(*), reply_to:messages!reply_to_id(id, body, from_user)')
                 .eq('thread_id', threadData.id)
                 .order('created_at', { ascending: true })
 
@@ -123,10 +124,15 @@ function ChatContent() {
                 sellerId={thread.seller_id}
                 sellerName={thread.seller.alias_inst}
                 listingId={thread.listing?.id}
+                onReply={setReplyTo}
             />
 
             <div className="flex-none p-4 bg-background/80 backdrop-blur-md border-t border-border z-20 pb-safe">
-                <ChatInput threadId={thread.id} />
+                <ChatInput
+                    threadId={thread.id}
+                    replyTo={replyTo}
+                    onCancelReply={() => setReplyTo(null)}
+                />
             </div>
         </div>
     )

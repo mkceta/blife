@@ -15,6 +15,12 @@ interface Message {
     type?: 'text' | 'offer'
     offer_id?: string
     offer?: any
+    reply_to?: {
+        id: string
+        body: string
+        from_user: string
+    }
+    reply_to_id?: string
 }
 
 interface ChatListProps {
@@ -27,6 +33,7 @@ interface ChatListProps {
     sellerId?: string
     sellerName?: string
     listingId?: string
+    onReply?: (message: Message) => void
 }
 
 export function ChatList({
@@ -38,7 +45,8 @@ export function ChatList({
     showRateDialog,
     sellerId,
     sellerName,
-    listingId
+    listingId,
+    onReply
 }: ChatListProps) {
     const [messages, setMessages] = useState<Message[]>(initialMessages)
     const bottomRef = useRef<HTMLDivElement>(null)
@@ -67,6 +75,17 @@ export function ChatList({
                 async (payload) => {
                     const newMessage = payload.new as Message
 
+                    // Fetch reply_to info if exists
+                    let replyInfo = null
+                    if (newMessage['reply_to_id']) {
+                        const { data } = await supabase
+                            .from('messages')
+                            .select('id, body, from_user')
+                            .eq('id', newMessage['reply_to_id'])
+                            .single()
+                        replyInfo = data
+                    }
+
                     // If it's an offer, we need to fetch the offer details
                     if (newMessage.type === 'offer' && newMessage.offer_id) {
                         const { data: offer } = await supabase
@@ -78,6 +97,10 @@ export function ChatList({
                         if (offer) {
                             newMessage.offer = offer
                         }
+                    }
+
+                    if (replyInfo) {
+                        newMessage.reply_to = replyInfo
                     }
 
                     setMessages((prev) => [...prev, newMessage])
@@ -105,7 +128,7 @@ export function ChatList({
                     const updatedMessage = payload.new as Message
                     setMessages((prev) =>
                         prev.map((msg) =>
-                            msg.id === updatedMessage.id ? updatedMessage : msg
+                            msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg
                         )
                     )
                 }
@@ -158,9 +181,10 @@ export function ChatList({
                 return (
                     <ChatBubble
                         key={msg.id}
-                        message={msg}
+                        message={msg as any}
                         isCurrentUser={isCurrentUser}
                         showTail={isFirstInSequence}
+                        onReply={onReply}
                     />
                 )
             })}
