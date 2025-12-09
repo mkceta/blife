@@ -7,14 +7,14 @@ import { Loader2 } from 'lucide-react'
 interface PullToRefreshProps {
     onRefresh: () => Promise<void>
     children: React.ReactNode
+    scrollContainerRef?: React.RefObject<any>
 }
 
-export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
+export function PullToRefresh({ onRefresh, children, scrollContainerRef }: PullToRefreshProps) {
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [pullY, setPullY] = useState(0)
     const startY = useRef(0)
     const isDragging = useRef(false)
-    const controls = useAnimation()
     const contentControls = useAnimation()
     const THRESHOLD = 80
 
@@ -26,8 +26,15 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
         }
     }, [isRefreshing, contentControls])
 
+    const getScrollTop = () => {
+        if (scrollContainerRef?.current) {
+            return scrollContainerRef.current.scrollTop
+        }
+        return window.scrollY
+    }
+
     const handleTouchStart = (e: React.TouchEvent) => {
-        if (window.scrollY === 0) {
+        if (getScrollTop() <= 0) {
             startY.current = e.touches[0].clientY
             isDragging.current = true
         }
@@ -37,7 +44,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
         if (!isDragging.current) return
 
         // If user scrolls down, stop tracking pull
-        if (window.scrollY > 0) {
+        if (getScrollTop() > 0) {
             isDragging.current = false
             setPullY(0)
             contentControls.start({ y: 0 })
@@ -55,7 +62,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
 
             // Prevent default only if we are pulling down significantly to avoid interfering with horizontal swipes
             if (diff > 10 && e.cancelable) {
-                // e.preventDefault() // Comentado para no bloquear scroll lateral u otros gestos si no es necesario
+                // e.preventDefault()
             }
         }
     }
@@ -82,7 +89,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
 
     return (
         <div
-            className="relative min-h-screen"
+            className="relative h-full"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -112,7 +119,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
             {/* Content Wrapper - This moves down */}
             <motion.div
                 animate={contentControls}
-                className="relative z-10 bg-transparent min-h-screen"
+                className="relative z-10 bg-transparent h-full"
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
                 {children}

@@ -10,8 +10,9 @@ interface MessagesSidebarProps {
     className?: string
 }
 
-import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useRouter } from 'next/navigation'
+import { PullToRefresh } from '@/components/ui/pull-to-refresh'
+import { useRef } from 'react'
 
 export function MessagesSidebar({
     threads,
@@ -21,6 +22,7 @@ export function MessagesSidebar({
     className
 }: MessagesSidebarProps) {
     const router = useRouter()
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
 
     const handleRefresh = async () => {
         router.refresh()
@@ -45,8 +47,11 @@ export function MessagesSidebar({
                 </div>
             </div>
             <div className="flex-1 overflow-hidden">
-                <PullToRefresh onRefresh={handleRefresh}>
-                    <div className="h-full overflow-y-auto p-2 scrollbar-thin pb-24">
+                <PullToRefresh onRefresh={handleRefresh} scrollContainerRef={scrollContainerRef}>
+                    <div
+                        ref={scrollContainerRef}
+                        className="h-full overflow-y-auto p-2 scrollbar-thin pb-24"
+                    >
                         <ThreadList
                             initialThreads={threads}
                             currentUserId={currentUserId}
