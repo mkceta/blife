@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useNotifications } from '@/hooks/use-notifications'
+import { mediumHaptic } from '@/lib/haptics'
 
 export function BottomNav() {
     const pathname = usePathname()
@@ -98,6 +99,7 @@ export function BottomNav() {
                             key={item.href}
                             href={item.href}
                             aria-label={item.label}
+                            onClick={() => mediumHaptic()}
                             className={cn(
                                 "flex flex-col items-center justify-center space-y-0.5 active-press w-full h-full",
                                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground/80"

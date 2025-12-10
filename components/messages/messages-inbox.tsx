@@ -8,6 +8,7 @@ import { NotificationList } from '@/components/notifications/notification-list'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { useNotifications } from '@/hooks/use-notifications'
+import { mediumHaptic } from '@/lib/haptics'
 
 function MessagesInboxContent({ className }: { className?: string }) {
     const router = useRouter()
@@ -29,6 +30,7 @@ function MessagesInboxContent({ className }: { className?: string }) {
 
     // Update URL when tab changes without full reload
     const handleTabChange = (tab: 'messages' | 'notifications') => {
+        mediumHaptic() // Add haptic feedback here
         setActiveTab(tab)
         // Only push state if we are tracking tabs in URL globally
         // const newUrl = tab === 'messages' ? '/messages' : '/messages?tab=notifications'

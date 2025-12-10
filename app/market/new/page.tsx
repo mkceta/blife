@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { ChevronLeft, ShoppingBag, Home } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
+import { mediumHaptic } from '@/lib/haptics'
 
 export default function NewListingSelectionPage() {
     return (
@@ -16,7 +17,7 @@ export default function NewListingSelectionPage() {
             </div>
 
             <div className="flex-1 flex flex-col gap-4">
-                <Link href="/market/new/product" className="group">
+                <Link href="/market/new/product" className="group" onClick={() => mediumHaptic()}>
                     <Card className="border-2 border-border hover:border-primary transition-colors cursor-pointer group-active:scale-[0.98] transition-transform">
                         <CardContent className="flex items-center p-6 gap-4">
                             <div className="bg-primary/10 p-4 rounded-full group-hover:bg-primary/20 transition-colors">
@@ -30,7 +31,7 @@ export default function NewListingSelectionPage() {
                     </Card>
                 </Link>
 
-                <Link href="/flats/new" className="group">
+                <Link href="/flats/new" className="group" onClick={() => mediumHaptic()}>
                     <Card className="border-2 border-border hover:border-primary transition-colors cursor-pointer group-active:scale-[0.98] transition-transform">
                         <CardContent className="flex items-center p-6 gap-4">
                             <div className="bg-blue-500/10 p-4 rounded-full group-hover:bg-blue-500/20 transition-colors">
