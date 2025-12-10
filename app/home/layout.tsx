@@ -27,34 +27,6 @@ export default function HomeLayout({
                 </div>
             </div>
 
-            {/* Floating Action Button logic for mobile is inside HomeClient in the old code.
-                We need to restore it here or inside the specific pages? 
-                Actually, putting it in Layout is efficient if it links dynamically.
-            */}
-            <FloatingActionButton />
-
-        </div>
-    )
-}
-
-
-
-function FloatingActionButton() {
-    const pathname = usePathname()
-    // Helper to determine link based on current sub-route
-    const isMarket = pathname.includes('/market') || !pathname.includes('/flats')
-    const href = isMarket ? '/market/new' : '/flats/new'
-
-    return (
-        <div className="md:hidden">
-            <Link href={href} aria-label="Crear nueva publicación">
-                <Button
-                    className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-6 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 border-2 border-white/10"
-                    size="icon"
-                >
-                    <Plus className="h-8 w-8" strokeWidth={3} />
-                </Button>
-            </Link>
         </div>
     )
 }

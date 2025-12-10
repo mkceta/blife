@@ -27,7 +27,6 @@ export default function SearchPage() {
                         placeholder="Busca artículos o miembros"
                         className="pl-10 pr-10 bg-muted/50 border-none h-11 text-base placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-primary"
                     />
-                    <Camera className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
                 </div>
             </div>
 
