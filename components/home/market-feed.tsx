@@ -173,8 +173,7 @@ export function MarketSearchBar() {
         <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm">
             <div className="flex flex-col gap-2 px-3 pt-2 pb-0">
                 <div className="flex gap-2 items-center">
-                    <form action="/home" method="GET" className="flex-1 relative">
-                        <input type="hidden" name="tab" value="market" />
+                    <form action="/home/market" method="GET" className="flex-1 relative">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <Input
@@ -197,8 +196,8 @@ export function MarketSearchBar() {
                             <Link
                                 key={cat.label}
                                 href={isActive
-                                    ? '/home?tab=market'
-                                    : (cat.id ? `/home?tab=market&category=${cat.id}` : '/home?tab=market')
+                                    ? '/home/market'
+                                    : (cat.id ? `/home/market?category=${cat.id}` : '/home/market')
                                 }
                                 className={`
                                     whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors border

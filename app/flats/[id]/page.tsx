@@ -1,6 +1,8 @@
-export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase-server'
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase'
+import { notFound, useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -16,42 +18,81 @@ import { ReportButton } from '@/components/market/report-button'
 import { FavoriteButton } from '@/components/market/favorite-button'
 import FlatMap from '@/components/flats/flat-map-dynamic'
 
-export default async function FlatDetailPage(props: { params: Promise<{ id: string }> }) {
-    const params = await props.params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+export default function FlatDetailPage() {
+    const params = useParams()
+    const id = params.id as string
+    const [flat, setFlat] = useState<any>(null)
+    const [user, setUser] = useState<any>(null)
+    const [isFavorite, setIsFavorite] = useState(false)
+    const [loading, setLoading] = useState(true)
+    const supabase = createClient()
 
-    const { data: flat } = await supabase
-        .from('flats')
-        .select('*, user:users!flats_user_id_fkey(*)')
-        .eq('id', params.id)
-        .single()
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true)
 
-    if (!flat) notFound()
+            // Get current user
+            const { data: { user: authUser } } = await supabase.auth.getUser()
+            setUser(authUser)
 
-    // Check if current user has favorited this flat (using same favorites table)
-    let isFavorite = false
-    if (user) {
-        const { data: favorite } = await supabase
-            .from('favorites')
-            .select('*')
-            .eq('listing_id', params.id) // Reusing listing_id column for flats
-            .eq('user_id', user.id)
-            .single()
+            // Get flat data
+            const { data: flatData } = await supabase
+                .from('flats')
+                .select('*, user:users!flats_user_id_fkey(*)')
+                .eq('id', id)
+                .single()
 
-        isFavorite = !!favorite
+            if (!flatData) {
+                setLoading(false)
+                return
+            }
+
+            setFlat(flatData)
+
+            // Check if favorited
+            if (authUser) {
+                const { data: favorite } = await supabase
+                    .from('favorites')
+                    .select('*')
+                    .eq('listing_id', id)
+                    .eq('user_id', authUser.id)
+                    .single()
+
+                setIsFavorite(!!favorite)
+            }
+
+            setLoading(false)
+        }
+
+        loadData()
+    }, [id, supabase])
+
+    if (loading) {
+        return (
+            <div className="pb-24 bg-background min-h-screen flex items-center justify-center">
+                <div className="text-center space-y-2">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground">Cargando piso...</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (!flat) {
+        notFound()
+        return null
     }
 
     const photos = flat.photos as any[] || []
     const rent = (flat.rent_cents / 100).toFixed(0)
     const landlord = Array.isArray(flat.user) ? flat.user[0] : flat.user
-    const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://blife-udc.vercel.app/flats/${params.id}`
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://blife-udc.vercel.app/flats/${id}`
 
     return (
         <div className="pb-24 bg-background min-h-screen">
             <div className="fixed top-0 left-0 right-0 z-10 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
                 <Button asChild variant="secondary" size="icon" className="pointer-events-auto rounded-full h-10 w-10 bg-black/50 hover:bg-black/70 border-none text-white">
-                    <Link href="/flats">
+                    <Link href="/home/flats">
                         <ChevronLeft className="h-6 w-6" />
                     </Link>
                 </Button>
@@ -64,7 +105,7 @@ export default async function FlatDetailPage(props: { params: Promise<{ id: stri
                     />
                     <ReportButton
                         targetType="flat"
-                        targetId={params.id}
+                        targetId={id}
                         variant="secondary"
                         className="rounded-full h-10 w-10 bg-black/50 hover:bg-black/70 border-none text-white"
                     />
@@ -240,7 +281,7 @@ export default async function FlatDetailPage(props: { params: Promise<{ id: stri
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-20 pb-safe flex gap-3">
                 {user && (
                     <FavoriteButton
-                        listingId={params.id}
+                        listingId={id}
                         initialIsFavorite={isFavorite}
                         variant="outline"
                         size="icon"

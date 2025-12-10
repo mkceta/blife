@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ThemeSelector } from '@/components/profile/theme-selector'
-import { Award, Heart, Users, Wallet, Package, Rocket, SlidersHorizontal, Percent, LogOut, Shield, ChevronRight, Trophy, BookOpen, Cpu, Shirt, Star, Key, Crown, Settings, Palette } from 'lucide-react'
+import { Award, Heart, Users, Wallet, Package, Rocket, SlidersHorizontal, Percent, LogOut, Shield, ChevronRight, Trophy, BookOpen, Cpu, Shirt, Star, Key, Crown, Settings, Palette, TestTube } from 'lucide-react'
 import { LogoutButton } from '@/components/auth/logout-button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -87,6 +87,7 @@ export default function ProfilePage() {
         { icon: Users, label: 'Invitar amigos' },
         { icon: Palette, label: 'Apariencia' },
         { icon: Settings, label: 'Ajustes y Perfil', href: '/profile/edit' },
+        { icon: TestTube, label: '🧪 Test FCM', href: '/test-fcm', variant: 'secondary' },
         { icon: LogOut, label: 'Cerrar sesión', action: 'logout', variant: 'destructive' },
         { icon: Shield, label: 'Admin', href: '/admin', show: profile?.role === 'admin', variant: 'destructive' }
     ]
@@ -128,7 +129,8 @@ export default function ProfilePage() {
                     const Content = () => (
                         <div className={cn(
                             "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg cursor-pointer",
-                            item.variant === 'destructive' && "text-red-500 hover:bg-red-50"
+                            item.variant === 'destructive' && "text-red-500 hover:bg-red-50",
+                            item.variant === 'secondary' && "text-blue-500 hover:bg-blue-50/50"
                         )}>
                             <item.icon className="h-6 w-6" strokeWidth={1.5} />
                             <span className="flex-1 font-medium">{item.label}</span>

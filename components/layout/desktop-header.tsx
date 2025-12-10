@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,8 @@ import { Badge } from '@/components/ui/badge'
 export function DesktopHeader() {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const pathname = usePathname()
+    const isFlats = pathname?.includes('/flats')
     const [user, setUser] = useState<any>(null)
     const [unreadMessages, setUnreadMessages] = useState(0)
     const supabase = createClient()
@@ -70,8 +72,9 @@ export function DesktopHeader() {
         e.preventDefault()
         const formData = new FormData(e.currentTarget)
         const q = formData.get('q') as string
+        const target = isFlats ? '/home/flats' : '/home/market'
         if (q) {
-            router.push(`/home?tab=market&q=${encodeURIComponent(q)}`)
+            router.push(`${target}?q=${encodeURIComponent(q)}`)
         }
     }
 
@@ -89,15 +92,15 @@ export function DesktopHeader() {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="gap-1 text-muted-foreground font-normal">
-                                {searchParams.get('tab') === 'flats' ? 'Pisos' : 'Artículos'}
+                                {isFlats ? 'Pisos' : 'Artículos'}
                                 <ChevronDown className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => router.push('/home?tab=market')}>
+                            <DropdownMenuItem onClick={() => router.push('/home/market')}>
                                 Artículos
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push('/home?tab=flats')}>
+                            <DropdownMenuItem onClick={() => router.push('/home/flats')}>
                                 Pisos
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -107,7 +110,7 @@ export function DesktopHeader() {
                         <Input
                             name="q"
                             defaultValue={searchParams.get('q') || ''}
-                            placeholder={searchParams.get('tab') === 'flats' ? "Buscar pisos..." : "Buscar artículos"}
+                            placeholder={isFlats ? "Buscar pisos..." : "Buscar artículos"}
                             className="w-full bg-muted/40 border-transparent focus:border-input pl-10 pr-4 rounded-md"
                         />
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
 export default function MarketRedirect() {
-    redirect('/home?tab=market')
+    redirect('/home/market')
 }

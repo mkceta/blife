@@ -141,8 +141,7 @@ export function FlatsSearchBar({ flats }: { flats: any[] }) {
         <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm pt-safe">
             <div className="flex flex-col gap-2 px-3 pb-2 pt-2">
                 <div className="flex gap-2 items-center">
-                    <form action="/home" method="GET" className="flex-1 relative">
-                        <input type="hidden" name="tab" value="flats" />
+                    <form action="/home/flats" method="GET" className="flex-1 relative">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <Input
