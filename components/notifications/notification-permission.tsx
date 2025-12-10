@@ -142,7 +142,7 @@ export function NotificationPermission() {
                     record: {
                         user_id: user.id,
                         title: 'Prueba de Servidor',
-                        message: 'Si lees esto, la configuración de servidor es correcta ✅',
+                        message: 'Si lees esto, la configuración de servidor es correcta',
                         id: 'test-' + Date.now()
                     }
                 }
@@ -183,7 +183,7 @@ export function NotificationPermission() {
             {/* Warning for dev environment/build issues */}
             {debugInfo && debugInfo.includes('sync') && (
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg text-xs">
-                    <p className="font-bold">⚠️ Configuración Requerida</p>
+                    <p className="font-bold">Configuración Requerida</p>
                     <p>{debugInfo}</p>
                 </div>
             )}

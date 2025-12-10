@@ -7,7 +7,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 
-interface Notification {
+export interface Notification {
     id: string
     created_at: string
     user_id: string

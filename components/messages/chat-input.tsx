@@ -3,9 +3,10 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, X, Loader2, Paperclip } from 'lucide-react'
+import { Send, X, Loader2, Paperclip, Camera as CameraIcon, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase'
+import { Camera, CameraResultType } from '@capacitor/camera'
 
 interface ChatInputProps {
     threadId: string
@@ -21,10 +22,7 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const supabase = createClient()
 
-    async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0]
-        if (!file) return
-
+    const uploadFile = async (file: File) => {
         setIsUploading(true)
         try {
             const fileExt = file.name.split('.').pop()
@@ -48,8 +46,32 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
             toast.error('Error al subir la imagen')
         } finally {
             setIsUploading(false)
-            // Clear input so same file can be selected again if needed
             if (fileInputRef.current) fileInputRef.current.value = ''
+        }
+    }
+
+    async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0]
+        if (file) await uploadFile(file)
+    }
+
+    async function handleCamera() {
+        try {
+            const image = await Camera.getPhoto({
+                quality: 90,
+                allowEditing: false,
+                resultType: CameraResultType.Uri
+            })
+
+            if (image.webPath) {
+                const response = await fetch(image.webPath)
+                const blob = await response.blob()
+                const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' })
+                await uploadFile(file)
+            }
+        } catch (error) {
+            // User cancelled or error
+            console.log('Camera error:', error)
         }
     }
 
@@ -139,10 +161,23 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                     accept="image/*"
                     onChange={handleFileSelect}
                 />
+
+                {/* Camera Button */}
                 <Button
                     variant="ghost"
                     size="icon"
                     className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground"
+                    onClick={handleCamera}
+                    disabled={isUploading}
+                >
+                    <CameraIcon className="h-5 w-5" />
+                </Button>
+
+                {/* Gallery Button */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground hidden sm:flex" // Hiding on mobile to save space? Or just keep both? User wants camera.
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
                 >
@@ -152,12 +187,22 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                         <Paperclip className="h-5 w-5" />
                     )}
                 </Button>
+                {/* Mobile: Use Long Press on Camera to open Gallery? Or just show both? Let's show both, it fits on modern phones (4 buttons width ~ 200px) */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground sm:hidden"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                >
+                    <ImageIcon className="h-5 w-5" />
+                </Button>
 
                 <Textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Escribe un mensaje..."
-                    className="min-h-[50px] max-h-[150px] resize-none bg-background/50 focus:bg-background transition-colors rounded-2xl"
+                    placeholder="Escribe..."
+                    className="min-h-[50px] max-h-[150px] resize-none bg-background/50 focus:bg-background transition-colors rounded-2xl py-3"
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()

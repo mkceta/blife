@@ -236,7 +236,7 @@ export default function EditProfilePage() {
                         {/* Section: Public Profile */}
                         <div className="space-y-4">
                             <h2 className="text-lg font-semibold flex items-center gap-2 pb-2 border-b border-border/50">
-                                <span className="text-primary">👤</span> Perfil Público
+                                Perfil Público
                             </h2>
                             <div className="space-y-4 pl-1">
                                 <div className="space-y-2">
@@ -311,7 +311,7 @@ export default function EditProfilePage() {
                         {/* Section: Account & Preferences */}
                         <div className="space-y-4">
                             <h2 className="text-lg font-semibold flex items-center gap-2 pb-2 border-b border-border/50">
-                                <span className="text-primary">⚙️</span> Preferencias y Cuenta
+                                Preferencias y Cuenta
                             </h2>
                             <div className="space-y-6 pl-1">
                                 <div className="space-y-2">
@@ -361,7 +361,7 @@ export default function EditProfilePage() {
                         {/* Section: Sales */}
                         <div className="space-y-4">
                             <h2 className="text-lg font-semibold flex items-center gap-2 pb-2 border-b border-border/50">
-                                <span className="text-primary">💰</span> Ventas y Pagos
+                                Ventas y Pagos
                             </h2>
                             <FormField
                                 control={form.control}

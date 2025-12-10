@@ -9,6 +9,7 @@ import { respondToOffer } from '@/app/market/offer-actions'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase'
 import { mediumHaptic } from '@/lib/haptics'
+import { ImageModal } from '@/components/ui/image-modal'
 import {
     ContextMenu,
     ContextMenuContent,
@@ -50,6 +51,7 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
     const [loading, setLoading] = useState(false)
     const supabase = createClient()
     const [reactions, setReactions] = useState<Record<string, string>>(message.reactions || {})
+    const [showImage, setShowImage] = useState(false)
 
     // Sync local state with prop updates
     useEffect(() => {
@@ -254,8 +256,16 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                                     <img
                                         src={message.image_url}
                                         alt="Imagen adjunta"
-                                        className="max-h-[300px] w-auto object-contain rounded-lg bg-black/20"
+                                        className="max-h-[300px] w-auto object-contain rounded-lg bg-black/20 cursor-zoom-in active:scale-95 transition-transform"
                                         loading="lazy"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setShowImage(true)
+                                        }}
+                                    />
+                                    <ImageModal
+                                        src={showImage ? (message.image_url || null) : null}
+                                        onClose={() => setShowImage(false)}
                                     />
                                 </div>
                             )}

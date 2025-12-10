@@ -206,7 +206,7 @@ export function ProfileHeader({ profile, currentUser, stats }: ProfileHeaderProp
                     {userBadges.length > 0 && (
                         <div className="pt-4 border-t border-dashed border-border/60 mt-4">
                             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 text-center md:text-left">Insignias</h3>
-                            <div className="flex overflow-x-auto pb-2 justify-start gap-4 scrollbar-hide mask-fade-right">
+                            <div className="flex overflow-x-auto pb-2 justify-start gap-2 scrollbar-hide mask-fade-right">
                                 {userBadges.map((badge) => (
                                     <div key={badge.id} className="shrink-0 relative group flex items-center gap-2 p-1 pr-3 bg-gradient-to-br from-background to-muted/30 rounded-full border border-border hover:border-primary/40 shadow-sm hover:shadow-md transition-all duration-300 cursor-default select-none">
                                         <div className="p-1.5 bg-primary/10 rounded-full group-hover:bg-primary/20 transition-colors">

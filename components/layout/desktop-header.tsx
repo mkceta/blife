@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { useNotifications } from '@/hooks/use-notifications'
 
 export function DesktopHeader() {
     const router = useRouter()
@@ -31,7 +32,8 @@ export function DesktopHeader() {
     const pathname = usePathname()
     const isFlats = pathname?.includes('/flats')
     const [user, setUser] = useState<any>(null)
-    const [unreadMessages, setUnreadMessages] = useState(0)
+    const { notifications } = useNotifications()
+    const unreadMessages = notifications.filter(n => !n.read && n.type === 'message').length
     const supabase = createClient()
 
     useEffect(() => {
@@ -40,18 +42,8 @@ export function DesktopHeader() {
             if (user) {
                 const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
                 setUser(profile)
-
-                const { count: notifCount } = await supabase
-                    .from('notifications')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', user.id)
-                    .eq('read', false)
-                    .eq('type', 'message')
-
-                setUnreadMessages(notifCount || 0)
             } else {
                 setUser(null)
-                setUnreadMessages(0)
             }
         }
 

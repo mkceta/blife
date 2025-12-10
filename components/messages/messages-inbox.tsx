@@ -64,7 +64,7 @@ function MessagesInboxContent({ className }: { className?: string }) {
                         <MessageSquare className="w-4 h-4 mr-2" />
                         Mensajes
                         {unreadMessages > 0 && (
-                            <span className="ml-2 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
+                            <span className="ml-2 bg-destructive text-white text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
                                 {unreadMessages}
                             </span>
                         )}
@@ -84,7 +84,7 @@ function MessagesInboxContent({ className }: { className?: string }) {
                         <Bell className="w-4 h-4 mr-2" />
                         Notificaciones
                         {unreadNotifications > 0 && (
-                            <span className="ml-2 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
+                            <span className="ml-2 bg-destructive text-white text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
                                 {unreadNotifications}
                             </span>
                         )}
