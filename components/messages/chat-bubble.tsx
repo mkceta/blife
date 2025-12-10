@@ -4,9 +4,11 @@ import { cn } from '@/lib/utils'
 import { formatMessageTime } from '@/lib/format'
 import { CheckCheck, Euro, Check, X, Reply } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { respondToOffer } from '@/app/market/offer-actions'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase'
+import { mediumHaptic } from '@/lib/haptics'
 import {
     ContextMenu,
     ContextMenuContent,
@@ -36,6 +38,7 @@ interface ChatBubbleProps {
             image_url?: string
         }
         image_url?: string
+        reactions?: Record<string, string>
     }
     isCurrentUser: boolean
     showTail?: boolean
@@ -45,6 +48,13 @@ interface ChatBubbleProps {
 
 export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, onScrollToMessage }: ChatBubbleProps) {
     const [loading, setLoading] = useState(false)
+    const supabase = createClient()
+    const [reactions, setReactions] = useState<Record<string, string>>(message.reactions || {})
+
+    // Sync local state with prop updates
+    useEffect(() => {
+        setReactions(message.reactions || {})
+    }, [message.reactions])
 
     const handleRespond = async (accept: boolean) => {
         if (!message.offer) return
@@ -59,13 +69,42 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
         }
     }
 
+    const handleReaction = async (emoji: string) => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const currentReaction = reactions[user.id]
+        const newReactions = { ...reactions }
+
+        if (currentReaction === emoji) {
+            delete newReactions[user.id]
+        } else {
+            newReactions[user.id] = emoji
+        }
+
+        setReactions(newReactions) // Optimistic update
+        mediumHaptic()
+
+        const { error } = await supabase
+            .from('messages')
+            .update({ reactions: newReactions })
+            .eq('id', message.id)
+
+        if (error) {
+            setReactions(reactions) // Revert
+            toast.error('Error al reaccionar')
+        }
+    }
+
     const onDragEnd = (event: any, info: PanInfo) => {
         if (info.offset.x > 50 && onReply) {
+            mediumHaptic()
             onReply(message)
         }
     }
 
     if (message.type === 'offer' && message.offer) {
+        // ... (Keep existing offer logic logic, slightly abbreviated for context limits if unmodified)
         const { amount_cents, status } = message.offer
         const amount = (amount_cents / 100).toFixed(2)
 
@@ -154,7 +193,7 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                     isCurrentUser ? "justify-end" : "justify-start",
                     showTail ? "mb-2" : "mb-1"
                 )}>
-                    {/* Desktop Reply Button (Left of sent message, Right of received message) */}
+                    {/* Desktop Reply Button (Left) */}
                     {isCurrentUser && onReply && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pr-2 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
                             <Button
@@ -173,7 +212,7 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                         dragConstraints={{ left: 0, right: 0 }}
                         dragElastic={{ right: 0.1 }}
                         onDragEnd={onDragEnd}
-                        className={cn("max-w-full", !isCurrentUser && "cursor-grab active:cursor-grabbing")}
+                        className={cn("max-w-full relative", !isCurrentUser && "cursor-grab active:cursor-grabbing")}
                         whileDrag={{ x: 20 }}
                         transition={{ type: "spring", stiffness: 400, damping: 20 }}
                     >
@@ -183,7 +222,8 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                                 ? cn("bg-primary text-primary-foreground", showTail && "rounded-tr-none")
                                 : cn("bg-muted/50 backdrop-blur-sm border border-white/10 text-foreground", showTail && "rounded-tl-none")
                         )}>
-                            {message.reply_to && (
+                            {/* BUG FIX: Check message.reply_to.id exists */}
+                            {message.reply_to && message.reply_to.id && (
                                 <div
                                     className={cn(
                                         "mb-2 p-2 rounded bg-black/10 text-xs border-l-2 border-white/50 truncate max-w-full cursor-pointer hover:bg-black/20 transition-colors",
@@ -191,7 +231,7 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                                     )}
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        if (onScrollToMessage && message.reply_to) {
+                                        if (onScrollToMessage && message.reply_to?.id) {
                                             onScrollToMessage(message.reply_to.id)
                                         }
                                     }}
@@ -235,9 +275,23 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                                 )}
                             </span>
                         </div>
+
+                        {/* Reactions Display */}
+                        {Object.keys(reactions).length > 0 && (
+                            <div className={cn(
+                                "absolute -bottom-3 flex gap-0.5 z-10",
+                                isCurrentUser ? "right-0" : "left-0"
+                            )}>
+                                {Object.entries(reactions).map(([userId, emoji], i) => (
+                                    <div key={`${userId}-${i}`} className="bg-background/90 border border-border/50 text-[10px] rounded-full px-1 py-0.5 shadow-sm animate-in zoom-in duration-200">
+                                        {emoji}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </motion.div>
 
-                    {/* Desktop Reply Button (Right of received message) */}
+                    {/* Desktop Reply Button (Right) */}
                     {!isCurrentUser && onReply && (
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full pl-2 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
                             <Button
@@ -253,7 +307,18 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                 </div>
             </ContextMenuTrigger>
 
-            <ContextMenuContent>
+            <ContextMenuContent className="w-48">
+                <div className="flex justify-between p-2">
+                    {['❤️', '😂', '😮', '😢', '😡', '👍'].map(emoji => (
+                        <button
+                            key={emoji}
+                            className="hover:scale-125 transition-transform text-lg"
+                            onClick={() => handleReaction(emoji)}
+                        >
+                            {emoji}
+                        </button>
+                    ))}
+                </div>
                 <ContextMenuItem onClick={() => onReply && onReply(message)}>
                     <Reply className="mr-2 h-4 w-4" />
                     Responder
