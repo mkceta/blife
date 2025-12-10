@@ -4,14 +4,15 @@ import { Capacitor } from '@capacitor/core';
 const isWeb = Capacitor.getPlatform() === 'web';
 
 export const simpleHaptic = async () => {
-    // Light impact for standard buttons (Selection)
-    await Haptics.impact({ style: ImpactStyle.Light });
+    // Standard vibration (30ms approx like a click)
+    await Haptics.vibrate({ duration: 30 });
 };
 
 export const mediumHaptic = async () => {
-    // Medium impact for distinct actions (Tabs, Important Buttons)
-    await Haptics.impact({ style: ImpactStyle.Medium });
+    // Stronger vibration
+    await Haptics.vibrate({ duration: 50 });
 };
+
 
 export const successHaptic = async () => {
     // Notification Success (Form submit, etc)
