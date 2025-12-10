@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { PushNotifications } from '@capacitor/push-notifications'
+import { LocalNotifications } from '@capacitor/local-notifications'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Bell, Check, X, RefreshCw, Send } from 'lucide-react'
+import { Bell, Check, X, RefreshCw, Send, TestTube } from 'lucide-react'
 
 export function FcmTest() {
     const [isNative, setIsNative] = useState(false)
@@ -68,9 +69,47 @@ export function FcmTest() {
             } else {
                 toast.error('Permisos denegados')
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error('Error requesting permissions:', e)
-            toast.error('Error solicitando permisos')
+            toast.error('Error: ' + (e?.message || JSON.stringify(e)))
+        }
+    }
+
+    const sendLocalNotification = async () => {
+        if (!Capacitor.isNativePlatform()) {
+            toast.error('Solo funciona en dispositivos nativos')
+            return
+        }
+
+        try {
+            // Request permission for local notifications
+            const perm = await LocalNotifications.requestPermissions()
+
+            if (perm.display !== 'granted') {
+                toast.error('Permisos de notificaciones locales denegados')
+                return
+            }
+
+            // Schedule a local notification
+            await LocalNotifications.schedule({
+                notifications: [
+                    {
+                        title: '🧪 Prueba Local',
+                        body: '¡Esta es una notificación local de prueba!',
+                        id: Date.now(),
+                        schedule: { at: new Date(Date.now() + 1000) }, // 1 segundo
+                        sound: undefined,
+                        attachments: undefined,
+                        actionTypeId: '',
+                        extra: null
+                    }
+                ]
+            })
+
+            toast.success('Notificación local programada (1 segundo)')
+        } catch (e: any) {
+            console.error('Error sending local notification:', e)
+            toast.error('Error: ' + e.message)
         }
     }
 
@@ -83,6 +122,7 @@ export function FcmTest() {
                 return
             }
 
+            // Try to call Edge Function
             const { data, error } = await supabase.functions.invoke('push-notification', {
                 body: {
                     record: {
@@ -97,14 +137,14 @@ export function FcmTest() {
 
             if (error) {
                 console.error('Error sending notification:', error)
-                toast.error('Error enviando notificación: ' + error.message)
+                toast.error('Edge Function no disponible. Usa notificación local en su lugar.')
             } else {
                 console.log('Notification sent:', data)
                 toast.success(`Notificación enviada a ${data.sent_to} dispositivo(s)`)
             }
         } catch (e: any) {
             console.error('Exception sending notification:', e)
-            toast.error('Error: ' + e.message)
+            toast.error('Edge Function no configurado. Prueba con notificación local.')
         } finally {
             setLoading(false)
         }
@@ -187,15 +227,26 @@ export function FcmTest() {
                     </div>
 
                     {permissionStatus === 'granted' && (
-                        <Button
-                            onClick={sendTestNotification}
-                            disabled={loading}
-                            className="w-full"
-                            variant="default"
-                        >
-                            <Send className="h-4 w-4 mr-2" />
-                            {loading ? 'Enviando...' : 'Enviar Notificación de Prueba'}
-                        </Button>
+                        <div className="space-y-2">
+                            <Button
+                                onClick={sendLocalNotification}
+                                className="w-full"
+                                variant="default"
+                            >
+                                <TestTube className="h-4 w-4 mr-2" />
+                                Enviar Notificación Local (Prueba Rápida)
+                            </Button>
+
+                            <Button
+                                onClick={sendTestNotification}
+                                disabled={loading}
+                                className="w-full"
+                                variant="outline"
+                            >
+                                <Send className="h-4 w-4 mr-2" />
+                                {loading ? 'Enviando...' : 'Enviar Push Notification (Requiere Edge Function)'}
+                            </Button>
+                        </div>
                     )}
                 </CardContent>
             </Card>
@@ -249,6 +300,25 @@ export function FcmTest() {
                     </CardContent>
                 </Card>
             )}
+
+            {/* Info Card */}
+            <Card className="border-blue-500/50 bg-blue-500/5">
+                <CardHeader>
+                    <CardTitle className="text-sm">💡 Nota sobre Edge Function</CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs space-y-2 text-muted-foreground">
+                    <p>
+                        <strong>Notificación Local</strong>: Funciona siempre, se programa en el dispositivo.
+                    </p>
+                    <p>
+                        <strong>Push Notification</strong>: Requiere que el Edge Function esté desplegado en Supabase con Firebase configurado.
+                    </p>
+                    <p className="text-xs">
+                        Si ves "Failed to send a request", significa que el Edge Function no está disponible.
+                        Usa la notificación local para probar que los permisos funcionan.
+                    </p>
+                </CardContent>
+            </Card>
         </div>
     )
 }
