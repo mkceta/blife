@@ -179,7 +179,7 @@ export function ChatList({
     }
 
     return (
-        <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 pb-4 scrollbar-thin min-h-0">
+        <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-1 pb-4 scrollbar-thin min-h-0">
             {showRateDialog && sellerId && sellerName && listingId && (
                 <div className="mb-4">
                     <RateUserDialog sellerId={sellerId} sellerName={sellerName} listingId={listingId} />

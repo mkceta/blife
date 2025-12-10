@@ -97,7 +97,8 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
     }
 
     const onDragEnd = (event: any, info: PanInfo) => {
-        if (info.offset.x > 50 && onReply) {
+        // Increased threshold from 50 to 80 for "un poco más"
+        if (info.offset.x > 80 && onReply) {
             mediumHaptic()
             onReply(message)
         }
@@ -191,7 +192,7 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                 <div className={cn(
                     "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 relative group",
                     isCurrentUser ? "justify-end" : "justify-start",
-                    showTail ? "mb-2" : "mb-1"
+                    showTail ? "mb-1" : "mb-0.5"
                 )}>
                     {/* Desktop Reply Button (Left) */}
                     {isCurrentUser && onReply && (
@@ -208,11 +209,11 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                     )}
 
                     <motion.div
-                        drag={!isCurrentUser ? "x" : false}
+                        drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
                         dragElastic={{ right: 0.1 }}
                         onDragEnd={onDragEnd}
-                        className={cn("max-w-full relative", !isCurrentUser && "cursor-grab active:cursor-grabbing")}
+                        className={cn("max-w-full relative", "cursor-grab active:cursor-grabbing")}
                         whileDrag={{ x: 20 }}
                         transition={{ type: "spring", stiffness: 400, damping: 20 }}
                     >
@@ -283,7 +284,7 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                                 isCurrentUser ? "right-0" : "left-0"
                             )}>
                                 {Object.entries(reactions).map(([userId, emoji], i) => (
-                                    <div key={`${userId}-${i}`} className="bg-background/90 border border-border/50 text-[10px] rounded-full px-1 py-0.5 shadow-sm animate-in zoom-in duration-200">
+                                    <div key={`${userId}-${i}`} className="bg-background/90 border border-border/50 text-xs rounded-full px-1.5 py-0.5 shadow-sm animate-in zoom-in duration-200">
                                         {emoji}
                                     </div>
                                 ))}
