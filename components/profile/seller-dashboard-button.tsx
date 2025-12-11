@@ -42,10 +42,22 @@ export function SellerDashboardButton({ userId }: { userId: string }) {
             >
                 <Wallet className="h-6 w-6" strokeWidth={1.5} />
                 <div className="flex-1 flex flex-col">
-                    <span className="font-medium">Pagos y Cobros</span>
-                    {status === 'active' && <span className="text-xs text-green-600 font-medium flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Cuenta activa para vender</span>}
-                    {status === 'pending' && <span className="text-xs text-yellow-600 font-medium">Configuración incompleta</span>}
-                    {status === 'none' && <span className="text-xs text-muted-foreground">Configura tu cuenta para vender</span>}
+                    <div className="flex items-center justify-between">
+                        <span className="font-medium">Pagos y Cobros</span>
+                        <div className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted">
+                            {status === 'active' && <span className="text-green-600 flex items-center gap-1">Verificado</span>}
+                            {status === 'pending' && <span className="text-yellow-600">Pendiente</span>}
+                            {status === 'none' && <span className="text-muted-foreground">No verificado</span>}
+                        </div>
+                    </div>
+
+                    {status === 'active' ? (
+                        <span className="text-xs text-muted-foreground mt-0.5">Gestión de cuenta y saldo</span>
+                    ) : (
+                        <span className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                            Se te pedirá configurarlo cuando realices tu primera compra o venta.
+                        </span>
+                    )}
                 </div>
             </div>
 

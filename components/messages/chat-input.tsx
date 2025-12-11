@@ -162,41 +162,28 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                     onChange={handleFileSelect}
                 />
 
-                {/* Camera Button */}
+                {/* Camera Button - Serves as main media button */}
                 <Button
                     variant="ghost"
                     size="icon"
                     className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleCamera}
+                    onClick={() => {
+                        // User requested "keep only camera". 
+                        // But usually this implies "Camera Icon" that might open options or just camera.
+                        // I will wire it to open Camera directly as per existing logic.
+                        // If they want gallery, they might need to long press or use camera UI's gallery picker if available.
+                        // Or I can make this button open a sheet? 
+                        // The user said: "hay 2 botones... uno cámara y otro foto (gallery)... deja solo el de la cámara".
+                        // So I delete the gallery button.
+                        handleCamera()
+                    }}
                     disabled={isUploading}
                 >
                     <CameraIcon className="h-5 w-5" />
                 </Button>
 
-                {/* Gallery Button */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground hidden sm:flex" // Hiding on mobile to save space? Or just keep both? User wants camera.
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                >
-                    {isUploading ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                        <Paperclip className="h-5 w-5" />
-                    )}
-                </Button>
-                {/* Mobile: Use Long Press on Camera to open Gallery? Or just show both? Let's show both, it fits on modern phones (4 buttons width ~ 200px) */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground sm:hidden"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                >
-                    <ImageIcon className="h-5 w-5" />
-                </Button>
+                {/* Gallery Button REMOVED as per user request */}
+
 
                 <Textarea
                     value={message}

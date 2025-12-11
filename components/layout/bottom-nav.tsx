@@ -105,7 +105,7 @@ export function BottomNav() {
                                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground/80"
                             )}
                         >
-                            <div className="relative">
+                            <div className="relative h-6 w-6">
                                 {item.isProfile && user ? (
                                     <Avatar className={cn("h-6 w-6 border-2 transition-all", isActive ? "border-primary" : "border-transparent")}>
                                         <AvatarImage src={avatarUrl || undefined} />
@@ -114,21 +114,32 @@ export function BottomNav() {
                                         </AvatarFallback>
                                     </Avatar>
                                 ) : (
-                                    <item.icon className={cn(
-                                        "h-6 w-6 transition-all",
-                                        isActive
-                                            ? (item.icon === Search || item.icon === FlameKindling)
-                                                ? "stroke-[2.5]"
-                                                : "stroke-0 fill-current"
-                                            : "stroke-2"
-                                    )} />
+                                    <>
+                                        {isActive && item.label === 'Comunidad' ? (
+                                            <>
+                                                {/* Filled Layer - Orange Fire */}
+                                                <item.icon className="absolute inset-0 h-6 w-6 text-primary fill-primary stroke-0" />
+                                                {/* Outline Layer - Accent Color */}
+                                                <item.icon className="absolute inset-0 h-6 w-6 text-primary stroke-[2.5] fill-none" />
+                                            </>
+                                        ) : (
+                                            <item.icon className={cn(
+                                                "h-6 w-6 transition-all absolute inset-0",
+                                                isActive
+                                                    ? (item.icon === Search)
+                                                        ? "stroke-[2.5]"
+                                                        : "stroke-0 fill-current"
+                                                    : "stroke-2"
+                                            )} />
+                                        )}
+                                    </>
                                 )}
 
                                 {item.hasNotifications && (
                                     (item.label === 'Comunidad' && unreadCommunity > 0) ||
                                     (item.label === 'Mensajes' && unreadMessages > 0)
                                 ) && (
-                                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive border-[1.5px] border-background" />
+                                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive border-[1.5px] border-background z-10" />
                                     )}
                             </div>
                             <span className={cn("text-[10px] font-medium")}>

@@ -272,10 +272,16 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
 
                             <span className="whitespace-pre-wrap leading-relaxed break-words">
                                 {message.body}
+                                {/* Add a zero-width space to ensure line height respects text */}
+                                &#8203;
                             </span>
-                            <span className={cn(
+
+                            {/* Status Indicator */}
+                            <div className={cn(
                                 "float-right ml-2 mt-1.5 align-bottom text-[10px] flex items-center gap-0.5 opacity-70 select-none h-3",
-                                isCurrentUser ? "text-primary-foreground/90" : "text-muted-foreground"
+                                isCurrentUser ? "text-primary-foreground/90" : "text-muted-foreground",
+                                // Fix displacement: ensure it clears image if there's no text or text is short
+                                message.image_url && !message.body && "absolute bottom-2 right-2 m-0 bg-black/40 px-1 rounded text-white"
                             )}>
                                 {formatMessageTime(message.created_at)}
                                 {isCurrentUser && (
@@ -284,7 +290,10 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                                         message.read ? "text-blue-500" : "text-current"
                                     )} />
                                 )}
-                            </span>
+                            </div>
+
+                            {/* Clear float for proper container expansion */}
+                            <div className="clear-both" />
                         </div>
 
                         {/* Reactions Display */}

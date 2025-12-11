@@ -87,7 +87,6 @@ export default function ProfilePage() {
         { icon: Users, label: 'Invitar amigos' },
         { icon: Palette, label: 'Apariencia' },
         { icon: Settings, label: 'Ajustes y Perfil', href: '/profile/edit' },
-        { icon: TestTube, label: 'Test FCM', href: '/test-fcm', variant: 'secondary' },
         { icon: LogOut, label: 'Cerrar sesión', action: 'logout', variant: 'destructive' },
         { icon: Shield, label: 'Admin', href: '/admin', show: profile?.role === 'admin', variant: 'destructive' }
     ]
