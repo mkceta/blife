@@ -462,16 +462,10 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                     // Poll for verification for up to 10 seconds
                     let verified = false
                     for (let i = 0; i < 10; i++) {
-                        // Check DB status
-                        const { data: { user } } = await supabase.auth.getUser()
-                        if (!user) break
-                        const { data: acc } = await supabase
-                            .from('stripe_accounts')
-                            .select('charges_enabled')
-                            .eq('user_id', user.id)
-                            .single()
+                        // Force check with Stripe directly via Edge Function to bypass Webhook latency
+                        const { data: status, error } = await supabase.functions.invoke('stripe-status')
 
-                        if (acc?.charges_enabled) {
+                        if (!error && status?.charges_enabled) {
                             verified = true
                             break
                         }
