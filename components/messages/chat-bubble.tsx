@@ -220,7 +220,8 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                         transition={{ type: "spring", stiffness: 400, damping: 20 }}
                     >
                         <div className={cn(
-                            "max-w-[80vw] sm:max-w-[350px] rounded-xl px-3 py-1.5 text-sm shadow-sm relative group/bubble",
+                            "max-w-[80vw] sm:max-w-[350px] rounded-xl text-sm shadow-sm relative group/bubble",
+                            message.image_url ? (message.body ? "pt-3 px-3 pb-3" : "pt-3 px-3") : "px-3 py-1.5",
                             isCurrentUser
                                 ? cn("bg-primary text-primary-foreground", showTail && "rounded-tr-none")
                                 : cn("bg-muted/50 backdrop-blur-sm border border-white/10 text-foreground", showTail && "rounded-tl-none")
@@ -252,11 +253,11 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                             )}
 
                             {message.image_url && (
-                                <div className="mb-2 relative rounded-lg overflow-hidden max-w-full">
+                                <div className="mb-1 relative rounded-lg overflow-hidden max-w-full">
                                     <img
                                         src={message.image_url}
                                         alt="Imagen adjunta"
-                                        className="max-h-[300px] w-auto object-contain rounded-lg bg-black/20 cursor-zoom-in active:scale-95 transition-transform"
+                                        className="max-h-[300px] w-auto object-contain rounded-lg cursor-zoom-in active:scale-95 transition-transform"
                                         loading="lazy"
                                         onClick={(e) => {
                                             e.stopPropagation()
@@ -281,7 +282,7 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
                                 "float-right ml-2 mt-1.5 align-bottom text-[10px] flex items-center gap-0.5 opacity-70 select-none h-3",
                                 isCurrentUser ? "text-primary-foreground/90" : "text-muted-foreground",
                                 // Fix displacement: ensure it clears image if there's no text or text is short
-                                message.image_url && !message.body && "absolute bottom-2 right-2 m-0 bg-black/40 px-1 rounded text-white"
+                                message.image_url && !message.body && "absolute bottom-2 right-2 m-0 text-white drop-shadow-md"
                             )}>
                                 {formatMessageTime(message.created_at)}
                                 {isCurrentUser && (
