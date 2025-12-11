@@ -24,6 +24,7 @@ const CATEGORIES = [
 ]
 
 const SORT_OPTIONS = [
+    { value: 'most_liked', label: 'Más gustados' },
     { value: 'newest', label: 'Más recientes' },
     { value: 'oldest', label: 'Más antiguos' },
     { value: 'price_asc', label: 'Precio: menor a mayor' },

@@ -36,6 +36,16 @@ export function formatRelativeTime(date: Date | string): string {
         .replace(' años', ' a')
 }
 
+// Verbose version "Hace 2 horas" without "alrededor de"
+export function formatTimeAgo(date: Date | string): string {
+    const d = typeof date === 'string' ? new Date(date) : date
+    const relative = formatDistanceToNow(d, { locale: es, addSuffix: true })
+    return relative
+        .replace('alrededor de ', '')
+        .replace('sobre ', '') // Sometimes "sobre 1 año"
+        .replace('casi ', '')
+}
+
 export function formatMessageTime(date: Date | string): string {
     const d = typeof date === 'string' ? new Date(date) : date
     return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })

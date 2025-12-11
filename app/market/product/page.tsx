@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Image from 'next/image'
@@ -9,9 +9,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ChevronLeft, Share2, ShieldCheck, Heart, MoreVertical, ChevronRight } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { ChevronLeft, Share2, ShieldCheck, Heart, MoreVertical, ChevronRight, Eye } from 'lucide-react'
+import { formatTimeAgo } from '@/lib/format'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { ListingStatusControls } from '@/components/market/listing-status-controls'
 import { FavoriteButton } from '@/components/market/favorite-button'
@@ -30,6 +29,17 @@ function ProductContent() {
     const [user, setUser] = useState<any>(null)
     const [isFavorite, setIsFavorite] = useState(false)
     const supabase = createClient()
+    const viewIncremented = useRef(false)
+
+    useEffect(() => {
+        if (id && !viewIncremented.current) {
+            viewIncremented.current = true
+            // Fire and forget view increment
+            supabase.rpc('increment_listing_views', { listing_id: id }).then(({ error }) => {
+                if (error) console.error('Error incrementing views:', error)
+            })
+        }
+    }, [id, supabase])
 
     useEffect(() => {
         async function fetchData() {
@@ -187,11 +197,20 @@ function ProductContent() {
                                     <div className="text-2xl font-bold mt-1 text-foreground">{price} €</div>
 
                                     {/* Buyer Protection */}
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <ShieldCheck className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm text-muted-foreground">
-                                            <span className="font-bold text-green-700">{(calculateTotalWithFees(listing.price_cents) / 100).toFixed(2)} €</span> con Protección al comprador
-                                        </span>
+                                    {/* Buyer Protection & Views */}
+                                    <div className="flex flex-col gap-1.5 mt-2">
+                                        <div className="flex items-center gap-2">
+                                            <ShieldCheck className="h-4 w-4 text-green-600" />
+                                            <span className="text-sm text-muted-foreground">
+                                                <span className="font-bold text-green-700">{(calculateTotalWithFees(listing.price_cents) / 100).toFixed(2)} €</span> con Protección al comprador
+                                            </span>
+                                        </div>
+                                        {(listing.views_count !== undefined) && (
+                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
+                                                <Eye className="h-3.5 w-3.5" />
+                                                <span>{listing.views_count} visitas</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
@@ -210,7 +229,7 @@ function ProductContent() {
                             {listing.brand && <AttributeRow label="Marca" value={listing.brand} isLink />}
                             {listing.size && <AttributeRow label="Talla" value={listing.size} />}
                             {listing.condition && <AttributeRow label="Estado" value={listing.condition} />}
-                            <AttributeRow label="Subido" value={formatDistanceToNow(new Date(listing.created_at), { locale: es })} />
+                            <AttributeRow label="Subido" value={formatTimeAgo(listing.created_at)} />
 
                         </div>
 

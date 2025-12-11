@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import { mediumHaptic } from '@/lib/haptics'
 
 interface PostActionsProps {
     postId: string
@@ -87,6 +88,8 @@ export function PostActions({
             toast.error('Debes iniciar sesión')
             return
         }
+
+        mediumHaptic()
 
         const newReacted = !userReacted
         setUserReacted(newReacted)

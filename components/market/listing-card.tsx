@@ -9,7 +9,7 @@ import { formatRelativeTime } from '@/lib/format'
 import { EditButton } from '@/components/ui/edit-button'
 import { WishlistButton } from './wishlist-button'
 import { cn } from '@/lib/utils'
-import { Package, Heart, MoreVertical, ShieldCheck } from 'lucide-react'
+import { Package, Heart, MoreVertical, ShieldCheck, FlameKindling } from 'lucide-react'
 import { useState } from 'react'
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
 import { useRouter } from 'next/navigation'
@@ -37,12 +37,13 @@ interface Listing {
         avatar_url?: string | null
     } | null
     favorites_count?: number
+    views_count?: number
     brand?: string
     size?: string
     condition?: string
 }
 
-export function ListingCard({ listing, currentUserId, isFavorited, priority = false }: { listing: Listing; currentUserId?: string; isFavorited?: boolean; priority?: boolean }) {
+export function ListingCard({ listing, currentUserId, isFavorited, priority = false, averageLikes = 2 }: { listing: Listing; currentUserId?: string; isFavorited?: boolean; priority?: boolean; averageLikes?: number }) {
     // Handle photos being null or empty
     const photos = listing.photos as any[] | null
     const cover = photos?.[0]?.thumb_url || photos?.[0]?.url
@@ -138,12 +139,21 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                     </div>
                 )}
 
-                {/* Tuyo Badge */}
-                {isOwner && (
-                    <Badge variant="secondary" className="absolute bottom-2 left-2 z-10 text-[10px] font-medium h-5 px-1.5 bg-black/50 text-white border-none backdrop-blur-sm pointer-events-none">
-                        Tuyo
-                    </Badge>
-                )}
+                <div className="absolute bottom-2 left-2 z-10 flex flex-col gap-1 items-start">
+                    {/* Hot Badge */}
+                    {(listing.favorites_count || 0) > Math.max(averageLikes * 1.5, 2) && (
+                        <Badge className="text-[10px] font-bold h-5 px-1.5 bg-orange-500 text-white border-none shadow-sm flex items-center gap-1 pointer-events-none">
+                            <FlameKindling className="h-3 w-3 fill-white" />
+                            Popular
+                        </Badge>
+                    )}
+                    {/* Tuyo Badge */}
+                    {isOwner && (
+                        <Badge variant="secondary" className="text-[10px] font-medium h-5 px-1.5 bg-black/50 text-white border-none backdrop-blur-sm pointer-events-none">
+                            Tuyo
+                        </Badge>
+                    )}
+                </div>
             </div>
 
             {/* Info Section (Below Image) */}

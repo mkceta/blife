@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { mediumHaptic } from '@/lib/haptics'
 
 interface WishlistButtonProps {
     listingId: string
@@ -34,6 +35,8 @@ export function WishlistButton({
             e.preventDefault()
             e.stopPropagation()
         }
+
+        mediumHaptic()
 
         if (!currentUserId) {
             toast.error('Inicia sesión para añadir a favoritos')

@@ -20,11 +20,16 @@ function MarketFeedContent() {
     const [userFavorites, setUserFavorites] = useState<Set<string>>(new Set())
     const [loading, setLoading] = useState(true)
     const [currentUser, setCurrentUser] = useState<any>(null)
+    const [averageLikes, setAverageLikes] = useState(0)
     const supabase = createClient()
 
     const fetchData = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUser(user)
+
+        // Fetch average likes stats for 'Hot' badges
+        const { data: avg } = await supabase.rpc('get_average_listing_favorites')
+        if (avg) setAverageLikes(avg)
 
         let marketQuery = supabase
             .from('listings')
@@ -64,6 +69,9 @@ function MarketFeedContent() {
                 break
             case 'price_desc':
                 marketQuery = marketQuery.order('price_cents', { ascending: false })
+                break
+            case 'most_liked':
+                marketQuery = marketQuery.order('favorites_count', { ascending: false })
                 break
             default:
                 // Default 'Discovery' Algorithm:
@@ -145,6 +153,7 @@ function MarketFeedContent() {
                                     currentUserId={currentUser?.id}
                                     isFavorited={userFavorites.has(listing.id)}
                                     priority={index < 4}
+                                    averageLikes={averageLikes}
                                 />
                             </motion.div>
                         ))}

@@ -99,8 +99,8 @@ export function ChatBubble({ message, isCurrentUser, showTail = true, onReply, o
     }
 
     const onDragEnd = (event: any, info: PanInfo) => {
-        // Increased threshold to require a longer swipe to reply
-        if (info.offset.x > 122 && onReply) {
+        // Increased threshold to require a longer swipe to reply (requested > 200)
+        if (info.offset.x > 200 && onReply) {
             mediumHaptic()
             onReply(message)
         }

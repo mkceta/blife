@@ -33,7 +33,7 @@ export default function NewListingSelectionPage() {
                     </Card>
                 </Link>
 
-                <Link href="/flats/new" className="group" onClick={() => mediumHaptic()}>
+                <Link href="/market/new/flat" className="group" onClick={() => mediumHaptic()}>
                     <Card className="border-2 border-border hover:border-primary transition-colors cursor-pointer group-active:scale-[0.98] transition-transform">
                         <CardContent className="flex items-center p-6 gap-4">
                             <div className="bg-blue-500/10 p-4 rounded-full group-hover:bg-blue-500/20 transition-colors">
