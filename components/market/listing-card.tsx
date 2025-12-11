@@ -143,7 +143,7 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                     {/* Hot Badge */}
                     {(listing.favorites_count || 0) > Math.max(averageLikes * 1.5, 2) && (
                         <Badge className="text-[10px] font-bold h-5 px-1.5 bg-orange-500 text-white border-none shadow-sm flex items-center gap-1 pointer-events-none">
-                            <FlameKindling className="h-3 w-3 fill-white" />
+                            <FlameKindling className="h-3 w-3" />
                             Popular
                         </Badge>
                     )}

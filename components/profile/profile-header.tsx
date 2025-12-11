@@ -107,7 +107,7 @@ export function ProfileHeader({ profile, currentUser, stats }: ProfileHeaderProp
     }
 
     return (
-        <div className="max-w-5xl mx-auto pt-[calc(env(safe-area-inset-top)+2rem)] pb-8 px-4 bg-background">
+        <div className="max-w-5xl mx-auto pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-8 px-4 bg-background">
             <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-start">
 
                 {/* Left Side: Avatar */}
@@ -130,7 +130,7 @@ export function ProfileHeader({ profile, currentUser, stats }: ProfileHeaderProp
                     {/* Header Row: Name, Rating, Button */}
                     <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
                         <div className="text-center md:text-left space-y-1">
-                            <h1 className="text-3xl font-bold flex items-center justify-center md:justify-start gap-2 text-foreground">
+                            <h1 className="text-2xl md:text-3xl font-bold flex items-center justify-center md:justify-start gap-2 text-foreground break-all md:break-normal">
                                 @{profile.alias_inst}
                             </h1>
 

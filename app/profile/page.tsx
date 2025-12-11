@@ -95,14 +95,14 @@ export default function ProfilePage() {
     return (
         <div className="pb-20 bg-background min-h-screen text-foreground">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md pt-safe border-b border-border shadow-sm">
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md pt-safe shadow-sm">
                 <div className="flex items-center p-4">
                     <h1 className="text-xl font-bold">Perfil</h1>
                 </div>
             </div>
 
             {/* User Card */}
-            <div className="p-4">
+            <div className="px-4 pb-4 pt-0">
                 <Link href={`/user/${profile.alias_inst}`} className="flex items-center gap-4 p-4 border border-border rounded-xl bg-card hover:bg-muted/50 transition-colors">
                     <Avatar className="h-16 w-16 border border-border/50">
                         <AvatarImage src={profile.avatar_url} />

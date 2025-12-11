@@ -42,7 +42,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Standard App Header Style */}
-            <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40">
+            <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md shadow-sm">
                 <div className="pt-[calc(env(safe-area-inset-top)+0.5rem)] px-4 pb-3 flex flex-col md:flex-row md:items-center gap-4 justify-between max-w-5xl mx-auto w-full">
                     <div className="flex items-center justify-between w-full md:w-auto">
                         <h1 className="text-xl font-bold">Comunidad UDC</h1>

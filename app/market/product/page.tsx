@@ -205,12 +205,10 @@ function ProductContent() {
                                                 <span className="font-bold text-green-700">{(calculateTotalWithFees(listing.price_cents) / 100).toFixed(2)} €</span> con Protección al comprador
                                             </span>
                                         </div>
-                                        {(listing.views_count !== undefined) && (
-                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
-                                                <Eye className="h-3.5 w-3.5" />
-                                                <span>{listing.views_count} visitas</span>
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
+                                            <Eye className="h-4 w-4 stroke-[2.5px]" />
+                                            <span>{listing.views_count} visitas</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
