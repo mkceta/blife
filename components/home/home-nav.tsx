@@ -20,7 +20,7 @@ export function HomeNav() {
     ]
 
     return (
-        <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 w-full bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="w-full bg-background/80 backdrop-blur-xl border-b border-border/50">
             <div className="flex w-full h-12 bg-transparent p-0 rounded-none shadow-none space-x-0">
                 {tabs.map((tab) => (
                     <Link
