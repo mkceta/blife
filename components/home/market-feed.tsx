@@ -175,12 +175,12 @@ export function MarketSearchBar() {
                 <div className="flex gap-2 items-center">
                     <form action="/home/market" method="GET" className="flex-1 relative">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 name="q"
                                 defaultValue={searchParams.get('q') || ''}
                                 placeholder="Busca artículos o miembros"
-                                className="h-11 w-full bg-muted/30 pl-10 pr-10 border-none focus-visible:ring-0 rounded-lg text-base"
+                                className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
                             />
                         </div>
                     </form>

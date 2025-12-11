@@ -104,7 +104,7 @@ export function DesktopHeader() {
                             name="q"
                             defaultValue={searchParams.get('q') || ''}
                             placeholder={isFlats ? "Buscar pisos..." : "Buscar artículos"}
-                            className="w-full bg-muted/40 border-transparent focus:border-input pl-10 pr-4 rounded-md"
+                            className="w-full bg-muted/50 border-border/50 focus-visible:ring-1 pl-10 pr-4 rounded-full text-sm h-9"
                         />
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </form>
