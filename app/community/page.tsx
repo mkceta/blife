@@ -81,9 +81,11 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                 </Suspense>
             </div>
 
-            <Link href="/community/new">
+            <Link
+                href="/community/new"
+            >
                 <Button
-                    className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 hover:shadow-primary/25"
+                    className="fixed bottom-[8rem] right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 hover:shadow-primary/25 md:bottom-10"
                     size="icon"
                 >
                     <Plus className="h-7 w-7" strokeWidth={3} />
