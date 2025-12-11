@@ -47,10 +47,6 @@ export default function NewListingSelectionPage() {
                     </Card>
                 </Link>
             </div>
-
-            <div className="p-4 text-center text-xs text-muted-foreground">
-                Elige la categoría correcta para llegar a más gente.
-            </div>
         </div>
     )
 }

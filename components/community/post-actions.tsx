@@ -41,39 +41,44 @@ export function PostActions({
 
     useEffect(() => {
         if (defaultShowComments && !hasLoadedComments) {
-            handleToggleComments()
+            loadComments()
         }
     }, [defaultShowComments])
 
-    const handleToggleComments = async () => {
+    const loadComments = async () => {
+        if (hasLoadedComments) return
+
+        setIsLoadingComments(true)
+        try {
+            const { data: commentsData, error } = await supabase
+                .from('comments')
+                .select(`
+                    id,
+                    text,
+                    created_at,
+                    user_id,
+                    post_id,
+                    user:users!comments_user_id_fkey(id, alias_inst, avatar_url)
+                `)
+                .eq('post_id', postId)
+                .order('created_at', { ascending: true })
+
+            if (error) throw error
+            setComments(commentsData as any)
+            setHasLoadedComments(true)
+        } catch (error) {
+            console.error('Error fetching comments:', error)
+            toast.error('Error al cargar comentarios')
+        } finally {
+            setIsLoadingComments(false)
+        }
+    }
+
+    const handleToggleComments = () => {
         const newShowComments = !showComments
         setShowComments(newShowComments)
-
-        if (newShowComments && !hasLoadedComments) {
-            setIsLoadingComments(true)
-            try {
-                const { data: commentsData, error } = await supabase
-                    .from('comments')
-                    .select(`
-                        id,
-                        text,
-                        created_at,
-                        user_id,
-                        post_id,
-                        user:users!comments_user_id_fkey(id, alias_inst, avatar_url)
-                    `)
-                    .eq('post_id', postId)
-                    .order('created_at', { ascending: true })
-
-                if (error) throw error
-                setComments(commentsData as any)
-                setHasLoadedComments(true)
-            } catch (error) {
-                console.error('Error fetching comments:', error)
-                toast.error('Error al cargar comentarios')
-            } finally {
-                setIsLoadingComments(false)
-            }
+        if (newShowComments) {
+            loadComments()
         }
     }
 

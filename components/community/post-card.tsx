@@ -109,9 +109,9 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false }
                 </Link>
             ) : (
                 <>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{post.text}</p>
+                    <p className="text-lg md:text-xl font-medium whitespace-pre-wrap leading-relaxed text-foreground/90">{post.text}</p>
                     {post.category && post.category[0] && (
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex gap-2 mt-3">
                             {post.category.map((cat: string) => (
                                 <span key={cat} className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">
                                     {cat}
