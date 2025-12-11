@@ -453,7 +453,41 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                 </DialogContent>
             </Dialog>
 
-            <StripeConnectModal open={showConnectModal} onOpenChange={setShowConnectModal} />
+            <StripeConnectModal
+                open={showConnectModal}
+                onOpenChange={setShowConnectModal}
+                onExit={async () => {
+                    setShowConnectModal(false)
+                    setIsLoading(true)
+                    // Poll for verification for up to 10 seconds
+                    let verified = false
+                    for (let i = 0; i < 10; i++) {
+                        // Check DB status
+                        const { data: { user } } = await supabase.auth.getUser()
+                        if (!user) break
+                        const { data: acc } = await supabase
+                            .from('stripe_accounts')
+                            .select('charges_enabled')
+                            .eq('user_id', user.id)
+                            .single()
+
+                        if (acc?.charges_enabled) {
+                            verified = true
+                            break
+                        }
+                        await new Promise(r => setTimeout(r, 1000))
+                    }
+                    setIsLoading(false)
+
+                    if (verified) {
+                        toast.success('Cuenta verificada correctamente')
+                        // Auto-submit form
+                        form.handleSubmit(onSubmit)()
+                    } else {
+                        toast.error('No se ha podido verificar la cuenta. Inténtalo de nuevo en unos segundos.')
+                    }
+                }}
+            />
         </Form>
     )
 }

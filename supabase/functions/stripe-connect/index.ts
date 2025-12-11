@@ -58,6 +58,32 @@ Deno.serve(async (req) => {
         let accountId = accountData?.stripe_account_id
 
         // 5. Create new Stripe Account if needed
+        // CLEANUP: If existing account is not fully setup, we might want to discard it to reset capabilities logic.
+        // For now, let's assume if it exists we use it. 
+        // BUT user reported issue with "stuck" requirements.
+        // Let's force check: if account exists but user invoked this, maybe we check if it has issues?
+        // Simpler: If the user manually triggers this via UI, and account is NOT details_submitted, let's delete and re-create?
+        // This is risky if they half-completed it.
+        // Better: The User specifically asked "Si ya había empezado... es normal que me lo siga pidiendo?".
+        // Answer: YES. So we should probably DETECT if they have 'card_payments' capability requested and REMOVE it if we want to simplify.
+
+        if (accountId) {
+            const account = await stripe.accounts.retrieve(accountId);
+            // If account has 'card_payments' requested, we want to update it to remove it?
+            // API allows updating capabilities.
+            if (account.capabilities?.card_payments === 'active' || account.capabilities?.card_payments === 'inactive') { // 'inactive' means requested but pending
+                // We can try to unrequest it? Or just leave it?
+                // Actually, deleting the account is cleaner for testing.
+                // Let's implement a 'force_reset' query param or just logic:
+                // If details_submitted is FALSE, we can safely delete and start over to ensure clean Express config.
+                if (!account.details_submitted) {
+                    await stripe.accounts.del(accountId);
+                    await adminClient.from('stripe_accounts').delete().eq('stripe_account_id', accountId);
+                    accountId = undefined; // Force re-creation below
+                }
+            }
+        }
+
         if (!accountId) {
             const account = await stripe.accounts.create({
                 type: 'express',

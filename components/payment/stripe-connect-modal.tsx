@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { ConnectComponentsProvider, ConnectAccountOnboarding } from "@stripe/react-connect-js"
 import { loadConnectAndInitialize } from "@stripe/connect-js"
 import { createClient } from '@/lib/supabase'
@@ -10,9 +11,10 @@ import { Loader2 } from 'lucide-react'
 interface StripeConnectModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
+    onExit?: () => void
 }
 
-export function StripeConnectModal({ open, onOpenChange }: StripeConnectModalProps) {
+export function StripeConnectModal({ open, onOpenChange, onExit }: StripeConnectModalProps) {
     const supabase = createClient()
     const [loading, setLoading] = useState(true)
 
@@ -49,11 +51,18 @@ export function StripeConnectModal({ open, onOpenChange }: StripeConnectModalPro
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden bg-background border-zinc-800">
+            <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden bg-background border-zinc-800" aria-describedby={undefined}>
+                <VisuallyHidden>
+                    <DialogTitle>Configuración de Pagos Stripe</DialogTitle>
+                </VisuallyHidden>
+
                 <div className="w-full h-full overflow-y-auto custom-scrollbar relative">
                     <ConnectComponentsProvider connectInstance={connectInstance}>
                         <ConnectAccountOnboarding
-                            onExit={() => onOpenChange(false)}
+                            onExit={() => {
+                                onOpenChange(false)
+                                if (onExit) onExit()
+                            }}
                         />
                     </ConnectComponentsProvider>
 
