@@ -1,7 +1,7 @@
 'use client'
 
 import { Heart, MessageCircle, Trash2 } from 'lucide-react'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -17,6 +17,7 @@ interface PostActionsProps {
     initialCommentsCount: number
     hasUserReacted: boolean
     currentUserId?: string
+    defaultShowComments?: boolean
 }
 
 export function PostActions({
@@ -24,10 +25,11 @@ export function PostActions({
     initialReactionsCount,
     initialCommentsCount,
     hasUserReacted,
-    currentUserId
+    currentUserId,
+    defaultShowComments = false
 }: PostActionsProps) {
     const [isPending, startTransition] = useTransition()
-    const [showComments, setShowComments] = useState(false)
+    const [showComments, setShowComments] = useState(defaultShowComments)
     const [commentText, setCommentText] = useState('')
     const [reactionsCount, setReactionsCount] = useState(initialReactionsCount)
     const [commentsCount, setCommentsCount] = useState(initialCommentsCount)
@@ -36,6 +38,12 @@ export function PostActions({
     const [isLoadingComments, setIsLoadingComments] = useState(false)
     const [hasLoadedComments, setHasLoadedComments] = useState(false)
     const supabase = createClient()
+
+    useEffect(() => {
+        if (defaultShowComments && !hasLoadedComments) {
+            handleToggleComments()
+        }
+    }, [defaultShowComments])
 
     const handleToggleComments = async () => {
         const newShowComments = !showComments

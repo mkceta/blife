@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, FlameKindling, MessageSquare, Heart, User, Search, PlusCircle } from 'lucide-react'
+import { Home, FlameKindling, MessageCircle, Heart, User, Search, PlusCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useEffect, useState } from 'react'
@@ -43,7 +43,7 @@ export function BottomNav() {
         { href: '/home', icon: Home, label: 'Inicio', activeIcon: Home },
         { href: '/search', icon: Search, label: 'Buscar', activeIcon: Search }, // Replaced community with Search for Vinted feel? or keep community? Let's stick to user request about "Vinted structure". Vinted has: Home, Search, Sell, Inbox, Profile.
         { href: '/market/new', icon: PlusCircle, label: 'Vender', isAction: true }, // "Vender" is central in Vinted
-        { href: '/messages', icon: MessageSquare, label: 'Buzón', hasNotifications: true },
+        { href: '/messages', icon: MessageCircle, label: 'Buzón', hasNotifications: true },
         { href: '/profile', icon: User, label: 'Perfil', isProfile: true },
     ]
 
@@ -60,7 +60,7 @@ export function BottomNav() {
         { href: '/home/market', icon: Home, label: 'Inicio' },
         { href: '/community', icon: FlameKindling, label: 'Comunidad' },
         { href: '/market/new', icon: PlusCircle, label: 'Vender', isMiddle: false }, // Changed isMiddle to false to remove floating effect if we want strict Vinted style, or keep it if user likes the emphasis. Vinted has it inline.
-        { href: '/messages', icon: MessageSquare, label: 'Mensajes', hasNotifications: true },
+        { href: '/messages', icon: MessageCircle, label: 'Mensajes', hasNotifications: true },
         { href: '/profile', icon: User, label: 'Perfil', isProfile: true },
     ]
 
