@@ -16,7 +16,7 @@ export default function NewProductPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto overscroll-y-contain">
-                <div className="container max-w-md mx-auto p-4 pt-6">
+                <div className="container max-w-md mx-auto p-4 pt-6 pb-72">
                     <ListingForm />
                 </div>
             </div>
