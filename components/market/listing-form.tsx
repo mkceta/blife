@@ -11,13 +11,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Loader2, ChevronRight, Camera } from 'lucide-react'
+import { Loader2, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { uploadListingImages } from '@/lib/upload'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
-import { cn } from '@/lib/utils'
+import { StripeConnectModal } from '@/components/payment/stripe-connect-modal'
 
 const CATEGORIES = ['Electronica', 'LibrosApuntes', 'Material', 'Ropa', 'Muebles', 'Transporte', 'Servicios', 'Ocio', 'Otros']
 
@@ -41,8 +41,10 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [files, setFiles] = useState<File[]>([])
     const [existingPhotos, setExistingPhotos] = useState<any[]>(initialData?.photos || [])
-    const [showStripeDialog, setShowStripeDialog] = useState(false)
-    const [isConnectingStripe, setIsConnectingStripe] = useState(false)
+
+    // Stripe States
+    const [showStripeInfoDialog, setShowStripeInfoDialog] = useState(false)
+    const [showConnectModal, setShowConnectModal] = useState(false)
 
     const router = useRouter()
     const supabase = createClient()
@@ -76,37 +78,6 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
         setExistingPhotos(newExisting)
     }
 
-    const handleConnectStripe = async () => {
-        setIsConnectingStripe(true)
-        try {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) {
-                toast.error('Debes iniciar sesión')
-                return
-            }
-
-            const { data, error } = await supabase.functions.invoke('stripe-connect', {
-                headers: {
-                    Authorization: `Bearer ${session.access_token}`
-                }
-            })
-
-            if (error) throw error
-
-            if (data?.error) {
-                throw new Error(data.error)
-            }
-
-            if (data?.url) {
-                window.location.href = data.url
-            }
-        } catch (error: any) {
-            console.error('Stripe connect error:', error)
-            toast.error(`Error: ${error.message || 'No se pudo conectar con Stripe'}`)
-            setIsConnectingStripe(false)
-        }
-    }
-
     async function onSubmit(values: z.infer<typeof formSchema>) {
         if (files.length === 0 && existingPhotos.length === 0) {
             toast.error('Añade al menos una foto')
@@ -134,7 +105,7 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                     .single()
 
                 if (!stripeAccount?.charges_enabled) {
-                    setShowStripeDialog(true)
+                    setShowStripeInfoDialog(true)
                     setIsLoading(false)
                     return
                 }
@@ -175,6 +146,7 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                         brand: values.brand,
                         size: values.size,
                         condition: values.condition,
+                        status: 'active',
                     })
                     .eq('id', targetListingId)
 
@@ -451,7 +423,7 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                 />
             </form>
 
-            <Dialog open={showStripeDialog} onOpenChange={setShowStripeDialog}>
+            <Dialog open={showStripeInfoDialog} onOpenChange={setShowStripeInfoDialog}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Recibir pagos</DialogTitle>
@@ -465,22 +437,23 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                         </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                        <Button onClick={handleConnectStripe} disabled={isConnectingStripe} className="w-full">
-                            {isConnectingStripe ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Conectando...
-                                </>
-                            ) : (
-                                'Configurar cuenta bancaria'
-                            )}
+                        <Button
+                            onClick={() => {
+                                setShowStripeInfoDialog(false)
+                                setShowConnectModal(true)
+                            }}
+                            className="w-full"
+                        >
+                            Configurar cuenta bancaria
                         </Button>
-                        <Button variant="ghost" onClick={() => setShowStripeDialog(false)} className="w-full">
+                        <Button variant="ghost" onClick={() => setShowStripeInfoDialog(false)} className="w-full">
                             Cancelar
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <StripeConnectModal open={showConnectModal} onOpenChange={setShowConnectModal} />
         </Form>
     )
 }

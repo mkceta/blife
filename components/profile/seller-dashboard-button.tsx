@@ -5,14 +5,16 @@ import { Wallet, Loader2, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
 
+import { StripeConnectModal } from '@/components/payment/stripe-connect-modal'
+
 export function SellerDashboardButton({ userId }: { userId: string }) {
-    const [loading, setLoading] = useState(false)
     const [status, setStatus] = useState<'none' | 'pending' | 'active'>('none')
+    const [openModal, setOpenModal] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
         checkStatus()
-    }, [])
+    }, [openModal]) // Re-check status when modal closes
 
     const checkStatus = async () => {
         try {
@@ -31,52 +33,24 @@ export function SellerDashboardButton({ userId }: { userId: string }) {
         }
     }
 
-    const handleConnect = async () => {
-        setLoading(true)
-        try {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) {
-                toast.error('Debes iniciar sesión')
-                return
-            }
-
-            const { data, error } = await supabase.functions.invoke('stripe-connect', {
-                headers: {
-                    Authorization: `Bearer ${session.access_token}`
-                }
-            })
-
-            if (error) throw error
-
-            // Check for functional error returned as 200 OK
-            if (data?.error) {
-                throw new Error(data.error)
-            }
-
-            if (data?.url) {
-                window.location.href = data.url
-            }
-        } catch (error: any) {
-            console.error('Stripe connect error:', error)
-            toast.error(`Error: ${error.message || 'No se pudo conectar con Stripe'}`)
-        } finally {
-            setLoading(false)
-        }
-    }
 
     return (
-        <div
-            onClick={handleConnect}
-            className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg cursor-pointer"
-        >
-            <Wallet className="h-6 w-6" strokeWidth={1.5} />
-            <div className="flex-1 flex flex-col">
-                <span className="font-medium">Pagos y Cobros</span>
-                {status === 'active' && <span className="text-xs text-green-600 font-medium flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Cuenta activa para vender</span>}
-                {status === 'pending' && <span className="text-xs text-yellow-600 font-medium">Configuración incompleta</span>}
-                {status === 'none' && <span className="text-xs text-muted-foreground">Configura tu cuenta para vender</span>}
+        <>
+            <div
+                onClick={() => setOpenModal(true)}
+                className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg cursor-pointer"
+            >
+                <Wallet className="h-6 w-6" strokeWidth={1.5} />
+                <div className="flex-1 flex flex-col">
+                    <span className="font-medium">Pagos y Cobros</span>
+                    {status === 'active' && <span className="text-xs text-green-600 font-medium flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Cuenta activa para vender</span>}
+                    {status === 'pending' && <span className="text-xs text-yellow-600 font-medium">Configuración incompleta</span>}
+                    {status === 'none' && <span className="text-xs text-muted-foreground">Configura tu cuenta para vender</span>}
+                </div>
             </div>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
-        </div>
+
+            <StripeConnectModal open={openModal} onOpenChange={setOpenModal} />
+        </>
     )
 }
+

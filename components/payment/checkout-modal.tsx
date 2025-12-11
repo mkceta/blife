@@ -103,7 +103,21 @@ export function CheckoutModal({
                 }
             })
 
-            if (error) throw error
+            // Invoke returns generic error for 400/500, but let's check explicitly for data.error if it returns 200 with error body
+            if (data?.error) {
+                throw new Error(data.error)
+            }
+            // Also check 'error' from invoke
+            if (error) {
+                // Try to parse the error message if it's a FunctionsHttpError
+                try {
+                    const body = await error.context.json()
+                    if (body.error) throw new Error(body.error)
+                } catch {
+                    // ignore JSON parse error
+                }
+                throw error
+            }
             if (data?.clientSecret) {
                 setClientSecret(data.clientSecret)
             }

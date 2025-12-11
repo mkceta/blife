@@ -1,6 +1,6 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import Stripe from 'https://esm.sh/stripe@13.10.0?target=deno'
+
+import { createClient } from "npm:@supabase/supabase-js@2"
+import Stripe from "npm:stripe@^14.21.0"
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
     apiVersion: '2023-10-16',
@@ -9,7 +9,7 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider()
 
-serve(async (req) => {
+Deno.serve(async (req) => {
     const signature = req.headers.get('Stripe-Signature')
     const body = await req.text()
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
@@ -23,7 +23,8 @@ serve(async (req) => {
             undefined,
             cryptoProvider
         )
-    } catch (err) {
+    } catch (err: any) {
+        console.error(`Webhook signature verification failed: ${err.message}`)
         return new Response(`Webhook Error: ${err.message}`, { status: 400 })
     }
 
@@ -33,10 +34,11 @@ serve(async (req) => {
     )
 
     try {
+        console.log(`Received event: ${event.type}`)
+
         switch (event.type) {
             case 'account.updated': {
                 const account = event.data.object
-                // Update our DB with the new status
                 await supabase
                     .from('stripe_accounts')
                     .update({
@@ -48,7 +50,76 @@ serve(async (req) => {
                 break
             }
 
-            // Add PaymentIntent logic later
+            case 'payment_intent.succeeded': {
+                const paymentIntent = event.data.object
+
+                // Logic for "Separate Charges and Transfers"
+                // 1. Get Listing & Payout Info from metadata
+                const listingId = paymentIntent.metadata?.listingId
+                const sellerId = paymentIntent.metadata?.sellerId
+
+                if (!listingId || !sellerId) {
+                    console.log('PaymentIntent missing metadata for transfer logic.')
+                    break
+                }
+
+                // 2. Fetch Listing Price to calculate Payout
+                const { data: listing } = await supabase
+                    .from('listings')
+                    .select('price_cents, user_id')
+                    .eq('id', listingId)
+                    .single()
+
+                if (!listing) {
+                    console.error('Listing not found for transfer.')
+                    break
+                }
+
+                // 3. Get Seller Stripe Account
+                const { data: sellerAccount } = await supabase
+                    .from('stripe_accounts')
+                    .select('stripe_account_id')
+                    .eq('user_id', sellerId)
+                    .single()
+
+                if (!sellerAccount?.stripe_account_id) {
+                    console.error('Seller Stripe account not found.')
+                    break
+                }
+
+                // 4. Create Transfer
+                // Seller receives exactly the listing price.
+                // Platform keeps the rest (Customer Price - Seller Price).
+                // Stripe fees are deducted from Platform balance automatically upon Charge.
+                // We transfer the exact listing amount to the seller.
+
+                const transferAmount = listing.price_cents
+
+                console.log(`Creating transfer of ${transferAmount} cents to ${sellerAccount.stripe_account_id}`)
+
+                const transfer = await stripe.transfers.create({
+                    amount: transferAmount,
+                    currency: 'eur',
+                    destination: sellerAccount.stripe_account_id,
+                    transfer_group: paymentIntent.transfer_group, // Link to the original charge
+                    metadata: {
+                        listingId: listingId,
+                        originalPaymentIntent: paymentIntent.id
+                    }
+                })
+
+                console.log(`Transfer created: ${transfer.id}`)
+
+                // Optional: Mark listing as sold? handled by another event? or here?
+                // Let's mark it sold here for robustness
+                await supabase
+                    .from('listings')
+                    .update({ status: 'sold' })
+                    .eq('id', listingId)
+
+                break
+            }
+
             default:
                 console.log(`Unhandled event type ${event.type}`)
         }
@@ -56,7 +127,9 @@ serve(async (req) => {
         return new Response(JSON.stringify({ received: true }), {
             headers: { 'Content-Type': 'application/json' },
         })
-    } catch (err) {
+    } catch (err: any) {
+        console.error(`Webhook processing error: ${err.message}`)
         return new Response(JSON.stringify({ error: err.message }), { status: 400 })
     }
 })
+

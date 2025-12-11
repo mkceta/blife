@@ -1,13 +1,13 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import Stripe from 'https://esm.sh/stripe@13.10.0?target=deno'
+
+import { createClient } from "npm:@supabase/supabase-js@2"
+import Stripe from "npm:stripe@^14.21.0"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
     // Handle CORS
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
@@ -65,9 +65,14 @@ serve(async (req) => {
                 email: user.email,
                 metadata: { user_id: user.id },
                 capabilities: {
-                    card_payments: { requested: true },
                     transfers: { requested: true },
                 },
+                business_type: 'individual',
+                business_profile: {
+                    mcc: '5734', // Computer Software Stores (Generic digital/marketplace goods) to avoid 'industry' prompt
+                    url: 'https://blife.app',
+                    product_description: 'Venta de artículos de segunda mano entre particulares en Blife.'
+                }
             })
             accountId = account.id
 
@@ -76,26 +81,36 @@ serve(async (req) => {
                 .insert({ user_id: user.id, stripe_account_id: accountId })
 
             if (insertError) throw new Error(`DB Insert Error: ${insertError.message}`)
-        } else if (accountData?.details_submitted) {
-            // Already onboarded? Generate login link
-            const loginLink = await stripe.accounts.createLoginLink(accountId)
-            return new Response(
-                JSON.stringify({ url: loginLink.url }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
         }
 
-        // 6. Generate Onboarding Link
-        const origin = req.headers.get('origin') || 'http://localhost:3000'
-        const accountLink = await stripe.accountLinks.create({
+
+        // 6. Generate Account Session for Embedded Onboarding
+        const accountSession = await stripe.accountSessions.create({
             account: accountId,
-            refresh_url: `${origin}/profile?stripe=refresh`,
-            return_url: `${origin}/profile?stripe=return`,
-            type: 'account_onboarding',
+            components: {
+                payment_details: {
+                    enabled: true,
+                    features: {
+                        refund_management: true,
+                        dispute_management: true,
+                        capture_payments: true,
+                    }
+                },
+                account_onboarding: { enabled: true },
+                payments: {
+                    enabled: true,
+                    features: {
+                        refund_management: true,
+                        dispute_management: true,
+                        capture_payments: true,
+                    }
+                },
+                payouts: { enabled: true }
+            },
         })
 
         return new Response(
-            JSON.stringify({ url: accountLink.url }),
+            JSON.stringify({ clientSecret: accountSession.client_secret }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
