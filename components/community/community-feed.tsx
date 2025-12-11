@@ -12,6 +12,8 @@ import { Loader2 } from 'lucide-react'
 
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useCallback } from 'react'
+import { CommunitySkeleton } from '@/components/community/community-skeleton'
+import { motion } from 'framer-motion'
 
 interface CommunityFeedProps {
     category?: string
@@ -83,19 +85,25 @@ export function CommunityFeed({ category = 'General', searchQuery = '' }: Commun
     }
 
     if (loading) {
-        return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+        return <div className="pt-4"><CommunitySkeleton /></div>
     }
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
             <div className="space-y-4 min-h-[calc(100vh-10rem)]">
-                {posts.map((post) => (
-                    <PostCard
+                {posts.map((post, index) => (
+                    <motion.div
                         key={post.id}
-                        post={post}
-                        currentUser={currentUser}
-                        hasUserReacted={userReactions.has(post.id)}
-                    />
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
+                    >
+                        <PostCard
+                            post={post}
+                            currentUser={currentUser}
+                            hasUserReacted={userReactions.has(post.id)}
+                        />
+                    </motion.div>
                 ))}
 
                 {posts.length === 0 && (

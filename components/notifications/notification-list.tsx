@@ -8,6 +8,8 @@ import { toast } from 'sonner'
 import { NotificationItem } from '@/components/notifications/notification-item'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { cn } from '@/lib/utils'
+import { MessagesSkeleton } from '@/components/messages/messages-skeleton'
+import { motion } from 'framer-motion'
 
 export function NotificationList() {
     const [allNotifications, setAllNotifications] = useState<any[]>([])
@@ -67,7 +69,8 @@ export function NotificationList() {
     const unreadCount = unreadNotifications.length
     const displayedNotifications = activeFilter === 'all' ? allNotifications : unreadNotifications
 
-    if (loading) return <div className="h-full flex items-center justify-center p-8 text-muted-foreground">Cargando notificaciones...</div>
+    // We can reuse MessagesSkeleton as the structure is very similar (list of items with avatars/icons)
+    if (loading) return <MessagesSkeleton />
 
     return (
         <div className="flex flex-col h-full bg-background">
@@ -121,11 +124,17 @@ export function NotificationList() {
                     <div className="h-full overflow-y-auto px-0 scrollbar-thin pb-20 md:pb-0">
                         {displayedNotifications.length > 0 ? (
                             <div className="divide-y divide-border/40">
-                                {displayedNotifications.map((notification) => (
-                                    <NotificationItem
+                                {displayedNotifications.map((notification, index) => (
+                                    <motion.div
                                         key={notification.id}
-                                        notification={notification}
-                                    />
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.5) }}
+                                    >
+                                        <NotificationItem
+                                            notification={notification}
+                                        />
+                                    </motion.div>
                                 ))}
                             </div>
                         ) : (

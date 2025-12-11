@@ -5,12 +5,14 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ListingCard } from '@/components/market/listing-card'
 import { MarketFilters } from '@/components/market/market-filters'
+import { FeedSkeleton } from '@/components/home/feed-skeleton'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
 import Link from 'next/link'
 
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useCallback } from 'react'
+import { motion } from 'framer-motion'
 
 function MarketFeedContent() {
     const searchParams = useSearchParams()
@@ -125,19 +127,26 @@ function MarketFeedContent() {
         <PullToRefresh onRefresh={handleRefresh}>
             <div className="min-h-[calc(100vh-10rem)] bg-transparent">
                 {loading ? (
-                    <div className="text-center py-20 text-muted-foreground">Cargando anuncios...</div>
+                    <div className="px-4 py-6">
+                        <FeedSkeleton />
+                    </div>
                 ) : (
                     // Vinted style grid: tighter gaps, 2 cols on mobile, 5 on desktop
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-6 gap-x-4 px-3 pb-24 pt-4 auto-rows-max">
                         {listings.map((listing, index) => (
-                            <div key={listing.id} className={index < 4 ? "" : "stagger-item"}>
+                            <motion.div
+                                key={listing.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }} // Cap delay
+                            >
                                 <ListingCard
                                     listing={listing}
                                     currentUserId={currentUser?.id}
                                     isFavorited={userFavorites.has(listing.id)}
                                     priority={index < 4}
                                 />
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 )}

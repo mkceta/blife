@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { formatRelativeTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 interface ThreadListProps {
     initialThreads: any[]
@@ -85,7 +86,7 @@ export function ThreadList({ initialThreads, currentUserId, unreadCounts: initia
 
     return (
         <div className="space-y-2">
-            {threads.map((thread) => {
+            {threads.map((thread, index) => {
                 const otherUser = thread.buyer_id === currentUserId ? thread.seller : thread.buyer
                 const item = thread.listing || thread.flat
                 const itemImage = item?.photos?.[0]?.url
@@ -103,71 +104,76 @@ export function ThreadList({ initialThreads, currentUserId, unreadCounts: initia
                 const isOnline = otherUser?.last_seen && new Date(otherUser.last_seen).getTime() > Date.now() - 5 * 60 * 1000
 
                 return (
-
-                    <Link
+                    <motion.div
                         key={thread.id}
-                        href={`/messages/chat?id=${thread.id}`}
-                        onClick={() => handleThreadClick(thread.id)}
-                        className={cn(
-                            "relative flex items-start gap-3 p-4 border-b border-border/40 hover:bg-muted/30 transition-colors",
-                            isSelected && "bg-muted/50"
-                        )}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.5) }}
                     >
-                        {/* Avatar */}
-                        <div className="relative shrink-0">
-                            <Avatar className="h-12 w-12 border border-border/50">
-                                <AvatarImage src={otherUser?.avatar_url || undefined} />
-                                <AvatarFallback>{otherUser?.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            {unreadCount > 0 && (
-                                <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
+                        <Link
+                            href={`/messages/chat?id=${thread.id}`}
+                            onClick={() => handleThreadClick(thread.id)}
+                            className={cn(
+                                "relative flex items-start gap-3 p-4 border-b border-border/40 hover:bg-muted/30 transition-colors",
+                                isSelected && "bg-muted/50"
                             )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                            {/* Header: Name + Time */}
-                            <div className="flex justify-between items-baseline mb-0.5">
-                                <span className={cn(
-                                    "font-medium truncate pr-2 text-[15px]",
-                                    unreadCount > 0 ? "text-foreground font-bold" : "text-foreground"
-                                )}>
-                                    {otherUser?.alias_inst}
-                                </span>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
-                                    {latestMessage ? formatRelativeTime(latestMessage.created_at) : ''}
-                                </span>
-                            </div>
-
-                            {/* Body: Snippet + Product Image */}
-                            <div className="flex gap-3 justify-between">
-                                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                    <p className={cn(
-                                        "text-sm truncate leading-snug",
-                                        unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"
-                                    )}>
-                                        {snippet}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-1 truncate">
-                                        {item?.title}
-                                    </p>
-                                    {item && 'price_cents' in item && (
-                                        <p className="text-sm font-medium mt-0.5">
-                                            {(item.price_cents / 100).toFixed(2)} €
-                                        </p>
-                                    )}
-                                </div>
-
-                                {itemImage && (
-                                    <img
-                                        src={itemImage}
-                                        alt=""
-                                        className="h-12 w-12 rounded-md object-cover bg-muted shrink-0 border border-border/50"
-                                    />
+                        >
+                            {/* Avatar */}
+                            <div className="relative shrink-0">
+                                <Avatar className="h-12 w-12 border border-border/50">
+                                    <AvatarImage src={otherUser?.avatar_url || undefined} />
+                                    <AvatarFallback>{otherUser?.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                {unreadCount > 0 && (
+                                    <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
                                 )}
                             </div>
-                        </div>
-                    </Link>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                                {/* Header: Name + Time */}
+                                <div className="flex justify-between items-baseline mb-0.5">
+                                    <span className={cn(
+                                        "font-medium truncate pr-2 text-[15px]",
+                                        unreadCount > 0 ? "text-foreground font-bold" : "text-foreground"
+                                    )}>
+                                        {otherUser?.alias_inst}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+                                        {latestMessage ? formatRelativeTime(latestMessage.created_at) : ''}
+                                    </span>
+                                </div>
+
+                                {/* Body: Snippet + Product Image */}
+                                <div className="flex gap-3 justify-between">
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        <p className={cn(
+                                            "text-sm truncate leading-snug",
+                                            unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"
+                                        )}>
+                                            {snippet}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                                            {item?.title}
+                                        </p>
+                                        {item && 'price_cents' in item && (
+                                            <p className="text-sm font-medium mt-0.5">
+                                                {(item.price_cents / 100).toFixed(2)} €
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {itemImage && (
+                                        <img
+                                            src={itemImage}
+                                            alt=""
+                                            className="h-12 w-12 rounded-md object-cover bg-muted shrink-0 border border-border/50"
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </Link>
+                    </motion.div>
                 )
             })}
         </div>

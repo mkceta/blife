@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { BadgesSheet } from '@/components/profile/badges-sheet'
 import { SellerDashboardButton } from '@/components/profile/seller-dashboard-button'
+import { ProfileSkeleton } from '@/components/profile/profile-skeleton'
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null)
@@ -78,7 +79,7 @@ export default function ProfilePage() {
         fetchData()
     }, [router, supabase])
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando perfil...</div>
+    if (loading) return <ProfileSkeleton />
     if (!profile) return null
 
     const menuItems = [

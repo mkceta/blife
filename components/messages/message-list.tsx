@@ -7,6 +7,7 @@ import { MessageSquare } from 'lucide-react'
 import { ThreadList } from '@/components/messages/thread-list'
 import { Button } from '@/components/ui/button'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
+import { MessagesSkeleton } from '@/components/messages/messages-skeleton'
 
 interface MessageListProps {
     searchQuery?: string
@@ -86,7 +87,7 @@ export function MessageList({ searchQuery = '' }: MessageListProps) {
         fetchData()
     }, [supabase, searchQuery])
 
-    if (loading) return <div className="h-full flex items-center justify-center p-8 text-muted-foreground">Cargando mensajes...</div>
+    if (loading) return <MessagesSkeleton />
 
     if (error) return (
         <div className="h-full flex flex-col items-center justify-center p-4 text-center">

@@ -10,6 +10,8 @@ import { Search } from 'lucide-react'
 
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useCallback } from 'react'
+import { FlatsSkeleton } from '@/components/home/flats-skeleton'
+import { motion } from 'framer-motion'
 
 function FlatsFeedContent() {
     const searchParams = useSearchParams()
@@ -109,17 +111,22 @@ function FlatsFeedContent() {
         <PullToRefresh onRefresh={handleRefresh}>
             <div className="min-h-[calc(100vh-10rem)] bg-transparent">
                 {loading ? (
-                    <div className="text-center py-20 text-muted-foreground">Cargando pisos...</div>
+                    <FlatsSkeleton />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 pb-24 pt-4">
                         {flats.map((flat, index) => (
-                            <div key={flat.id} className={index < 4 ? "" : "stagger-item"}>
+                            <motion.div
+                                key={flat.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
+                            >
                                 <FlatCard
                                     flat={flat}
                                     currentUserId={currentUser?.id}
                                     priority={index < 4}
                                 />
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 )}

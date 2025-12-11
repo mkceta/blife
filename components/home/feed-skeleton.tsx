@@ -2,27 +2,27 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export function FeedSkeleton() {
     return (
-        <div className="space-y-6">
-            {/* Search Bar Skeleton */}
-            <div className="sticky top-[calc(4.5rem+env(safe-area-inset-top))] z-20 mx-auto max-w-2xl w-full mb-6 px-4 md:px-0 pt-2 bg-black/95 backdrop-blur-sm pb-2 rounded-b-xl shadow-sm">
-                <div className="flex gap-2">
-                    <Skeleton className="h-10 w-full rounded-md bg-card/50" />
-                    <Skeleton className="h-10 w-10 rounded-md bg-card/50" />
-                </div>
-            </div>
+        // Match margin/padding of MarketFeed grid container exactly
+        // MarketFeed: grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-6 gap-x-4 px-3 pb-24 pt-4 auto-rows-max
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-6 gap-x-4 px-3 pb-24 pt-4 auto-rows-max">
+            {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-2 bg-card/40 p-2.5 rounded-xl border border-border/40">
+                    {/* Image Aspect Ratio 3:4 */}
+                    <Skeleton className="aspect-[3/4] w-full rounded-lg" />
 
-            {/* Grid Skeleton */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="space-y-3">
-                        <Skeleton className="aspect-square w-full rounded-xl bg-card/50" />
-                        <div className="space-y-2 px-1">
-                            <Skeleton className="h-4 w-3/4 bg-card/50" />
-                            <Skeleton className="h-3 w-1/2 bg-card/50" />
+                    {/* Info Section Emulating ListingCard */}
+                    <div className="flex flex-col gap-1.5 mt-1">
+                        <div className="flex justify-between items-start">
+                            <Skeleton className="h-4 w-16 rounded-md" /> {/* Price */}
+                            <Skeleton className="h-3 w-8 rounded-md" />  {/* Size/Cond */}
+                        </div>
+                        <Skeleton className="h-3 w-3/4 rounded-md" /> {/* Brand/Title */}
+                        <div className="flex gap-2 mt-1">
+                            <Skeleton className="h-3 w-12 rounded-full" /> {/* Badge/Tag */}
                         </div>
                     </div>
-                ))}
-            </div>
+                </div>
+            ))}
         </div>
     )
 }
