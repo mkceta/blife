@@ -15,9 +15,10 @@ import { useCallback } from 'react'
 
 interface CommunityFeedProps {
     category?: string
+    searchQuery?: string
 }
 
-export function CommunityFeed({ category = 'General' }: CommunityFeedProps) {
+export function CommunityFeed({ category = 'General', searchQuery = '' }: CommunityFeedProps) {
     const [posts, setPosts] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [currentUser, setCurrentUser] = useState<any>(null)
@@ -44,6 +45,10 @@ export function CommunityFeed({ category = 'General' }: CommunityFeedProps) {
             query = query.contains('category', [category])
         }
 
+        if (searchQuery) {
+            query = query.ilike('text', `%${searchQuery}%`)
+        }
+
         const { data: postsData, error } = await query
 
         if (error) {
@@ -66,7 +71,7 @@ export function CommunityFeed({ category = 'General' }: CommunityFeedProps) {
             setUserReactions(new Set(reactions?.map((r: any) => r.target_id) || []))
         }
         setLoading(false)
-    }, [supabase, category])
+    }, [supabase, category, searchQuery])
 
     useEffect(() => {
         setLoading(true)

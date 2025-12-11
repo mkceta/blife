@@ -7,6 +7,19 @@ import { formatRelativeTime } from '@/lib/format'
 import Link from 'next/link'
 import Image from 'next/image'
 
+import { Trash2, MoreVertical, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 interface PostCardProps {
     post: any
     currentUser?: any
@@ -17,9 +30,38 @@ interface PostCardProps {
 export function PostCard({ post, currentUser, hasUserReacted, isDetail = false }: PostCardProps) {
     const user = Array.isArray(post.user) ? post.user[0] : post.user
     const displayName = `@${user?.alias_inst || 'Usuario'}`
+    const router = useRouter()
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    const handleDelete = async () => {
+        if (!confirm('¿Seguro que quieres borrar este post?')) return
+
+        setIsDeleting(true)
+        const supabase = createClient()
+        try {
+            const { error } = await supabase
+                .from('posts')
+                .delete()
+                .eq('id', post.id)
+
+            if (error) throw error
+
+            toast.success('Post eliminado')
+            if (isDetail) {
+                router.push('/community')
+            }
+            router.refresh()
+        } catch (error) {
+            console.error(error)
+            toast.error('Error al eliminar')
+            setIsDeleting(false)
+        }
+    }
+
+    const isOwner = currentUser?.id === post.user_id
 
     return (
-        <div className="bg-card rounded-xl p-4 border border-border space-y-3">
+        <div className="bg-card rounded-xl p-4 border border-border space-y-3 relative">
             <div className="flex items-start gap-3">
                 <Link href={`/user/${user?.alias_inst}`}>
                     <Avatar className="h-10 w-10 border border-border cursor-pointer hover:opacity-80 transition-opacity">
@@ -27,7 +69,7 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false }
                         <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                 </Link>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 pr-8">
                     <div className="flex items-center gap-2">
                         <Link href={`/user/${user?.alias_inst}`} className="font-medium text-sm hover:text-primary transition-colors">
                             {displayName}
@@ -35,15 +77,49 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false }
                         <span className="text-xs text-muted-foreground">{formatRelativeTime(post.created_at)}</span>
                     </div>
                 </div>
+
+                {isOwner && (
+                    <div className="absolute top-4 right-4">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground hover:text-foreground">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                                    {isDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                                    Eliminar
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                )}
             </div>
 
             {/* If not detailed view, wrap text in Link to detail */}
             {!isDetail ? (
                 <Link href={`/community/post/${post.id}`} className="block group">
                     <p className="text-sm whitespace-pre-wrap leading-relaxed group-hover:text-foreground/90 transition-colors">{post.text}</p>
+                    {post.category && post.category[0] && post.category[0] !== 'General' && (
+                        <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">
+                            {post.category[0]}
+                        </span>
+                    )}
                 </Link>
             ) : (
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{post.text}</p>
+                <>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{post.text}</p>
+                    {post.category && post.category[0] && (
+                        <div className="flex gap-2 mt-2">
+                            {post.category.map((cat: string) => (
+                                <span key={cat} className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">
+                                    {cat}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </>
             )}
 
             {post.photo_url && (

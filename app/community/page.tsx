@@ -1,12 +1,11 @@
-
-
 import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { markNotificationsAsReadByType } from '../notifications/mark-read-helpers';
 import { CommunityFeed } from '@/components/community/community-feed';
 import { CommunitySkeleton } from '@/components/community/community-skeleton';
+import { Input } from '@/components/ui/input';
 
 const CATEGORIES = [
     { id: 'General', label: '🔥 General' },
@@ -18,25 +17,45 @@ const CATEGORIES = [
     { id: 'Offtopic', label: '🤡 Offtopic' },
 ]
 
-export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
+function CommunitySearchBar({ defaultValue }: { defaultValue: string }) {
+    return (
+        <form action="/community" method="GET" className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+                name="q"
+                defaultValue={defaultValue}
+                placeholder="Buscar en la comunidad..."
+                className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
+            />
+        </form>
+    )
+}
+
+export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ category?: string, q?: string }> }) {
     // Mark unread comment notifications as read for this user
     await markNotificationsAsReadByType('comment');
 
     const params = await searchParams
     const currentCategory = params.category || 'General'
+    const searchQuery = params.q || ''
 
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Standard App Header Style */}
             <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/40">
-                <div className="pt-[calc(env(safe-area-inset-top)+0.5rem)] px-4 pb-3 flex items-center justify-between">
-                    <h1 className="text-xl font-bold">Comunidad UDC</h1>
-                    {/* Optional: Add user avatar or search icon here if needed in future */}
+                <div className="pt-[calc(env(safe-area-inset-top)+0.5rem)] px-4 pb-3 flex flex-col md:flex-row md:items-center gap-4 justify-between max-w-5xl mx-auto w-full">
+                    <div className="flex items-center justify-between w-full md:w-auto">
+                        <h1 className="text-xl font-bold">Comunidad UDC</h1>
+                        {/* New Post Button - Visible on Mobile Header only if needed, but currently FAB is better for Mobile */}
+
+                    </div>
+
+                    <CommunitySearchBar defaultValue={searchQuery} />
                 </div>
 
                 {/* Categories / Threads */}
-                <div className="max-w-screen-xl mx-auto">
-                    <div className="flex gap-2 overflow-x-auto pb-3 px-4 scrollbar-hide mask-fade-right">
+                <div className="max-w-5xl mx-auto w-full">
+                    <div className="flex gap-2 overflow-x-auto pb-3 px-4 scrollbar-hide mask-fade-right md:justify-center md:flex-wrap">
                         {CATEGORIES.map((cat) => (
                             <Link
                                 key={cat.id}
@@ -56,13 +75,16 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                 </div>
             </div>
 
-            <div className="max-w-2xl mx-auto p-4 space-y-4">
+            <div className="max-w-3xl mx-auto p-4 space-y-4">
                 <Suspense fallback={<CommunitySkeleton />}>
-                    <CommunityFeed category={currentCategory} />
+                    <CommunityFeed category={currentCategory} searchQuery={searchQuery} />
                 </Suspense>
 
                 <Link href="/community/new">
-                    <Button className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 hover:shadow-primary/25" size="icon">
+                    <Button
+                        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 hover:shadow-primary/25"
+                        size="icon"
+                    >
                         <Plus className="h-7 w-7" strokeWidth={3} />
                     </Button>
                 </Link>
