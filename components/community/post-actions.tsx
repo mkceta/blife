@@ -93,19 +93,38 @@ export function PostActions({
         setReactionsCount(prev => newReacted ? prev + 1 : prev - 1)
 
         try {
-            if (userReacted) {
+            // Check current status in DB to be safe
+            const { data: existingReaction, error: fetchError } = await supabase
+                .from('reactions')
+                .select('id')
+                .eq('target_id', postId)
+                .eq('target_type', 'post')
+                .eq('user_id', currentUserId)
+                .maybeSingle()
+
+            if (fetchError) throw fetchError
+
+            if (existingReaction) {
                 // Remove reaction
                 const { error } = await supabase
                     .from('reactions')
                     .delete()
-                    .eq('target_id', postId)
-                    .eq('target_type', 'post')
-                    .eq('user_id', currentUserId)
+                    .eq('id', existingReaction.id)
 
                 if (error) throw error
 
-                // Try to call RPC if exists, otherwise ignore (trigger might handle it)
                 await (supabase as any).rpc('decrement_reactions', { post_id: postId }).catch(() => { })
+
+                // Ensure state matches reality (if we thought we were adding, but it existed, we actually removed it)
+                if (userReacted === false) {
+                    // We thought we were adding (newReacted=true), but it existed so we removed it.
+                    // So we should end up with userReacted=false.
+                    setUserReacted(false)
+                    setReactionsCount(prev => prev - 2) // Revert the +1 and do -1?
+                    // Actually, if we just toggle based on what we found:
+                    // existing -> delete -> userReacted=false
+                    // !existing -> insert -> userReacted=true
+                }
             } else {
                 // Add reaction
                 const { error } = await supabase

@@ -155,25 +155,6 @@ function MarketFeedContent() {
 export function MarketSearchBar() {
     const searchParams = useSearchParams()
     const currentCategory = searchParams.get('category')
-    const [isStuck, setIsStuck] = useState(false)
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                setIsStuck(!entry.isIntersecting)
-            },
-            { threshold: [1], rootMargin: '-1px 0px 0px 0px' }
-        )
-
-        const sentinel = document.getElementById('market-sentinel')
-        if (sentinel) {
-            observer.observe(sentinel)
-        }
-
-        return () => {
-            if (sentinel) observer.unobserve(sentinel)
-        }
-    }, [])
 
     const categories = [
         { id: null, label: 'Todo' },
@@ -189,9 +170,19 @@ export function MarketSearchBar() {
     ]
 
     return (
-        <div className="md:hidden relative">
-            <div id="market-sentinel" className="absolute -top-1 h-1 w-full" />
-            <div className={`sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm transition-all duration-200 ${isStuck ? 'pt-[env(safe-area-inset-top)]' : 'pt-2'}`}>
+        <div className="md:hidden relative z-40">
+            {/* Sticky at top offset by HomeNav height (12 = 3rem) + safe area. 
+                HomeNav has pt-safe. Its height is 3rem + env(safe-area-inset-top).
+                So we stick at that offset. 
+                However, calc(3rem + env(...)) in 'top' might be tricky if not supported everywhere, but broadly ok. 
+                Actually, HomeNav is sticky top-0. It occupies the top space.
+                If we use sticky, we define "top" as the distance from viewport top where it sticks.
+                We want it to stick adjacent to HomeNav bottom.
+            */}
+            <div
+                className="sticky w-full bg-background/95 backdrop-blur-md border-b border-border/5 shadow-sm pt-2"
+                style={{ top: 'calc(3rem + env(safe-area-inset-top))' }}
+            >
                 <div className="flex flex-col gap-2 px-3 pb-0">
                     <div className="flex gap-2 items-center">
                         <form action="/home/market" method="GET" className="flex-1 relative">
