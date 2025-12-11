@@ -162,34 +162,12 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                     onChange={handleFileSelect}
                 />
 
-                {/* Camera Button - Serves as main media button */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => {
-                        // User requested "keep only camera". 
-                        // But usually this implies "Camera Icon" that might open options or just camera.
-                        // I will wire it to open Camera directly as per existing logic.
-                        // If they want gallery, they might need to long press or use camera UI's gallery picker if available.
-                        // Or I can make this button open a sheet? 
-                        // The user said: "hay 2 botones... uno cámara y otro foto (gallery)... deja solo el de la cámara".
-                        // So I delete the gallery button.
-                        handleCamera()
-                    }}
-                    disabled={isUploading}
-                >
-                    <CameraIcon className="h-5 w-5" />
-                </Button>
-
-                {/* Gallery Button REMOVED as per user request */}
-
-
                 <Textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Escribe..."
-                    className="min-h-[50px] max-h-[150px] resize-none bg-background/50 focus:bg-background transition-colors rounded-2xl py-3"
+                    placeholder="Escribe un mensaje..."
+                    rows={1}
+                    className="min-h-[50px] max-h-[150px] resize-none bg-background/50 focus:bg-background transition-colors rounded-[24px] py-[13px] px-5 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/20 scrollbar-hide"
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()
@@ -197,14 +175,35 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                         }
                     }}
                 />
-                <Button
-                    onClick={handleSend}
-                    disabled={(!message.trim() && !imageUrl) || isSending || isUploading}
-                    size="icon"
-                    className="h-[50px] w-[50px] shrink-0 rounded-full"
-                >
-                    <Send className="h-5 w-5" />
-                </Button>
+
+                {(!message.trim() && !imageUrl) ? (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-[50px] w-[50px] shrink-0 rounded-full border border-input bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground"
+                        onClick={handleCamera}
+                        disabled={isUploading}
+                    >
+                        {isUploading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                            <CameraIcon className="h-5 w-5" />
+                        )}
+                    </Button>
+                ) : (
+                    <Button
+                        onClick={handleSend}
+                        disabled={(!message.trim() && !imageUrl) || isSending || isUploading}
+                        size="icon"
+                        className="h-[50px] w-[50px] shrink-0 rounded-full"
+                    >
+                        {(isSending || isUploading) ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                            <Send className="h-5 w-5" />
+                        )}
+                    </Button>
+                )}
             </div>
         </div>
     )
