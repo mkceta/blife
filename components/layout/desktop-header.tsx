@@ -170,7 +170,7 @@ export function DesktopHeader() {
                                 </DropdownMenu>
                             </div>
                             <Button className="bg-primary hover:bg-primary/90 text-white font-medium px-4" onClick={() => router.push('/market/new')}>
-                                Vender ahora
+                                Publicar
                             </Button>
                         </>
                     ) : (

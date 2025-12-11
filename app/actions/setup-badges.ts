@@ -10,7 +10,7 @@ const BADGES = [
     { code: 'scholar', name: 'Erudito', description: 'Aporta material académico (libros y apuntes)', icon_name: 'BookOpen' },
     { code: 'techie', name: 'G33K', description: 'Vendedor de gadgets y electrónica', icon_name: 'Cpu' },
     { code: 'fashion', name: 'Swagger', description: 'Renueva su armario vendiendo ropa', icon_name: 'Shirt' },
-    { code: 'five_stars', name: 'Impecable', description: 'Vendedor excelente con valoración media de 5 estrellas', icon_name: 'Star' },
+    { code: 'five_stars', name: 'Impecable', description: 'Vendedor excelente con valoración media superior a 4.5', icon_name: 'Star' },
     { code: 'early_bird', name: 'Pionero', description: 'Uno de los primeros 100 usuarios de Blife', icon_name: 'Rocket' },
     { code: 'influencer', name: 'Sinvergüenza', description: 'Usuario con perfil completo y foto establecida', icon_name: 'Crown' }
 ]
@@ -79,7 +79,7 @@ export async function setupBadgesSystem() {
         if ((fashionCount || 0) >= 1) badgesToAward.push(badgeMap['fashion'])
 
         // 5 Stars
-        if ((user.rating_avg || 0) >= 4.8 && (user.rating_count || 0) >= 3) {
+        if ((user.rating_avg || 0) >= 4.5 && (user.rating_count || 0) >= 1) {
             badgesToAward.push(badgeMap['five_stars'])
         }
 

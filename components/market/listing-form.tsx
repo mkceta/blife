@@ -386,7 +386,7 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                 </div>
 
                 {/* Submit Actions */}
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t pb-[calc(1rem+env(safe-area-inset-bottom))] z-20">
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t pb-[calc(1rem+env(safe-area-inset-bottom))] z-50">
                     <div className="container max-w-md mx-auto">
                         <Button type="submit" className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-primary/20" disabled={isLoading}>
                             {isLoading ? (
