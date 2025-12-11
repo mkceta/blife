@@ -58,7 +58,7 @@ export function BottomNav() {
 
     const blifeItems = [
         { href: '/home/market', icon: Home, label: 'Inicio' },
-        { href: '/search', icon: Search, label: 'Buscar' },
+        { href: '/community', icon: Users, label: 'Comunidad' },
         { href: '/market/new', icon: PlusCircle, label: 'Vender', isMiddle: false }, // Changed isMiddle to false to remove floating effect if we want strict Vinted style, or keep it if user likes the emphasis. Vinted has it inline.
         { href: '/messages', icon: MessageSquare, label: 'Mensajes', hasNotifications: true },
         { href: '/profile', icon: User, label: 'Perfil', isProfile: true },
