@@ -15,14 +15,13 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Checkbox } from '@/components/ui/checkbox'
+
 import { NotificationPermission } from '@/components/notifications/notification-permission'
 
 const formSchema = z.object({
     bio: z.string().max(200, 'Máximo 200 caracteres').optional(),
     degree: z.string().optional(),
     session_duration: z.number().optional(),
-    payment_methods: z.array(z.string()).optional(),
 })
 
 export default function EditProfilePage() {
@@ -37,7 +36,6 @@ export default function EditProfilePage() {
             bio: '',
             degree: 'none',
             session_duration: 604800, // 7 days default
-            payment_methods: [],
         },
     })
     const supabase = createClient()
@@ -63,7 +61,6 @@ export default function EditProfilePage() {
                     bio: profile.bio || '',
                     degree: profile.degree || 'none',
                     session_duration: profile.session_duration || 604800,
-                    payment_methods: profile.payment_methods || [],
                 })
             }
         }
@@ -81,7 +78,6 @@ export default function EditProfilePage() {
                     bio: values.bio,
                     degree: values.degree === 'none' ? '' : values.degree,
                     session_duration: values.session_duration,
-                    payment_methods: values.payment_methods,
                 })
                 .eq('id', user.id)
 
@@ -358,63 +354,7 @@ export default function EditProfilePage() {
                             </div>
                         </div>
 
-                        {/* Section: Sales */}
-                        <div className="space-y-4">
-                            <h2 className="text-lg font-semibold flex items-center gap-2 pb-2 border-b border-border/50">
-                                Ventas y Pagos
-                            </h2>
-                            <FormField
-                                control={form.control}
-                                name="payment_methods"
-                                render={() => (
-                                    <FormItem className="pl-1">
-                                        <div className="mb-4">
-                                            <FormLabel>Métodos de cobro aceptados</FormLabel>
-                                            <FormDescription>
-                                                Estos se mostrarán en tus artículos para que los compradores sepan cómo pagarte.
-                                            </FormDescription>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {['Bizum', 'PayPal', 'Efectivo', 'Transferencia'].map((item) => (
-                                                <FormField
-                                                    key={item}
-                                                    control={form.control}
-                                                    name="payment_methods"
-                                                    render={({ field }) => {
-                                                        return (
-                                                            <FormItem
-                                                                key={item}
-                                                                className="flex flex-row items-center space-x-3 space-y-0 rounded-xl border bg-card p-4 transition-all hover:bg-muted/50"
-                                                            >
-                                                                <FormControl>
-                                                                    <Checkbox
-                                                                        checked={field.value?.includes(item)}
-                                                                        onCheckedChange={(checked) => {
-                                                                            return checked
-                                                                                ? field.onChange([...(field.value || []), item])
-                                                                                : field.onChange(
-                                                                                    field.value?.filter(
-                                                                                        (value) => value !== item
-                                                                                    )
-                                                                                )
-                                                                        }}
-                                                                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                                                    />
-                                                                </FormControl>
-                                                                <FormLabel className="font-medium cursor-pointer flex-1">
-                                                                    {item}
-                                                                </FormLabel>
-                                                            </FormItem>
-                                                        )
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+
 
                         <div className="pt-6">
                             <Button type="submit" className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20" size="lg" disabled={isLoading}>

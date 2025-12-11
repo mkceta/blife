@@ -211,7 +211,7 @@ function ProductContent() {
                             {listing.size && <AttributeRow label="Talla" value={listing.size} />}
                             {listing.condition && <AttributeRow label="Estado" value={listing.condition} />}
                             <AttributeRow label="Subido" value={formatDistanceToNow(new Date(listing.created_at), { locale: es })} />
-                            <AttributeRow label="Pagos" value={<div className="flex gap-1 text-[10px] text-muted-foreground">VISA, PayPal</div>} />
+
                         </div>
 
 
