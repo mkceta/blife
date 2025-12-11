@@ -19,8 +19,13 @@ export function StripeConnectModal({ open, onOpenChange, onExit }: StripeConnect
     const [loading, setLoading] = useState(true)
 
     const connectInstance = useMemo(() => {
+        const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        if (!key) {
+            console.error('Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
+            return null
+        }
         return loadConnectAndInitialize({
-            publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+            publishableKey: key,
             fetchClientSecret: async () => {
                 const { data: { session } } = await supabase.auth.getSession()
                 if (!session) throw new Error('No session')
@@ -48,6 +53,19 @@ export function StripeConnectModal({ open, onOpenChange, onExit }: StripeConnect
             },
         })
     }, [])
+
+    if (!connectInstance) {
+        return (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="max-w-md p-6 bg-background border-zinc-800">
+                    <DialogTitle className="text-destructive">Error de Configuración</DialogTitle>
+                    <p className="text-muted-foreground mt-2">
+                        No se ha encontrado la clave pública de Stripe. Por favor, configura la variable de entorno <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>.
+                    </p>
+                </DialogContent>
+            </Dialog>
+        )
+    }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
