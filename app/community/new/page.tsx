@@ -13,8 +13,19 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
+const CATEGORIES = [
+    { id: 'General', label: 'General' },
+    { id: 'Peticiones', label: 'Peticiones' },
+    { id: 'Fiesta', label: 'Fiesta' },
+    { id: 'Deporte', label: 'Deporte' },
+    { id: 'Eventos', label: 'Eventos' },
+    { id: 'Entradas', label: 'Entradas' },
+    { id: 'Offtopic', label: 'Offtopic' },
+]
+
 const formSchema = z.object({
     text: z.string().min(10, 'Mínimo 10 caracteres').max(500, 'Máximo 500 caracteres'),
+    categories: z.array(z.string()).min(1, 'Selecciona al menos una categoría'),
 })
 
 export default function NewPostPage() {
@@ -24,6 +35,7 @@ export default function NewPostPage() {
         resolver: zodResolver(formSchema),
         defaultValues: {
             text: '',
+            categories: ['General'],
         },
     })
 
@@ -39,6 +51,7 @@ export default function NewPostPage() {
                 .insert({
                     user_id: user.id,
                     text: values.text,
+                    category: values.categories, // Array of strings
                 })
 
             if (error) throw error
@@ -52,6 +65,22 @@ export default function NewPostPage() {
             toast.error(error.message || 'Error al publicar')
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const toggleCategory = (catId: string, current: string[], onChange: (val: string[]) => void) => {
+        if (catId === 'General') {
+            // General is always on? No, user said "General va incluída por defecto (se puede quitar)"
+            // So standard toggle.
+        }
+
+        if (current.includes(catId)) {
+            const newVal = current.filter(c => c !== catId)
+            // Prevent empty? User didn't say prevent empty explicitly, but form defaults to General.
+            // Schema min(1) prevents empty submission.
+            onChange(newVal)
+        } else {
+            onChange([...current, catId])
         }
     }
 
@@ -70,6 +99,33 @@ export default function NewPostPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 space-y-6">
                     <FormField
                         control={form.control}
+                        name="categories"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Categorías</FormLabel>
+                                <FormControl>
+                                    <div className="flex flex-wrap gap-2">
+                                        {CATEGORIES.map((cat) => (
+                                            <Button
+                                                key={cat.id}
+                                                type="button"
+                                                variant={field.value.includes(cat.id) ? "default" : "outline"}
+                                                size="sm"
+                                                className={`rounded-full ${field.value.includes(cat.id) ? 'shadow-md shadow-primary/20' : ''}`}
+                                                onClick={() => toggleCategory(cat.id, field.value, field.onChange)}
+                                            >
+                                                {cat.label}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
                         name="text"
                         render={({ field }) => (
                             <FormItem>
@@ -77,7 +133,7 @@ export default function NewPostPage() {
                                 <FormControl>
                                     <Textarea
                                         placeholder="Comparte algo con la comunidad UDC..."
-                                        className="min-h-[200px] text-base"
+                                        className="min-h-[200px] text-base resize-none"
                                         {...field}
                                     />
                                 </FormControl>

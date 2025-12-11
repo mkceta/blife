@@ -41,7 +41,7 @@ export function CommunityFeed({ category = 'General' }: CommunityFeedProps) {
             .limit(20)
 
         if (category && category !== 'Todos') {
-            query = query.eq('category', category)
+            query = query.contains('category', [category])
         }
 
         const { data: postsData, error } = await query
