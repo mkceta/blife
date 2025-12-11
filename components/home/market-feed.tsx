@@ -155,6 +155,25 @@ function MarketFeedContent() {
 export function MarketSearchBar() {
     const searchParams = useSearchParams()
     const currentCategory = searchParams.get('category')
+    const [isStuck, setIsStuck] = useState(false)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsStuck(!entry.isIntersecting)
+            },
+            { threshold: [1], rootMargin: '-1px 0px 0px 0px' }
+        )
+
+        const sentinel = document.getElementById('market-sentinel')
+        if (sentinel) {
+            observer.observe(sentinel)
+        }
+
+        return () => {
+            if (sentinel) observer.unobserve(sentinel)
+        }
+    }, [])
 
     const categories = [
         { id: null, label: 'Todo' },
@@ -170,47 +189,50 @@ export function MarketSearchBar() {
     ]
 
     return (
-        <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm">
-            <div className="flex flex-col gap-2 px-3 pt-2 pb-0">
-                <div className="flex gap-2 items-center">
-                    <form action="/home/market" method="GET" className="flex-1 relative">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                name="q"
-                                defaultValue={searchParams.get('q') || ''}
-                                placeholder="Busca artículos o miembros"
-                                className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
-                            />
+        <div className="md:hidden relative">
+            <div id="market-sentinel" className="absolute -top-1 h-1 w-full" />
+            <div className={`sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm transition-all duration-200 ${isStuck ? 'pt-[env(safe-area-inset-top)]' : 'pt-2'}`}>
+                <div className="flex flex-col gap-2 px-3 pb-0">
+                    <div className="flex gap-2 items-center">
+                        <form action="/home/market" method="GET" className="flex-1 relative">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    name="q"
+                                    defaultValue={searchParams.get('q') || ''}
+                                    placeholder="Busca artículos o miembros"
+                                    className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
+                                />
+                            </div>
+                        </form>
+                        <div className="flex-none">
+                            <MarketFilters />
                         </div>
-                    </form>
-                    <div className="flex-none">
-                        <MarketFilters />
                     </div>
-                </div>
-                {/* Category Pills */}
-                <div className="flex gap-2 overflow-x-auto pb-3 -mx-3 px-3 scrollbar-hide">
-                    {categories.map((cat) => {
-                        const isActive = currentCategory === cat.id || (cat.id === null && !currentCategory)
-                        return (
-                            <Link
-                                key={cat.label}
-                                href={isActive
-                                    ? '/home/market'
-                                    : (cat.id ? `/home/market?category=${cat.id}` : '/home/market')
-                                }
-                                className={`
-                                    whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors border
-                                    ${isActive
-                                        ? 'bg-primary text-primary-foreground border-primary'
-                                        : 'bg-transparent text-muted-foreground border-border hover:border-primary/50'
+                    {/* Category Pills */}
+                    <div className="flex gap-2 overflow-x-auto pb-3 -mx-3 px-3 scrollbar-hide">
+                        {categories.map((cat) => {
+                            const isActive = currentCategory === cat.id || (cat.id === null && !currentCategory)
+                            return (
+                                <Link
+                                    key={cat.label}
+                                    href={isActive
+                                        ? '/home/market'
+                                        : (cat.id ? `/home/market?category=${cat.id}` : '/home/market')
                                     }
-                                `}
-                            >
-                                {cat.label}
-                            </Link>
-                        )
-                    })}
+                                    className={`
+                                        whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors border
+                                        ${isActive
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-transparent text-muted-foreground border-border hover:border-primary/50'
+                                        }
+                                    `}
+                                >
+                                    {cat.label}
+                                </Link>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
         </div>

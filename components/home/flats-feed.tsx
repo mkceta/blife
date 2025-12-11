@@ -136,24 +136,46 @@ function FlatsFeedContent() {
 
 export function FlatsSearchBar({ flats }: { flats: any[] }) {
     const searchParams = useSearchParams()
+    const [isStuck, setIsStuck] = useState(false)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsStuck(!entry.isIntersecting)
+            },
+            { threshold: [1], rootMargin: '-1px 0px 0px 0px' }
+        )
+
+        const sentinel = document.getElementById('flats-sentinel')
+        if (sentinel) {
+            observer.observe(sentinel)
+        }
+
+        return () => {
+            if (sentinel) observer.unobserve(sentinel)
+        }
+    }, [])
 
     return (
-        <div className="md:hidden sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm pt-safe">
-            <div className="flex flex-col gap-2 px-3 pb-2 pt-2">
-                <div className="flex gap-2 items-center">
-                    <form action="/home/flats" method="GET" className="flex-1 relative">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                name="q"
-                                defaultValue={searchParams.get('q') || ''}
-                                placeholder="Buscar pisos..."
-                                className="h-11 w-full bg-muted/30 pl-10 pr-10 border-none focus-visible:ring-0 rounded-lg text-base"
-                            />
+        <div className="md:hidden relative">
+            <div id="flats-sentinel" className="absolute -top-1 h-1 w-full" />
+            <div className={`sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm transition-all duration-200 ${isStuck ? 'pt-[env(safe-area-inset-top)]' : 'pt-2'}`}>
+                <div className="flex flex-col gap-2 px-3 pb-2">
+                    <div className="flex gap-2 items-center">
+                        <form action="/home/flats" method="GET" className="flex-1 relative">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    name="q"
+                                    defaultValue={searchParams.get('q') || ''}
+                                    placeholder="Buscar pisos..."
+                                    className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
+                                />
+                            </div>
+                        </form>
+                        <div className="flex-none">
+                            <FlatFilters flats={flats || []} />
                         </div>
-                    </form>
-                    <div className="flex-none">
-                        <FlatFilters flats={flats || []} />
                     </div>
                 </div>
             </div>
