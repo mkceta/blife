@@ -98,11 +98,21 @@ serve(async (req) => {
         //  Let's use `transfer_data`.
 
         // 4. Create PaymentIntent
+        // For Destination Charges with Express, the Platform is responsible for Stripe fees.
+        // Funds flow: Total -> Platform Balance -> (Stripe Fees deducted) -> Transfer to Destination.
+        // We want Seller to receive EXACTLY listing.price_cents.
+        // Transfer Amount = Total - Application Fee.
+        // We want: Transfer Amount = listing.price_cents
+        // Therefore: Application Fee = totalCents - listing.price_cents
+        // Our 'platformFeeCents' variable previously only covered our margin, but here we need to cover the Stripe fee too.
+
+        const applicationFeeAmount = totalCents - listing.price_cents
+
         const paymentIntent = await stripe.paymentIntents.create({
             amount: totalCents,
             currency: 'eur',
             automatic_payment_methods: { enabled: true },
-            application_fee_amount: platformFeeCents,
+            application_fee_amount: applicationFeeAmount,
             transfer_data: {
                 destination: sellerAccount.stripe_account_id,
             },
@@ -125,7 +135,7 @@ serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
-    } catch (error) {
+    } catch (error: any) {
         return new Response(
             JSON.stringify({ error: error.message }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

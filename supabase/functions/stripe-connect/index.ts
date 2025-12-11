@@ -60,9 +60,14 @@ serve(async (req) => {
         // 5. Create new Stripe Account if needed
         if (!accountId) {
             const account = await stripe.accounts.create({
-                type: 'standard',
+                type: 'express',
+                country: 'ES',
                 email: user.email,
-                metadata: { user_id: user.id }
+                metadata: { user_id: user.id },
+                capabilities: {
+                    card_payments: { requested: true },
+                    transfers: { requested: true },
+                },
             })
             accountId = account.id
 
