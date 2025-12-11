@@ -11,7 +11,7 @@ import {
     Bell,
     Heart,
     User,
-    Users,
+    FlameKindling,
     HelpCircle,
     ChevronDown,
     Mail,
@@ -142,7 +142,7 @@ export function DesktopHeader() {
                                     className="text-muted-foreground hover:text-foreground"
                                     onClick={() => router.push('/community')}
                                 >
-                                    <Users className="h-5 w-5" />
+                                    <FlameKindling className="h-5 w-5" />
                                 </Button>
                                 <Button
                                     variant="ghost"

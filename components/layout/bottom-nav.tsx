@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Users, MessageSquare, Heart, User, Search, PlusCircle } from 'lucide-react'
+import { Home, FlameKindling, MessageSquare, Heart, User, Search, PlusCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useEffect, useState } from 'react'
@@ -58,7 +58,7 @@ export function BottomNav() {
 
     const blifeItems = [
         { href: '/home/market', icon: Home, label: 'Inicio' },
-        { href: '/community', icon: Users, label: 'Comunidad' },
+        { href: '/community', icon: FlameKindling, label: 'Comunidad' },
         { href: '/market/new', icon: PlusCircle, label: 'Vender', isMiddle: false }, // Changed isMiddle to false to remove floating effect if we want strict Vinted style, or keep it if user likes the emphasis. Vinted has it inline.
         { href: '/messages', icon: MessageSquare, label: 'Mensajes', hasNotifications: true },
         { href: '/profile', icon: User, label: 'Perfil', isProfile: true },
@@ -117,9 +117,9 @@ export function BottomNav() {
                                     <item.icon className={cn(
                                         "h-6 w-6 transition-all",
                                         isActive
-                                            ? item.icon === Search
-                                                ? "stroke-2"
-                                                : "stroke-0 fill-primary"
+                                            ? (item.icon === Search || item.icon === FlameKindling)
+                                                ? "stroke-[2.5]"
+                                                : "stroke-0 fill-current"
                                             : "stroke-2"
                                     )} />
                                 )}
