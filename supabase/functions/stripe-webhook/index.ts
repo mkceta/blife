@@ -34,6 +34,12 @@ Deno.serve(async (req) => {
     )
 
     try {
+        await supabase.from('debug_logs').insert({
+            source: 'stripe-webhook',
+            message: `Received event: ${event.type}`,
+            data: { eventId: event.id, type: event.type }
+        })
+
         console.log(`Received event: ${event.type}`)
 
         switch (event.type) {
@@ -53,6 +59,12 @@ Deno.serve(async (req) => {
             case 'payment_intent.succeeded': {
                 const paymentIntent = event.data.object
 
+                await supabase.from('debug_logs').insert({
+                    source: 'stripe-webhook',
+                    message: 'Processing payment_intent.succeeded',
+                    data: { paymentIntentId: paymentIntent.id, metadata: paymentIntent.metadata }
+                })
+
                 // Logic for "Separate Charges and Transfers"
                 // 1. Get Listing & Payout Info from metadata
                 const listingId = paymentIntent.metadata?.listingId
@@ -60,7 +72,9 @@ Deno.serve(async (req) => {
                 const buyerId = paymentIntent.metadata?.buyerId
 
                 if (!listingId || !sellerId || !buyerId) {
-                    console.log('PaymentIntent missing metadata for transfer logic.')
+                    const msg = 'PaymentIntent missing metadata for transfer logic.'
+                    console.log(msg)
+                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: msg, data: paymentIntent.metadata })
                     break
                 }
 
@@ -73,6 +87,7 @@ Deno.serve(async (req) => {
 
                 if (existingOrder) {
                     console.log('Order already exists for this payment intent.')
+                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Order already exists', data: { orderId: existingOrder.id } })
                     break
                 }
 
@@ -84,7 +99,9 @@ Deno.serve(async (req) => {
                     .single()
 
                 if (!listing) {
-                    console.error('Listing not found for transfer.')
+                    const msg = 'Listing not found for transfer.'
+                    console.error(msg)
+                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: msg, data: { listingId } })
                     break
                 }
 
@@ -96,7 +113,9 @@ Deno.serve(async (req) => {
                     .single()
 
                 if (!sellerAccount?.stripe_account_id) {
-                    console.error('Seller Stripe account not found.')
+                    const msg = 'Seller Stripe account not found.'
+                    console.error(msg)
+                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: msg, data: { sellerId } })
                     break
                 }
 
@@ -141,13 +160,20 @@ Deno.serve(async (req) => {
 
                 if (orderError) {
                     console.error('Error creating order:', orderError)
+                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Error creating order', data: orderError })
+                } else {
+                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Order created', data: { orderId: order.id } })
                 }
 
                 // 6. Update Listing Status
-                await supabase
+                const { error: updateError } = await supabase
                     .from('listings')
                     .update({ status: 'sold' })
                     .eq('id', listingId)
+
+                if (updateError) {
+                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Error updating listing', data: updateError })
+                }
 
                 // 7. Send Notification to Seller
                 await supabase
@@ -194,7 +220,7 @@ Deno.serve(async (req) => {
         })
     } catch (err: any) {
         console.error(`Webhook processing error: ${err.message}`)
+        await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Processing Error', data: { error: err.message, stack: err.stack } })
         return new Response(JSON.stringify({ error: err.message }), { status: 400 })
     }
 })
-

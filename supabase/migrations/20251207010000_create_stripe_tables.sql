@@ -1,53 +1,54 @@
--- Create table to link users with their Stripe Connected Accounts
-CREATE TABLE IF NOT EXISTS stripe_accounts (
-  user_id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
-  stripe_account_id TEXT UNIQUE NOT NULL,
-  details_submitted BOOLEAN DEFAULT FALSE,
-  charges_enabled BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS for stripe_accounts
-ALTER TABLE stripe_accounts ENABLE ROW LEVEL SECURITY;
-
--- Policies for stripe_accounts
-CREATE POLICY "Users can view their own stripe account"
-  ON stripe_accounts FOR SELECT
-  USING (auth.uid() = user_id);
-
--- Create Order Status Enum
-DO $$ BEGIN
-    CREATE TYPE order_status AS ENUM ('pending', 'paid', 'completed', 'disputed', 'cancelled');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
--- Create Orders table
-CREATE TABLE IF NOT EXISTS orders (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  listing_id UUID REFERENCES listings(id) NOT NULL,
-  buyer_id UUID REFERENCES auth.users(id) NOT NULL,
-  seller_id UUID REFERENCES auth.users(id) NOT NULL,
-  status order_status DEFAULT 'pending',
-  total_amount_cents INTEGER NOT NULL,
-  platform_fee_cents INTEGER NOT NULL,
-  seller_amount_cents INTEGER NOT NULL,
-  stripe_payment_intent_id TEXT,
-  stripe_transfer_id TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS for orders
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-
--- Policies for orders
-CREATE POLICY "Users can view orders where they are buyer or seller"
-  ON orders FOR SELECT
-  USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
-
--- Add index for performance
-CREATE INDEX idx_orders_listing_id ON orders(listing_id);
-CREATE INDEX idx_orders_buyer_id ON orders(buyer_id);
-CREATE INDEX idx_orders_seller_id ON orders(seller_id);
+-- Archivo comentado para evitar conflictos de migración con tablas existentes
+-- -- Create table to link users with their Stripe Connected Accounts
+-- CREATE TABLE IF NOT EXISTS stripe_accounts (
+--   user_id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
+--   stripe_account_id TEXT UNIQUE NOT NULL,
+--   details_submitted BOOLEAN DEFAULT FALSE,
+--   charges_enabled BOOLEAN DEFAULT FALSE,
+--   created_at TIMESTAMPTZ DEFAULT NOW(),
+--   updated_at TIMESTAMPTZ DEFAULT NOW()
+-- );
+--
+-- -- Enable RLS for stripe_accounts
+-- ALTER TABLE stripe_accounts ENABLE ROW LEVEL SECURITY;
+--
+-- -- Policies for stripe_accounts
+-- CREATE POLICY "Users can view their own stripe account"
+--   ON stripe_accounts FOR SELECT
+--   USING (auth.uid() = user_id);
+--
+-- -- Create Order Status Enum
+-- DO $$ BEGIN
+--     CREATE TYPE order_status AS ENUM ('pending', 'paid', 'completed', 'disputed', 'cancelled');
+-- EXCEPTION
+--     WHEN duplicate_object THEN null;
+-- END $$;
+--
+-- -- Create Orders table
+-- CREATE TABLE IF NOT EXISTS orders (
+--   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+--   listing_id UUID REFERENCES listings(id) NOT NULL,
+--   buyer_id UUID REFERENCES auth.users(id) NOT NULL,
+--   seller_id UUID REFERENCES auth.users(id) NOT NULL,
+--   status order_status DEFAULT 'pending',
+--   total_amount_cents INTEGER NOT NULL,
+--   platform_fee_cents INTEGER NOT NULL,
+--   seller_amount_cents INTEGER NOT NULL,
+--   stripe_payment_intent_id TEXT,
+--   stripe_transfer_id TEXT,
+--   created_at TIMESTAMPTZ DEFAULT NOW(),
+--   updated_at TIMESTAMPTZ DEFAULT NOW()
+-- );
+--
+-- -- Enable RLS for orders
+-- ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+--
+-- -- Policies for orders
+-- CREATE POLICY "Users can view orders where they are buyer or seller"
+--   ON orders FOR SELECT
+--   USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
+--
+-- -- Add index for performance
+-- CREATE INDEX idx_orders_listing_id ON orders(listing_id);
+-- CREATE INDEX idx_orders_buyer_id ON orders(buyer_id);
+-- CREATE INDEX idx_orders_seller_id ON orders(seller_id);
