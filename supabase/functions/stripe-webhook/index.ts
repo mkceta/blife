@@ -134,24 +134,56 @@ Deno.serve(async (req) => {
                     break
                 }
 
+                // Check available balance before transfer (Test Mode Fix)
+                let balanceSufficient = true;
+                try {
+                    const balance = await stripe.balance.retrieve()
+                    const availableEur = balance.available.find(b => b.currency === 'eur')?.amount || 0
+                    if (availableEur < transferAmount) {
+                        console.log(`Insufficient balance: ${availableEur} < ${transferAmount}. Skipping immediate transfer.`)
+                        balanceSufficient = false;
+                        await supabase.from('debug_logs').insert({
+                            source: 'stripe-webhook',
+                            message: 'Skipping transfer due to insufficient funds (Test Mode)',
+                            data: { available: availableEur, required: transferAmount }
+                        })
+                    }
+                } catch (bErr) {
+                    console.error('Error checking balance:', bErr)
+                }
+
                 // 4. Create Transfer
                 // Seller receives exactly the listing price.
                 const transferAmount = listing.price_cents
+                let transferId = null
+                let transferError = null
 
-                console.log(`Creating transfer of ${transferAmount} cents to ${sellerAccount.stripe_account_id}`)
-
-                const transfer = await stripe.transfers.create({
-                    amount: transferAmount,
-                    currency: 'eur',
-                    destination: sellerAccount.stripe_account_id,
-                    transfer_group: paymentIntent.transfer_group, // Link to the original charge
-                    metadata: {
-                        listingId: listingId,
-                        originalPaymentIntent: paymentIntent.id
+                if (balanceSufficient) {
+                    try {
+                        console.log(`Creating transfer of ${transferAmount} cents to ${sellerAccount.stripe_account_id}`)
+                        const transfer = await stripe.transfers.create({
+                            amount: transferAmount,
+                            currency: 'eur',
+                            destination: sellerAccount.stripe_account_id,
+                            transfer_group: paymentIntent.transfer_group, // Link to the original charge
+                            metadata: {
+                                listingId: listingId,
+                                originalPaymentIntent: paymentIntent.id
+                            }
+                        })
+                        transferId = transfer.id
+                        console.log(`Transfer created: ${transfer.id}`)
+                    } catch (err: any) {
+                        console.error(`Transfer failed: ${err.message}`)
+                        transferError = err.message
+                        await supabase.from('debug_logs').insert({
+                            source: 'stripe-webhook',
+                            message: 'Transfer Failed (Continuing flow)',
+                            data: { error: err.message, code: err.code }
+                        })
+                        // We continue the flow without stopping. The money stays in Platform Account.
                     }
-                })
-
-                console.log(`Transfer created: ${transfer.id}`)
+                }
 
                 // 5. Create Order Record
                 const totalAmount = paymentIntent.amount
@@ -163,12 +195,12 @@ Deno.serve(async (req) => {
                         listing_id: listingId,
                         buyer_id: buyerId,
                         seller_id: sellerId,
-                        status: 'paid',
+                        status: 'paid', // Paid by buyer
                         total_amount_cents: totalAmount,
                         platform_fee_cents: platformFee,
                         seller_amount_cents: transferAmount,
                         stripe_payment_intent_id: paymentIntent.id,
-                        stripe_transfer_id: transfer.id
+                        stripe_transfer_id: transferId // Can be null if failed or skipped
                     })
                     .select()
                     .single()
@@ -177,7 +209,7 @@ Deno.serve(async (req) => {
                     console.error('Error creating order:', orderError)
                     await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Error creating order', data: orderError })
                 } else {
-                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Order created', data: { orderId: order.id } })
+                    await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Order created', data: { orderId: order.id, transferFailed: !!transferError } })
                 }
 
                 // 6. Update Listing Status
@@ -191,14 +223,14 @@ Deno.serve(async (req) => {
                 }
 
                 // 7. Send Notification to Seller
-                await supabase
+                const { error: sellerNotifError } = await supabase
                     .from('notifications')
                     .insert({
                         user_id: sellerId,
                         type: 'sale',
                         title: '¡Has vendido un artículo!',
                         message: `Tu artículo "${listing.title}" se ha vendido.`,
-                        link: `/market/orders/${order?.id}`, // Assuming we'll make an order details page
+                        link: `/market/orders/${order?.id}`,
                         read: false,
                         data: {
                             order_id: order?.id,
@@ -207,8 +239,17 @@ Deno.serve(async (req) => {
                         }
                     })
 
+                if (sellerNotifError) {
+                    console.error('Error sending seller notification:', sellerNotifError)
+                    await supabase.from('debug_logs').insert({
+                        source: 'stripe-webhook',
+                        message: 'Error sending seller notification',
+                        data: sellerNotifError
+                    })
+                }
+
                 // Send Notification to Buyer
-                await supabase
+                const { error: buyerNotifError } = await supabase
                     .from('notifications')
                     .insert({
                         user_id: buyerId,
@@ -222,6 +263,15 @@ Deno.serve(async (req) => {
                             listing_id: listingId
                         }
                     })
+
+                if (buyerNotifError) {
+                    console.error('Error sending buyer notification:', buyerNotifError)
+                    await supabase.from('debug_logs').insert({
+                        source: 'stripe-webhook',
+                        message: 'Error sending buyer notification',
+                        data: buyerNotifError
+                    })
+                }
 
                 break
             }
