@@ -70,6 +70,12 @@ Deno.serve(async (req) => {
         // Ensure Seller gets exact price
         const applicationFeeAmount = totalCents - sellerPriceCents
 
+        // Verify Buyer Auth
+        const { data: { user: buyer }, error: userError } = await supabaseClient.auth.getUser()
+        if (userError || !buyer) {
+            throw new Error('User not authenticated')
+        }
+
         // 4. Create PaymentIntent
         const paymentIntent = await stripe.paymentIntents.create({
             amount: totalCents,
@@ -77,7 +83,7 @@ Deno.serve(async (req) => {
             automatic_payment_methods: { enabled: true },
             metadata: {
                 listingId: listing.id,
-                buyerId: (await supabaseClient.auth.getUser()).data.user?.id,
+                buyerId: buyer.id,
                 sellerId: listing.user_id
             },
             transfer_group: listing.id // IMPORTANT: Link charge to future transfer

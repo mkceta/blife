@@ -57,16 +57,29 @@ Deno.serve(async (req) => {
                 // 1. Get Listing & Payout Info from metadata
                 const listingId = paymentIntent.metadata?.listingId
                 const sellerId = paymentIntent.metadata?.sellerId
+                const buyerId = paymentIntent.metadata?.buyerId
 
-                if (!listingId || !sellerId) {
+                if (!listingId || !sellerId || !buyerId) {
                     console.log('PaymentIntent missing metadata for transfer logic.')
+                    break
+                }
+
+                // Check for idempotency (if order already exists)
+                const { data: existingOrder } = await supabase
+                    .from('orders')
+                    .select('id')
+                    .eq('stripe_payment_intent_id', paymentIntent.id)
+                    .single()
+
+                if (existingOrder) {
+                    console.log('Order already exists for this payment intent.')
                     break
                 }
 
                 // 2. Fetch Listing Price to calculate Payout
                 const { data: listing } = await supabase
                     .from('listings')
-                    .select('price_cents, user_id')
+                    .select('price_cents, user_id, title')
                     .eq('id', listingId)
                     .single()
 
@@ -89,10 +102,6 @@ Deno.serve(async (req) => {
 
                 // 4. Create Transfer
                 // Seller receives exactly the listing price.
-                // Platform keeps the rest (Customer Price - Seller Price).
-                // Stripe fees are deducted from Platform balance automatically upon Charge.
-                // We transfer the exact listing amount to the seller.
-
                 const transferAmount = listing.price_cents
 
                 console.log(`Creating transfer of ${transferAmount} cents to ${sellerAccount.stripe_account_id}`)
@@ -110,12 +119,68 @@ Deno.serve(async (req) => {
 
                 console.log(`Transfer created: ${transfer.id}`)
 
-                // Optional: Mark listing as sold? handled by another event? or here?
-                // Let's mark it sold here for robustness
+                // 5. Create Order Record
+                const totalAmount = paymentIntent.amount
+                const platformFee = totalAmount - transferAmount
+
+                const { data: order, error: orderError } = await supabase
+                    .from('orders')
+                    .insert({
+                        listing_id: listingId,
+                        buyer_id: buyerId,
+                        seller_id: sellerId,
+                        status: 'paid',
+                        total_amount_cents: totalAmount,
+                        platform_fee_cents: platformFee,
+                        seller_amount_cents: transferAmount,
+                        stripe_payment_intent_id: paymentIntent.id,
+                        stripe_transfer_id: transfer.id
+                    })
+                    .select()
+                    .single()
+
+                if (orderError) {
+                    console.error('Error creating order:', orderError)
+                }
+
+                // 6. Update Listing Status
                 await supabase
                     .from('listings')
                     .update({ status: 'sold' })
                     .eq('id', listingId)
+
+                // 7. Send Notification to Seller
+                await supabase
+                    .from('notifications')
+                    .insert({
+                        user_id: sellerId,
+                        type: 'sale',
+                        title: '¡Has vendido un artículo!',
+                        message: `Tu artículo "${listing.title}" se ha vendido.`,
+                        link: `/market/orders/${order?.id}`, // Assuming we'll make an order details page
+                        read: false,
+                        data: {
+                            order_id: order?.id,
+                            listing_id: listingId,
+                            amount: transferAmount
+                        }
+                    })
+
+                // Send Notification to Buyer
+                await supabase
+                    .from('notifications')
+                    .insert({
+                        user_id: buyerId,
+                        type: 'purchase',
+                        title: '¡Compra realizada con éxito!',
+                        message: `Has comprado "${listing.title}".`,
+                        link: `/market/orders/${order?.id}`,
+                        read: false,
+                        data: {
+                            order_id: order?.id,
+                            listing_id: listingId
+                        }
+                    })
 
                 break
             }
