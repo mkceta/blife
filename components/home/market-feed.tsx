@@ -14,122 +14,91 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useCallback } from 'react'
 import { motion } from 'framer-motion'
 
-function MarketFeedContent() {
+// ... imports
+
+interface MarketFeedProps {
+    initialListings?: any[]
+}
+
+function MarketFeedContent({ initialListings = [] }: MarketFeedProps) {
     const searchParams = useSearchParams()
-    const [listings, setListings] = useState<any[]>([])
+    // listings state is initialized with props. 
+    // If props change (new search), we rely on the component re-rendering with new props?
+    // Actually, distinct Feed components are often key-ed by params in parent to force remount, 
+    // OR we use useEffect to update state when props change.
+    // BUT, if we are using Server Actions/Components fully, we might not need 'listings' state at all, just render props.
+    // HOWEVER, we have 'shuffling' logic on client for 'discovery'.
+    // And 'Favorites' logic.
+
+    // Let's stick to state to allow client-side shuffling if needed, but initialize from props.
+    const [listings, setListings] = useState<any[]>(initialListings)
     const [userFavorites, setUserFavorites] = useState<Set<string>>(new Set())
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false) // Initial data is present!
     const [currentUser, setCurrentUser] = useState<any>(null)
     const [averageLikes, setAverageLikes] = useState(0)
     const supabase = createClient()
 
-    const fetchData = useCallback(async () => {
+    // Update listings when initialListings prop changes (e.g. navigation)
+    useEffect(() => {
+        let finalListings = [...initialListings]
+        const sort = searchParams.get('sort')
+        const isDiscovery = !sort || sort === 'recommended'
+
+        if (isDiscovery) {
+            // Shuffle logic here if desired, but maybe server should handle it or just do it once on mount.
+            // If we shuffle on every navigation it might be jarring if data didn't change.
+            // But valid for "Discovery".
+            for (let i = finalListings.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [finalListings[i], finalListings[j]] = [finalListings[j], finalListings[i]];
+            }
+        }
+        setListings(finalListings)
+    }, [initialListings, searchParams])
+
+
+    const fetchFavorites = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUser(user)
 
-        // Fetch average likes stats for 'Hot' badges
         const { data: avg } = await supabase.rpc('get_average_listing_favorites')
         if (avg) setAverageLikes(avg)
 
-        let marketQuery = supabase
-            .from('listings')
-            .select('*, user:users!listings_user_id_fkey(alias_inst, rating_avg, degree, avatar_url)')
-            .eq('is_hidden', false)
-            .neq('status', 'sold')
+        if (user && initialListings.length > 0) {
+            const { data: favorites } = await supabase
+                .from('favorites')
+                .select('listing_id')
+                .eq('user_id', user.id)
+                .in('listing_id', initialListings.map(l => l.id))
 
-        const q = searchParams.get('q')
-        const category = searchParams.get('category')
-        const degree = searchParams.get('degree')
-        const minPrice = searchParams.get('min_price')
-        const maxPrice = searchParams.get('max_price')
-        const sort = searchParams.get('sort') || 'newest'
-
-        if (q) {
-            marketQuery = marketQuery.ilike('title', `%${q}%`)
-        }
-        if (category) {
-            marketQuery = marketQuery.eq('category', category)
-        }
-        if (degree) {
-            marketQuery = marketQuery.eq('user.degree', degree)
-        }
-        if (minPrice) {
-            marketQuery = marketQuery.gte('price_cents', parseFloat(minPrice) * 100)
-        }
-        if (maxPrice) {
-            marketQuery = marketQuery.lte('price_cents', parseFloat(maxPrice) * 100)
-        }
-
-        switch (sort) {
-            case 'oldest':
-                marketQuery = marketQuery.order('created_at', { ascending: true })
-                break
-            case 'price_asc':
-                marketQuery = marketQuery.order('price_cents', { ascending: true })
-                break
-            case 'price_desc':
-                marketQuery = marketQuery.order('price_cents', { ascending: false })
-                break
-            case 'most_liked':
-                marketQuery = marketQuery.order('favorites_count', { ascending: false })
-                break
-            default:
-                // Default 'Discovery' Algorithm:
-                // Fetch latest 50 items and shuffle them client-side to ensure freshness
-                // and "distinct feeds each time".
-                marketQuery = marketQuery.order('created_at', { ascending: false }).limit(50)
-        }
-
-        const { data: listingsData } = await marketQuery
-
-        if (listingsData) {
-            let finalListings = listingsData
-
-            // If default sort, shuffle the results for 'Discovery' feel
-            if (sort === 'newest') { // 'newest' is the default if param is missing? No, param is missing.
-                // Actually the default in switch is for missing sort.
-                // Let's check searchParams again.
-            }
-
-            // If we are in the default "Discovery" mode (no explicit sort or 'recommended')
-            // We shuffle. 
-            // Note: The switch case 'default' handles the query.
-            // But we need to know if we should shuffle.
-            const isDiscovery = !sort || sort === 'recommended'
-
-            if (isDiscovery) {
-                // Fisher-Yates Shuffle
-                for (let i = finalListings.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [finalListings[i], finalListings[j]] = [finalListings[j], finalListings[i]];
-                }
-            }
-
-            setListings(finalListings)
-
-            if (user) {
-                const { data: favorites } = await supabase
-                    .from('favorites')
-                    .select('listing_id')
-                    .eq('user_id', user.id)
-                    .in('listing_id', listingsData.map(l => l.id))
-
-                if (favorites) {
-                    setUserFavorites(new Set(favorites.map((f: any) => f.listing_id)))
-                }
+            if (favorites) {
+                setUserFavorites(new Set(favorites.map((f: any) => f.listing_id)))
             }
         }
-        setLoading(false)
-    }, [searchParams, supabase])
+    }, [supabase, initialListings])
 
+
+    // Just fetch favorites on mount or when listings change
     useEffect(() => {
-        setLoading(true)
-        fetchData()
-    }, [fetchData])
+        fetchFavorites()
+    }, [fetchFavorites])
 
     const handleRefresh = async () => {
-        await fetchData()
+        // Refresh could trigger a router refresh to re-run server fetch
+        // or standard client fetch. 
+        // Simpler: location.reload() or router.refresh()
+        // router.refresh() re-executes server components.
+        // But we need to wait for it.
+        // For now, let's keep it simple: router.refresh() 
+        // to get fresh data from server (which might be cached 60s, so actually we might need to invalidate?)
+        // If we want *real* refresh we might need to bust cache.
+        // For now, standard refresh.
+        window.location.reload()
     }
+
+    // ... render use listings ...
+
+
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
@@ -248,10 +217,10 @@ export function MarketSearchBar() {
     )
 }
 
-export function MarketFeed() {
+export function MarketFeed({ initialListings }: { initialListings?: any[] }) {
     return (
         <Suspense fallback={<div className="text-center py-20 text-muted-foreground">Cargando...</div>}>
-            <MarketFeedContent />
+            <MarketFeedContent initialListings={initialListings} />
         </Suspense>
     )
 }

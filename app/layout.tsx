@@ -38,6 +38,7 @@ import { Suspense } from 'react'
 
 import { PresenceUpdater } from '@/components/presence-updater'
 import { BackButtonHandler } from '@/components/back-button-handler'
+import { NotificationHandler } from '@/components/notification-handler'
 
 // ... existing imports
 
@@ -59,6 +60,7 @@ export default function RootLayout({
           <PresenceUpdater />
           <PwaRegister />
           <BackButtonHandler />
+          <NotificationHandler />
           <Suspense>
             <DesktopHeader />
           </Suspense>
