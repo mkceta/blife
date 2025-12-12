@@ -14,6 +14,21 @@ Deno.serve(async (req) => {
     const body = await req.text()
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
+    const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    try {
+        await supabase.from('debug_logs').insert({
+            source: 'stripe-webhook',
+            message: 'Incoming Webhook Request',
+            data: { signature_exists: !!signature, body_length: body.length }
+        })
+    } catch (e) {
+        console.error('Failed to log init', e)
+    }
+
     let event
     try {
         event = await stripe.webhooks.constructEventAsync(
@@ -25,18 +40,18 @@ Deno.serve(async (req) => {
         )
     } catch (err: any) {
         console.error(`Webhook signature verification failed: ${err.message}`)
+        await supabase.from('debug_logs').insert({
+            source: 'stripe-webhook',
+            message: 'Signature Verification Failed',
+            data: { error: err.message }
+        })
         return new Response(`Webhook Error: ${err.message}`, { status: 400 })
     }
-
-    const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
 
     try {
         await supabase.from('debug_logs').insert({
             source: 'stripe-webhook',
-            message: `Received event: ${event.type}`,
+            message: `Event Verified: ${event.type}`,
             data: { eventId: event.id, type: event.type }
         })
 
