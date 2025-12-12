@@ -134,11 +134,15 @@ Deno.serve(async (req) => {
                     break
                 }
 
+                // 4. Create Transfer
+                // Seller receives exactly the listing price.
+                const transferAmount = listing.price_cents
+
                 // Check available balance before transfer (Test Mode Fix)
                 let balanceSufficient = true;
                 try {
                     const balance = await stripe.balance.retrieve()
-                    const availableEur = balance.available.find(b => b.currency === 'eur')?.amount || 0
+                    const availableEur = balance.available.find((b: any) => b.currency === 'eur')?.amount || 0
                     if (availableEur < transferAmount) {
                         console.log(`Insufficient balance: ${availableEur} < ${transferAmount}. Skipping immediate transfer.`)
                         balanceSufficient = false;
@@ -152,9 +156,7 @@ Deno.serve(async (req) => {
                     console.error('Error checking balance:', bErr)
                 }
 
-                // 4. Create Transfer
-                // Seller receives exactly the listing price.
-                const transferAmount = listing.price_cents
+
                 let transferId = null
                 let transferError = null
 

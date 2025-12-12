@@ -35,7 +35,7 @@ async function run() {
         console.log('Logs found:', data.length);
         data.forEach(log => {
             console.log(`[${log.created_at}] [${log.source}]: ${log.message}`);
-            console.log(JSON.stringify(log.data));
+            console.log(JSON.stringify(log.data, null, 2));
             console.log('---');
         });
     }
