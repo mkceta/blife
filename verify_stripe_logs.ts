@@ -17,6 +17,13 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function checkLogs() {
+    console.log('Inserting test log...')
+    const { error: insertError } = await supabase.from('debug_logs').insert({
+        source: 'local-script',
+        message: 'Test log from verification script'
+    })
+    if (insertError) console.error('Error inserting test log:', insertError)
+
     console.log('Checking debug_logs...')
     const { data, error } = await supabase
         .from('debug_logs')
@@ -37,4 +44,6 @@ async function checkLogs() {
     })
 }
 
-checkLogs()
+; (async () => {
+    await checkLogs()
+})()

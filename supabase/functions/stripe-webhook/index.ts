@@ -226,6 +226,36 @@ Deno.serve(async (req) => {
                 break
             }
 
+            case 'payment_intent.payment_failed': {
+                const paymentIntent = event.data.object
+                const buyerId = paymentIntent.metadata?.buyerId
+                const listingId = paymentIntent.metadata?.listingId
+
+                console.log(`Payment failed: ${paymentIntent.id}`)
+                await supabase.from('debug_logs').insert({
+                    source: 'stripe-webhook',
+                    message: 'Payment Failed',
+                    data: { error: paymentIntent.last_payment_error?.message, buyerId }
+                })
+
+                if (buyerId) {
+                    await supabase
+                        .from('notifications')
+                        .insert({
+                            user_id: buyerId,
+                            type: 'system',
+                            title: 'Error en el pago',
+                            message: `Tu intento de pago para el artículo ha fallado. Por favor revisa tu tarjeta.`,
+                            link: listingId ? `/market/product?id=${listingId}` : '/market',
+                            read: false,
+                            data: {
+                                payment_intent_id: paymentIntent.id
+                            }
+                        })
+                }
+                break
+            }
+
             default:
                 console.log(`Unhandled event type ${event.type}`)
         }
