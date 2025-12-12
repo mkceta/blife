@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useState, Suspense, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { FlatCard } from '@/components/flats/flat-card'
 import { FlatFilters } from '@/components/flats/flat-filters'
@@ -143,7 +143,28 @@ function FlatsFeedContent() {
 
 export function FlatsSearchBar({ flats }: { flats: any[] }) {
     const searchParams = useSearchParams()
+    const router = useRouter()
     const [isStuck, setIsStuck] = useState(false)
+    const [inputValue, setInputValue] = useState(searchParams.get('q') || '')
+    const timeoutRef = useRef<NodeJS.Timeout>(null)
+
+    const handleSearch = (value: string) => {
+        setInputValue(value)
+
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+        }
+
+        timeoutRef.current = setTimeout(() => {
+            const params = new URLSearchParams(searchParams.toString())
+            if (value) {
+                params.set('q', value)
+            } else {
+                params.delete('q')
+            }
+            router.replace(`/home/flats?${params.toString()}`)
+        }, 300)
+    }
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -169,17 +190,17 @@ export function FlatsSearchBar({ flats }: { flats: any[] }) {
             <div className={`sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm transition-all duration-200 ${isStuck ? 'pt-[env(safe-area-inset-top)]' : 'pt-2'}`}>
                 <div className="flex flex-col gap-2 px-3 pb-2">
                     <div className="flex gap-2 items-center">
-                        <form action="/home/flats" method="GET" className="flex-1 relative">
+                        <div className="flex-1 relative">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    name="q"
-                                    defaultValue={searchParams.get('q') || ''}
+                                    value={inputValue}
+                                    onChange={(e) => handleSearch(e.target.value)}
                                     placeholder="Buscar pisos..."
                                     className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
                                 />
                             </div>
-                        </form>
+                        </div>
                         <div className="flex-none">
                             <FlatFilters flats={flats || []} />
                         </div>

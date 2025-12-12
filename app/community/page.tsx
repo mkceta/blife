@@ -31,6 +31,10 @@ function CommunitySearchBar({ defaultValue }: { defaultValue: string }) {
     )
 }
 
+import { createClient } from '@/lib/supabase-server'
+
+// ... existing imports ...
+
 export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ category?: string, q?: string }> }) {
     // Mark unread comment notifications as read for this user
     await markNotificationsAsReadByType('comment');
@@ -39,6 +43,46 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
     const currentCategory = params.category || 'General'
     const searchQuery = params.q || ''
 
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Fetch Posts
+    let query = supabase
+        .from('posts')
+        .select(`
+                *,
+                user:users!posts_user_id_fkey(id, alias_inst, avatar_url)
+            `)
+        .eq('is_hidden', false)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+    if (currentCategory && currentCategory !== 'Todos') {
+        query = query.contains('category', [currentCategory])
+    }
+
+    if (searchQuery) {
+        query = query.ilike('text', `%${searchQuery}%`)
+    }
+
+    const { data: posts } = await query
+
+    // Fetch User Reactions
+    let initialReactions: string[] = []
+    if (user && posts && posts.length > 0) {
+        const postIds = posts.map(p => p.id)
+        const { data: reactions } = await supabase
+            .from('reactions')
+            .select('target_id')
+            .eq('user_id', user.id)
+            .eq('target_type', 'post')
+            .in('target_id', postIds)
+
+        if (reactions) {
+            initialReactions = reactions.map((r: any) => r.target_id)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Standard App Header Style */}
@@ -46,8 +90,6 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                 <div className="pt-[calc(env(safe-area-inset-top)+0.5rem)] px-4 pb-3 flex flex-col md:flex-row md:items-center gap-4 justify-between max-w-5xl mx-auto w-full">
                     <div className="flex items-center justify-between w-full md:w-auto">
                         <h1 className="text-xl font-bold">Comunidad UDC</h1>
-                        {/* New Post Button - Visible on Mobile Header only if needed, but currently FAB is better for Mobile */}
-
                     </div>
 
                     <CommunitySearchBar defaultValue={searchQuery} />
@@ -77,7 +119,13 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
 
             <div className="max-w-3xl mx-auto p-4 space-y-4">
                 <Suspense fallback={<CommunitySkeleton />}>
-                    <CommunityFeed category={currentCategory} searchQuery={searchQuery} />
+                    <CommunityFeed
+                        category={currentCategory}
+                        searchQuery={searchQuery}
+                        initialPosts={posts || []}
+                        initialReactions={initialReactions}
+                        currentUserId={user?.id}
+                    />
                 </Suspense>
             </div>
 
@@ -85,7 +133,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                 href="/community/new"
             >
                 <Button
-                    className="fixed bottom-[8rem] right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-50 hover:shadow-primary/25 md:bottom-10"
+                    className="fixed bottom-[8rem] right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-[60] hover:shadow-primary/25 md:bottom-10"
                     size="icon"
                 >
                     <Plus className="h-7 w-7" strokeWidth={3} />

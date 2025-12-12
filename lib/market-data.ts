@@ -4,8 +4,8 @@ import { unstable_cache } from 'next/cache'
 
 // Use a separate client for cached requests to avoid cookie/header dependency errors in cache
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export type MarketFilters = {
     q?: string
@@ -14,12 +14,13 @@ export type MarketFilters = {
     minPrice?: number
     maxPrice?: number
     sort?: string
+    size?: string
 }
 
 const getListings = async (filters: MarketFilters) => {
     let query = supabase
         .from('listings')
-        .select('*, user:users!listings_user_id_fkey(alias_inst, rating_avg, degree, avatar_url)')
+        .select('id, title, price_cents, photos, created_at, status, user_id, favorites_count, brand, size, condition, is_hidden, category, user:users!listings_user_id_fkey(alias_inst, rating_avg, degree, avatar_url)')
         .eq('is_hidden', false)
         .neq('status', 'sold')
 
@@ -55,6 +56,9 @@ const getListings = async (filters: MarketFilters) => {
     }
     if (filters.maxPrice) {
         query = query.lte('price_cents', filters.maxPrice * 100)
+    }
+    if (filters.size) {
+        query = query.eq('size', filters.size)
     }
 
     // Sort
@@ -94,7 +98,7 @@ export const getCachedMarketListings = unstable_cache(
     },
     ['market-listings'], // Base tag
     {
-        revalidate: 60, // Cache for 60 seconds
+        revalidate: 28800, // Cache for 8 hours (8 * 60 * 60)
         tags: ['market-listings']
     }
 )

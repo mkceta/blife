@@ -1,12 +1,11 @@
-'use client'
-
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { mediumHaptic } from '@/lib/haptics'
+import { mediumHaptic, successHaptic } from '@/lib/haptics'
+import { motion, AnimatePresence, useAnimation } from 'framer-motion'
 
 interface WishlistButtonProps {
     listingId: string
@@ -15,6 +14,35 @@ interface WishlistButtonProps {
     currentUserId?: string
     variant?: 'default' | 'icon'
     className?: string
+}
+
+const Particle = ({ angle }: { angle: number }) => {
+    // Randomize distance and size slightly for natural feel
+    const distance = 40 + Math.random() * 20
+    const size = 3 + Math.random() * 3
+
+    return (
+        <motion.div
+            initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+            animate={{
+                x: Math.cos(angle * (Math.PI / 180)) * distance,
+                y: Math.sin(angle * (Math.PI / 180)) * distance,
+                scale: [0, 1.5, 0], // Pop up and shrink
+                opacity: [1, 1, 0]  // Fade out at end
+            }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="absolute rounded-full"
+            style={{
+                width: size,
+                height: size,
+                backgroundColor: ['#FF4D4D', '#FF8585', '#FFD700', '#4D96FF', '#6AC5FE'][Math.floor(Math.random() * 5)], // More colors
+                left: '50%',
+                top: '50%',
+                marginLeft: -size / 2,
+                marginTop: -size / 2,
+            }}
+        />
+    )
 }
 
 export function WishlistButton({
@@ -28,30 +56,54 @@ export function WishlistButton({
     const [isFavorited, setIsFavorited] = useState(initialFavorited)
     const [count, setCount] = useState(favoritesCount)
     const [isPending, startTransition] = useTransition()
+    const [showParticles, setShowParticles] = useState(false)
+    const controls = useAnimation()
     const supabase = createClient()
 
-    const handleToggle = (e?: React.MouseEvent) => {
+    // Reset particles after animation
+    useEffect(() => {
+        if (showParticles) {
+            const timer = setTimeout(() => setShowParticles(false), 800)
+            return () => clearTimeout(timer)
+        }
+    }, [showParticles])
+
+    const handleToggle = async (e?: React.MouseEvent) => {
         if (e) {
             e.preventDefault()
             e.stopPropagation()
         }
-
-        mediumHaptic()
 
         if (!currentUserId) {
             toast.error('Inicia sesión para añadir a favoritos')
             return
         }
 
-        // Optimistic update
+        // 1. Instant UI Update
         const newState = !isFavorited
         setIsFavorited(newState)
         setCount(prev => newState ? prev + 1 : Math.max(0, prev - 1))
 
+        // 2. Animation & Haptics
+        if (newState) {
+            successHaptic() // Stronger haptic for "Like"
+            setShowParticles(true)
+            controls.start({
+                scale: [1, 0.8, 1.4, 0.9, 1],
+                transition: { type: "spring", stiffness: 400, damping: 10 } // "Pop" effect
+            })
+        } else {
+            mediumHaptic()
+            controls.start({
+                scale: [1, 0.8, 1],
+                transition: { duration: 0.2 }
+            })
+        }
+
+        // 3. Server Request (Optimistic)
         startTransition(async () => {
             try {
                 if (newState) {
-                    // Add to favorites
                     const { error } = await supabase
                         .from('favorites')
                         .insert({
@@ -61,7 +113,6 @@ export function WishlistButton({
                     if (error) throw error
                     await (supabase as any).rpc('increment_favorites', { listing_id: listingId })
                 } else {
-                    // Remove from favorites
                     const { error } = await supabase
                         .from('favorites')
                         .delete()
@@ -72,8 +123,8 @@ export function WishlistButton({
                 }
             } catch (error: any) {
                 console.error('Error toggling favorite:', error)
-                toast.error(error.message || 'Error al actualizar favoritos')
-                // Revert on error
+                toast.error('No se pudo actualizar')
+                // Revert UI on error
                 setIsFavorited(!newState)
                 setCount(prev => !newState ? prev + 1 : Math.max(0, prev - 1))
             }
@@ -83,39 +134,55 @@ export function WishlistButton({
     if (!currentUserId) return null
 
     if (variant === 'icon') {
+        const particleCount = 12
+        const angles = Array.from({ length: particleCount }).map((_, i) => (360 / particleCount) * i)
+
         return (
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleToggle}
-                disabled={isPending}
-                className={cn(
-                    "h-10 rounded-full glass-strong border transition-all duration-300 group backdrop-blur-md flex items-center justify-center gap-1.5",
-                    count > 0 ? "w-auto px-3" : "w-10",
-                    isFavorited
-                        ? "bg-primary/20 hover:bg-primary/30 border-primary/50 shadow-lg shadow-primary/50 hover:shadow-xl hover:shadow-primary/60"
-                        : "bg-black/40 hover:bg-black/60 text-white border-white/30 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/30",
-                    isPending && "animate-pulse-slow",
-                    className
-                )}
-                aria-label={isFavorited ? "Quitar de favoritos" : "Añadir a favoritos"}
-            >
-                <Heart
+            <div className="relative group/btn z-50">
+                {/* Particles Container */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <AnimatePresence>
+                        {showParticles && angles.map((angle, i) => (
+                            <Particle key={i} angle={angle} />
+                        ))}
+                    </AnimatePresence>
+                </div>
+
+                <motion.button
+                    onClick={handleToggle}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.9 }}
                     className={cn(
-                        "h-5 w-5 transition-all duration-300",
-                        isFavorited && "fill-primary text-primary scale-110 drop-shadow-md",
-                        !isFavorited && "text-white group-hover:scale-125 group-hover:text-primary"
+                        "relative h-9 rounded-full decoration-0 select-none outline-none overflow-visible flex items-center justify-center gap-1.5 transition-all duration-300",
+                        "glass-strong backdrop-blur-md border",
+                        count > 0 ? "w-auto px-3" : "w-9",
+                        isFavorited
+                            ? "bg-primary/20 border-primary/50 shadow-[0_0_15px_-3px_rgba(var(--primary),0.6)]" // Glowing effect
+                            : "bg-black/40 border-white/10 hover:bg-black/60 hover:border-white/30",
+                        className
                     )}
-                />
-                {count > 0 && (
-                    <span className={cn(
-                        "text-xs font-bold transition-colors",
-                        isFavorited ? "text-primary" : "text-white group-hover:text-primary"
-                    )}>
-                        {count}
-                    </span>
-                )}
-            </Button>
+                >
+                    <motion.div animate={controls}>
+                        <Heart
+                            className={cn(
+                                "h-5 w-5 transition-colors duration-300",
+                                isFavorited
+                                    ? "fill-primary text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.8)]"
+                                    : "text-white group-hover/btn:text-primary"
+                            )}
+                        />
+                    </motion.div>
+
+                    {count > 0 && (
+                        <span className={cn(
+                            "text-xs font-bold transition-colors duration-200",
+                            isFavorited ? "text-primary shadow-glow-sm" : "text-white"
+                        )}>
+                            {count}
+                        </span>
+                    )}
+                </motion.button>
+            </div>
         )
     }
 
@@ -123,14 +190,15 @@ export function WishlistButton({
         <Button
             variant={isFavorited ? "default" : "outline"}
             onClick={handleToggle}
-            disabled={isPending}
             className={cn(
-                "transition-all duration-300",
-                isFavorited && "bg-gradient-primary shadow-glow-primary",
+                "transition-all duration-300 transform active:scale-95",
+                isFavorited && "bg-gradient-primary shadow-glow-primary hover:shadow-glow-lg",
                 className
             )}
         >
-            <Heart className={cn("h-4 w-4 mr-2 transition-all", isFavorited && "fill-current")} />
+            <motion.div animate={controls} className="mr-2">
+                <Heart className={cn("h-4 w-4 transition-all", isFavorited && "fill-current")} />
+            </motion.div>
             {isFavorited ? 'En Wishlist' : 'Añadir a Wishlist'}
         </Button>
     )

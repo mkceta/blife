@@ -90,52 +90,33 @@ export default function NewFlatPage() {
         }
 
         setIsLoading(true)
-        const supabase = createClient()
         try {
+            const supabase = createClient()
+            // Check auth client-side before starting upload
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('No autenticado')
 
-            const { data: flat, error } = await supabase
-                .from('flats')
-                .insert({
-                    user_id: user.id,
-                    title: values.title,
-                    description: values.description,
-                    rent_cents: Math.round(values.rent * 100),
-                    rooms: values.rooms,
-                    baths: values.baths,
-                    area_m2: values.area_m2,
-                    location_area: values.location_area || 'custom',
-                    roommates_current: values.roommates_current,
-                    lat: values.lat,
-                    lng: values.lng,
-                    amenities: values.amenities || [],
-                    status: 'active',
-                })
-                .select()
-                .single()
-
-            if (error) throw error
+            // Generate a random UUID for the storage folder
+            // We can't know the Flat ID yet, but we need to upload images.
+            // Strategically, we can use a random ID for storage.
+            // The DB 'flats' table will generate its own ID.
+            // We just store the full URLs in the 'photos' array, so the storage path doesn't strictly matter.
+            const storageId = crypto.randomUUID()
 
             // Upload images
-            const uploadedPhotos = await uploadFlatImages(files, flat.id)
+            const uploadedPhotos = await uploadFlatImages(files, storageId)
 
-            // Update flat with photos
-            const { error: updateError } = await supabase
-                .from('flats')
-                .update({ photos: uploadedPhotos })
-                .eq('id', flat.id)
+            // Server Action for Creation
+            const { createFlatAction } = await import('@/app/market/actions')
 
-            if (updateError) throw updateError
+            await createFlatAction(values, uploadedPhotos)
 
             toast.success('Piso publicado')
-            router.push(`/flats/${flat.id}`)
-            router.refresh()
+            // Redirection happens in action
 
         } catch (error: any) {
             console.error(error)
             toast.error(error.message || 'Error al publicar')
-        } finally {
             setIsLoading(false)
         }
     }
@@ -151,9 +132,9 @@ export default function NewFlatPage() {
                 <h1 className="text-xl font-bold">Publicar Piso</h1>
             </div>
 
-            <div className="flex-1 overflow-y-auto overscroll-y-contain pb-32">
+            <div className="flex-1 overflow-y-auto overscroll-y-contain">
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 space-y-6 pb-safe container max-w-md mx-auto">
+                    <form id="flat-form" onSubmit={form.handleSubmit(onSubmit)} className="p-4 space-y-6 container max-w-md mx-auto">
                         <div className="space-y-4">
                             <FormLabel>Fotos del piso (Mínimo 5)</FormLabel>
                             <ImageUpload
@@ -356,31 +337,32 @@ export default function NewFlatPage() {
                                 </FormItem>
                             )}
                         />
-                        {/* Added generous padding bottom to form content to clear dynamic footer */}
-                        <div className="pb-24" />
-
-                        {/* Sticky Footer */}
-                        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t pb-[calc(1rem+env(safe-area-inset-bottom))] z-50">
-                            <div className="container max-w-md mx-auto">
-                                <Button
-                                    type="submit"
-                                    className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20"
-                                    size="lg"
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Publicando...
-                                        </>
-                                    ) : (
-                                        'Publicar Piso'
-                                    )}
-                                </Button>
-                            </div>
-                        </div>
+                        {/* Spacing for footer */}
+                        <div className="pb-4" />
                     </form>
                 </Form>
+            </div>
+
+            {/* Fixed Footer (now flex item) */}
+            <div className="p-4 bg-background border-t pb-[calc(1rem+env(safe-area-inset-bottom))] z-50 mt-auto">
+                <div className="container max-w-md mx-auto">
+                    <Button
+                        type="submit"
+                        form="flat-form"
+                        className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20"
+                        size="lg"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Publicando...
+                            </>
+                        ) : (
+                            'Publicar Piso'
+                        )}
+                    </Button>
+                </div>
             </div>
         </div>
     )

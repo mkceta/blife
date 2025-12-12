@@ -46,6 +46,14 @@ const DEGREES = [
     'Otro'
 ]
 
+const SIZES = [
+    'Todos',
+    'XS', 'S', 'M', 'L', 'XL', 'XXL',
+    '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'
+]
+
+// ... previous code ...
+
 export function MarketFilters() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -88,9 +96,10 @@ export function MarketFilters() {
         minPrice: searchParams.get('min_price') || '',
         maxPrice: searchParams.get('max_price') || '',
         sort: searchParams.get('sort') || 'newest',
+        size: searchParams.get('size') || 'Todos',
     })
 
-    // Sync state with URL params when they change
+    // Sync state with URL params
     useEffect(() => {
         setFilters({
             category: searchParams.get('category') || 'Todos',
@@ -98,12 +107,14 @@ export function MarketFilters() {
             minPrice: searchParams.get('min_price') || '',
             maxPrice: searchParams.get('max_price') || '',
             sort: searchParams.get('sort') || 'newest',
+            size: searchParams.get('size') || 'Todos',
         })
     }, [searchParams])
 
     const applyFilters = () => {
         const params = new URLSearchParams(searchParams.toString())
 
+        // ... existing params logic ... 
         if (filters.category && filters.category !== 'Todos') {
             params.set('category', filters.category)
         } else {
@@ -114,6 +125,12 @@ export function MarketFilters() {
             params.set('degree', filters.degree)
         } else {
             params.delete('degree')
+        }
+
+        if (filters.size && filters.size !== 'Todos') {
+            params.set('size', filters.size)
+        } else {
+            params.delete('size')
         }
 
         if (filters.minPrice) {
@@ -134,13 +151,13 @@ export function MarketFilters() {
             params.delete('sort')
         }
 
-        // Ensure we are on the correct tab if needed, though preserving params handles it
+        // ...
+
         if (!params.has('tab')) {
             params.set('tab', 'market')
         }
 
         router.push(`${pathname}?${params.toString()}`)
-        // Close handles the history back
         handleOpenChange(false)
     }
 
@@ -151,6 +168,7 @@ export function MarketFilters() {
         params.delete('min_price')
         params.delete('max_price')
         params.delete('sort')
+        params.delete('size') // Clear size
 
         setFilters({
             category: 'Todos',
@@ -158,10 +176,10 @@ export function MarketFilters() {
             minPrice: '',
             maxPrice: '',
             sort: 'newest',
+            size: 'Todos',
         })
 
         router.push(`${pathname}?${params.toString()}`)
-        // Close handles the history back
         handleOpenChange(false)
     }
 
@@ -171,6 +189,7 @@ export function MarketFilters() {
         filters.minPrice,
         filters.maxPrice,
         filters.sort !== 'newest',
+        filters.size !== 'Todos',
     ].filter(Boolean).length
 
     return (
@@ -188,7 +207,6 @@ export function MarketFilters() {
                     <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
                         Filtros y Ordenación
                     </SheetTitle>
-                    {/* Close button is automatically added by SheetContent usually, but we can add explicit one if needed or rely on default X */}
                 </SheetHeader>
 
                 <div className="flex flex-col gap-8 h-[calc(100vh-10rem)] overflow-y-auto pr-2">
@@ -231,6 +249,30 @@ export function MarketFilters() {
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {filters.category === 'Ropa' && (
+                        <>
+                            <Separator className="bg-white/10" />
+                            <div className="space-y-4">
+                                <Label className="text-base font-medium text-foreground/90">Talla</Label>
+                                <Select
+                                    value={filters.size}
+                                    onValueChange={(value) => setFilters({ ...filters, size: value })}
+                                >
+                                    <SelectTrigger className="h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 transition-all focus:ring-primary/20">
+                                        <SelectValue placeholder="Selecciona talla" />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-white/10 bg-black/90 backdrop-blur-xl max-h-[300px]">
+                                        {SIZES.map((size) => (
+                                            <SelectItem key={size} value={size} className="focus:bg-white/10 focus:text-primary">
+                                                {size}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </>
+                    )}
 
                     <Separator className="bg-white/10" />
 

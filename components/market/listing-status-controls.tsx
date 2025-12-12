@@ -13,8 +13,9 @@ import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase'
+
 import { useRouter } from 'next/navigation'
+import { updateListingStatusAction, deleteListingAction } from '@/app/market/actions'
 
 interface ListingStatusControlsProps {
     listingId: string
@@ -35,7 +36,6 @@ export function ListingStatusControls({
 }: ListingStatusControlsProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-    const supabase = createClient()
     const router = useRouter()
 
     async function handleStatusChange(status: 'active' | 'reserved' | 'sold') {
@@ -43,15 +43,8 @@ export function ListingStatusControls({
 
         setIsLoading(true)
         try {
-            const { error } = await supabase
-                .from('listings')
-                .update({ status })
-                .eq('id', listingId)
-
-            if (error) throw error
-
+            await updateListingStatusAction(listingId, status)
             toast.success('Estado actualizado')
-            router.refresh()
         } catch (error) {
             console.error('Error updating listing status:', error)
             toast.error('Error al actualizar estado')
@@ -84,16 +77,8 @@ export function ListingStatusControls({
 
     async function handleDelete() {
         try {
-            const { error } = await supabase
-                .from('listings')
-                .delete()
-                .eq('id', listingId)
-
-            if (error) throw error
-
-            toast.success('Anuncio eliminado')
-            router.push('/market')
-            router.refresh()
+            await deleteListingAction(listingId)
+            // Redirect is handled by server action
         } catch (error) {
             console.error('Error deleting listing:', error)
             toast.error('Error al eliminar el anuncio')

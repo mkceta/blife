@@ -25,9 +25,10 @@ interface PostCardProps {
     currentUser?: any
     hasUserReacted: boolean
     isDetail?: boolean
+    priority?: boolean
 }
 
-export function PostCard({ post, currentUser, hasUserReacted, isDetail = false }: PostCardProps) {
+export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, priority = false }: PostCardProps) {
     const user = Array.isArray(post.user) ? post.user[0] : post.user
     const displayName = `@${user?.alias_inst || 'Usuario'}`
     const router = useRouter()
@@ -37,20 +38,16 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false }
         if (!confirm('¿Seguro que quieres borrar este post?')) return
 
         setIsDeleting(true)
-        const supabase = createClient()
         try {
-            const { error } = await supabase
-                .from('posts')
-                .delete()
-                .eq('id', post.id)
-
-            if (error) throw error
+            const { deletePostAction } = await import('@/app/community/actions')
+            await deletePostAction(post.id)
 
             toast.success('Post eliminado')
             if (isDetail) {
                 router.push('/community')
             }
-            router.refresh()
+            // No need to router.refresh() if revalidatePath worked, but no harm keeping it if needed, 
+            // though server action revalidation should be enough.
         } catch (error) {
             console.error(error)
             toast.error('Error al eliminar')
@@ -130,6 +127,7 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false }
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        priority={priority}
                     />
                 </div>
             )}

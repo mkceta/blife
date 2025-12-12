@@ -12,6 +12,9 @@ import { ChevronLeft, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { ImageUpload } from '@/components/ui/image-upload'
+import { uploadPostImage } from '@/lib/upload'
+import { createPostAction } from '@/app/community/actions'
 
 const CATEGORIES = [
     { id: 'General', label: 'General' },
@@ -30,7 +33,9 @@ const formSchema = z.object({
 
 export default function NewPostPage() {
     const [isLoading, setIsLoading] = useState(false)
+    const [files, setFiles] = useState<File[]>([])
     const router = useRouter()
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -39,6 +44,16 @@ export default function NewPostPage() {
         },
     })
 
+    const handleFilesChange = (newFiles: File[]) => {
+        setFiles(newFiles)
+    }
+
+    const removeFile = (index: number) => {
+        const newFiles = [...files]
+        newFiles.splice(index, 1)
+        setFiles(newFiles)
+    }
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
         const supabase = createClient()
@@ -46,38 +61,35 @@ export default function NewPostPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('No autenticado')
 
-            const { error } = await supabase
-                .from('posts')
-                .insert({
-                    user_id: user.id,
-                    text: values.text,
-                    category: values.categories, // Array of strings
-                })
+            let photoUrl = undefined
+            if (files.length > 0) {
+                // We use a temporary ID for the upload path if we don't have the post ID yet.
+                // Ideally we'd prefer the ID, but for now we'll use a random UUID which effectively organizes it.
+                // Alternatively we could create the post first? But that risks empty post if upload fails.
+                // Better to upload first.
+                const tempId = crypto.randomUUID()
+                photoUrl = await uploadPostImage(files[0], tempId)
+            }
 
-            if (error) throw error
+            await createPostAction(values.text, values.categories, photoUrl)
 
             toast.success('Post publicado')
-            router.push('/community')
-            router.refresh()
-
+            // Redirect handled by action, but we can also push if we want to be sure client side
+            // Action calls redirect() which throws NEXT_REDIRECT, so this code might not be reached if successful.
         } catch (error: any) {
             console.error(error)
             toast.error(error.message || 'Error al publicar')
-        } finally {
             setIsLoading(false)
         }
     }
 
     const toggleCategory = (catId: string, current: string[], onChange: (val: string[]) => void) => {
         if (catId === 'General') {
-            // General is always on? No, user said "General va incluída por defecto (se puede quitar)"
-            // So standard toggle.
+            // Optional logic: keep General or not. User said "se puede quitar".
         }
 
         if (current.includes(catId)) {
             const newVal = current.filter(c => c !== catId)
-            // Prevent empty? User didn't say prevent empty explicitly, but form defaults to General.
-            // Schema min(1) prevents empty submission.
             onChange(newVal)
         } else {
             onChange([...current, catId])
@@ -96,7 +108,7 @@ export default function NewPostPage() {
             </div>
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 space-y-6 pb-24">
                     <FormField
                         control={form.control}
                         name="categories"
@@ -133,7 +145,7 @@ export default function NewPostPage() {
                                 <FormControl>
                                     <Textarea
                                         placeholder="Comparte algo con la comunidad UDC..."
-                                        className="min-h-[200px] text-base resize-none"
+                                        className="min-h-[150px] text-base resize-none"
                                         {...field}
                                     />
                                 </FormControl>
@@ -141,6 +153,16 @@ export default function NewPostPage() {
                             </FormItem>
                         )}
                     />
+
+                    <div className="space-y-4">
+                        <FormLabel>Foto (Opcional)</FormLabel>
+                        <ImageUpload
+                            value={files}
+                            onChange={handleFilesChange}
+                            onRemove={removeFile}
+                            maxFiles={1}
+                        />
+                    </div>
 
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                         {isLoading ? (

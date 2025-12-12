@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { createClient } from '@/lib/supabase'
+import { compressAvatar } from '@/lib/upload'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -121,16 +122,18 @@ export default function EditProfilePage() {
         // Upload file
         setIsLoading(true)
         try {
-            const fileExt = file.name.split('.').pop()
+            const compressedFile = await compressAvatar(file)
+            const fileExt = 'webp' // compressAvatar forces webp
             const fileName = `${Date.now()}.${fileExt}`
             const filePath = `${user.id}/${fileName}`
 
             // Upload new avatar
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
-                .upload(filePath, file, {
+                .upload(filePath, compressedFile, {
                     cacheControl: '3600',
-                    upsert: false
+                    upsert: false,
+                    contentType: 'image/webp'
                 })
 
             if (uploadError) throw uploadError

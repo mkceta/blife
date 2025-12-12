@@ -18,21 +18,28 @@ import { motion } from 'framer-motion'
 interface CommunityFeedProps {
     category?: string
     searchQuery?: string
+    initialPosts?: any[]
+    initialReactions?: string[] // Array of post IDs the user reacted to
+    currentUserId?: string
 }
 
-export function CommunityFeed({ category = 'General', searchQuery = '' }: CommunityFeedProps) {
-    const [posts, setPosts] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-    const [currentUser, setCurrentUser] = useState<any>(null)
-    const [userReactions, setUserReactions] = useState<Set<string>>(new Set())
+export function CommunityFeed({
+    category = 'General',
+    searchQuery = '',
+    initialPosts = [],
+    initialReactions = [],
+    currentUserId
+}: CommunityFeedProps) {
+    const [posts, setPosts] = useState<any[]>(initialPosts)
+    const [loading, setLoading] = useState(initialPosts.length === 0)
+    const [userReactions, setUserReactions] = useState<Set<string>>(new Set(initialReactions))
     const supabase = createClient()
 
     const fetchPosts = useCallback(async () => {
-        setLoading(true)
-        const { data: { user } } = await supabase.auth.getUser()
-        setCurrentUser(user)
+        // Only show loading if we really need to fetch (no existing posts) or if explicit refresh
+        // But for "Refresh" action (PullToRefresh), we want to show the spinner from the PullToRefresh component, not full screen skeleton.
+        // So we keep loading=false during refresh usually.
 
-        // Fetch posts with user data joined
         let query = supabase
             .from('posts')
             .select(`
@@ -55,33 +62,35 @@ export function CommunityFeed({ category = 'General', searchQuery = '' }: Commun
 
         if (error) {
             console.error('Error fetching posts:', error)
-            setLoading(false)
             return
         }
 
         setPosts(postsData || [])
 
         // Fetch user reactions if logged in
-        if (user && postsData && postsData.length > 0) {
+        if (currentUserId && postsData && postsData.length > 0) {
             const postIds = postsData.map(p => p.id)
             const { data: reactions } = await supabase
                 .from('reactions')
                 .select('target_id')
-                .eq('user_id', user.id)
+                .eq('user_id', currentUserId)
                 .eq('target_type', 'post')
                 .in('target_id', postIds)
             setUserReactions(new Set(reactions?.map((r: any) => r.target_id) || []))
         }
-        setLoading(false)
-    }, [supabase, category, searchQuery])
+    }, [supabase, category, searchQuery, currentUserId])
 
+    // Fetch on mount ONLY if no initial data provided (Client-side fallback)
     useEffect(() => {
-        setLoading(true)
-        fetchPosts()
-    }, [fetchPosts])
+        if (initialPosts.length === 0) {
+            fetchPosts().then(() => setLoading(false))
+        }
+    }, [fetchPosts, initialPosts])
 
     const handleRefresh = async () => {
         await fetchPosts()
+        // We might want to re-check user auth or something? No, simple re-fetch matches current filter.
+        // Note: PullToRefresh handles the UI loading state.
     }
 
     if (loading) {
@@ -100,8 +109,9 @@ export function CommunityFeed({ category = 'General', searchQuery = '' }: Commun
                     >
                         <PostCard
                             post={post}
-                            currentUser={currentUser}
+                            currentUser={{ id: currentUserId }} // Pass minimal user obj
                             hasUserReacted={userReactions.has(post.id)}
+                            priority={index < 2}
                         />
                     </motion.div>
                 ))}
