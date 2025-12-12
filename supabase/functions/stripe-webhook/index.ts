@@ -224,6 +224,60 @@ Deno.serve(async (req) => {
                     await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Error updating listing', data: updateError })
                 }
 
+                // 7. Create or Get Conversation (Thread)
+                let threadId: string | null = null
+
+                // Check if thread exists
+                const { data: existingThread } = await supabase
+                    .from('threads')
+                    .select('id')
+                    .eq('listing_id', listingId)
+                    .eq('buyer_id', buyerId)
+                    .eq('seller_id', sellerId)
+                    .maybeSingle()
+
+                if (existingThread) {
+                    threadId = existingThread.id
+                } else {
+                    // Create new thread
+                    const { data: newThread, error: threadError } = await supabase
+                        .from('threads')
+                        .insert({
+                            listing_id: listingId,
+                            buyer_id: buyerId,
+                            seller_id: sellerId,
+                            status: 'open'
+                        })
+                        .select()
+                        .single()
+
+                    if (newThread) {
+                        threadId = newThread.id
+                    } else if (threadError) {
+                        console.error('Error creating thread:', threadError)
+                        await supabase.from('debug_logs').insert({
+                            source: 'stripe-webhook',
+                            message: 'Error creating thread',
+                            data: threadError
+                        })
+                    }
+                }
+
+                // Send Auto-Message to Thread to start conversation
+                if (threadId) {
+                    // We check if a message already exists to avoid duplicate auto-messages if retrying
+                    const { count: msgCount } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('thread_id', threadId)
+
+                    if (msgCount === 0) {
+                        await supabase.from('messages').insert({
+                            thread_id: threadId,
+                            from_user: buyerId,
+                            body: `¡Hola! He comprado tu artículo "${listing.title}".`,
+                            type: 'text'
+                        })
+                    }
+                }
+
                 // 7. Send Notification to Seller
                 const { error: sellerNotifError } = await supabase
                     .from('notifications')
@@ -231,13 +285,14 @@ Deno.serve(async (req) => {
                         user_id: sellerId,
                         type: 'sale',
                         title: '¡Has vendido un artículo!',
-                        message: `Tu artículo "${listing.title}" se ha vendido.`,
-                        link: `/market/orders/${order?.id}`,
+                        message: `Tu artículo "${listing.title}" se ha vendido. Pulsa para ver el chat.`,
+                        link: threadId ? `/messages/${threadId}` : `/market/orders/${order?.id}`,
                         read: false,
                         data: {
                             order_id: order?.id,
                             listing_id: listingId,
-                            amount: transferAmount
+                            amount: transferAmount,
+                            thread_id: threadId
                         }
                     })
 
@@ -257,12 +312,13 @@ Deno.serve(async (req) => {
                         user_id: buyerId,
                         type: 'purchase',
                         title: '¡Compra realizada con éxito!',
-                        message: `Has comprado "${listing.title}".`,
-                        link: `/market/orders/${order?.id}`,
+                        message: `Has comprado "${listing.title}". Habla con el vendedor.`,
+                        link: threadId ? `/messages/${threadId}` : `/market/orders/${order?.id}`,
                         read: false,
                         data: {
                             order_id: order?.id,
-                            listing_id: listingId
+                            listing_id: listingId,
+                            thread_id: threadId
                         }
                     })
 
