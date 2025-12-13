@@ -90,7 +90,10 @@ export function CommunityFeed({
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.3 }}
+                            transition={{
+                                duration: 0.3,
+                                delay: Math.min(index * 0.05, 0.4)
+                            }}
                         >
                             <PostCard
                                 post={post}

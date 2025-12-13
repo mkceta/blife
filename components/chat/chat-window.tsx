@@ -9,6 +9,7 @@ import { Send, MoreVertical } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Message {
     id: string
@@ -31,13 +32,16 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
     const [messages, setMessages] = useState<Message[]>([])
     const [newMessage, setNewMessage] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const [isTyping, setIsTyping] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
     const supabase = createClient()
+    const channelRef = useRef<any>(null)
+    const typingTimeoutRef = useRef<NodeJS.Timeout>()
 
-    // Fetch initial messages
+    // Fetch initial messages and setup realtime
     useEffect(() => {
         const fetchMessages = async () => {
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('messages')
                 .select('*')
                 .eq('thread_id', threadId)
@@ -45,7 +49,7 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
 
             if (data) {
                 setMessages(data)
-                // Mark thread as read when entering
+                // Mark as read
                 await supabase
                     .from('messages')
                     .update({ read: true })
@@ -57,9 +61,8 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
 
         fetchMessages()
 
-        // Realtime subscription
-        const channel = supabase
-            .channel(`thread:${threadId}`)
+        // Setup channel with broadcast for typing
+        const channel = supabase.channel(`thread:${threadId}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
@@ -69,7 +72,6 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
                 const newMsg = payload.new as Message
                 setMessages((prev) => [...prev, newMsg])
 
-                // If message is from other user, mark as read
                 if (newMsg.from_user !== currentUserId) {
                     await supabase
                         .from('messages')
@@ -79,9 +81,26 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
                         .neq('from_user', currentUserId)
                 }
             })
-            .subscribe()
+            .on('broadcast', { event: 'typing' }, (payload) => {
+                console.log('📡 Received typing broadcast:', payload)
+                // Only show typing if it's from the other user
+                if (payload.payload.user_id !== currentUserId) {
+                    console.log('✅ Setting isTyping to:', payload.payload.typing)
+                    setIsTyping(payload.payload.typing)
+                } else {
+                    console.log('❌ Ignoring own typing event')
+                }
+            })
+            .subscribe((status) => {
+                console.log('📢 Channel status:', status)
+            })
+
+        channelRef.current = channel
 
         return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
             supabase.removeChannel(channel)
         }
     }, [threadId, supabase, currentUserId])
@@ -91,13 +110,63 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight
         }
-    }, [messages])
+    }, [messages, isTyping])
+
+    // Handle typing indicator
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setNewMessage(e.target.value)
+
+        console.log('⌨️ Input changed, length:', e.target.value.length, 'channel:', !!channelRef.current)
+
+        // Broadcast typing status
+        if (channelRef.current && e.target.value.length > 0) {
+            console.log('📤 Sending typing=true')
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_id: currentUserId, typing: true }
+            })
+
+            // Clear existing timeout
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+
+            // Stop typing after 2 seconds of inactivity
+            typingTimeoutRef.current = setTimeout(() => {
+                if (channelRef.current) {
+                    channelRef.current.send({
+                        type: 'broadcast',
+                        event: 'typing',
+                        payload: { user_id: currentUserId, typing: false }
+                    })
+                }
+            }, 2000)
+        } else if (channelRef.current && e.target.value.length === 0) {
+            // Stop typing immediately if input is empty
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_id: currentUserId, typing: false }
+            })
+        }
+    }
 
     const sendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!newMessage.trim()) return
 
         setIsLoading(true)
+
+        // Stop typing indicator
+        if (channelRef.current) {
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_id: currentUserId, typing: false }
+            })
+        }
+
         const { error } = await supabase
             .from('messages')
             .insert({
@@ -110,7 +179,6 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
             toast.error('Error al enviar mensaje')
         } else {
             setNewMessage('')
-            // Update thread last_message_at
             await supabase
                 .from('threads')
                 .update({ last_message_at: new Date().toISOString() })
@@ -140,22 +208,66 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
 
             {/* Messages */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((msg) => {
-                    const isMe = msg.from_user === currentUserId
-                    return (
-                        <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${isMe
-                                ? 'bg-primary text-primary-foreground rounded-tr-none'
-                                : 'bg-secondary text-secondary-foreground rounded-tl-none'
-                                }`}>
-                                <p>{msg.body}</p>
-                                <span className="text-[10px] opacity-70 block text-right mt-1">
-                                    {formatDistanceToNow(new Date(msg.created_at), { locale: es })}
-                                </span>
+                <AnimatePresence initial={false}>
+                    {messages.map((msg) => {
+                        const isMe = msg.from_user === currentUserId
+                        return (
+                            <motion.div
+                                key={msg.id}
+                                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 500,
+                                    damping: 30
+                                }}
+                                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                            >
+                                <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${isMe
+                                    ? 'bg-primary text-primary-foreground rounded-tr-none'
+                                    : 'bg-secondary text-secondary-foreground rounded-tl-none'
+                                    }`}>
+                                    <p>{msg.body}</p>
+                                    <span className="text-[10px] opacity-70 block text-right mt-1">
+                                        {formatDistanceToNow(new Date(msg.created_at), { locale: es })}
+                                    </span>
+                                </div>
+                            </motion.div>
+                        )
+                    })}
+                </AnimatePresence>
+
+                {/* Typing Indicator */}
+                <AnimatePresence>
+                    {isTyping && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex justify-start"
+                        >
+                            <div className="bg-secondary text-secondary-foreground rounded-2xl rounded-tl-none px-4 py-3 flex gap-1">
+                                <motion.div
+                                    className="w-2 h-2 bg-current rounded-full opacity-60"
+                                    animate={{ y: [0, -6, 0] }}
+                                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                                />
+                                <motion.div
+                                    className="w-2 h-2 bg-current rounded-full opacity-60"
+                                    animate={{ y: [0, -6, 0] }}
+                                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                                />
+                                <motion.div
+                                    className="w-2 h-2 bg-current rounded-full opacity-60"
+                                    animate={{ y: [0, -6, 0] }}
+                                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                                />
                             </div>
-                        </div>
-                    )
-                })}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Input */}
@@ -163,7 +275,7 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
                 <form onSubmit={sendMessage} className="flex gap-2">
                     <Input
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={handleInputChange}
                         placeholder="Escribe un mensaje..."
                         className="flex-1 rounded-full bg-secondary border-none focus-visible:ring-1 focus-visible:ring-primary"
                     />

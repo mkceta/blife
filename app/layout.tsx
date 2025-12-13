@@ -21,7 +21,7 @@ export const openSans = Open_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'BLife - Universidad de Coruña',
+  title: 'BLife - Mercado y comunidad',
   description: 'Marketplace y comunidad para estudiantes UDC',
   manifest: '/manifest.json',
   icons: {

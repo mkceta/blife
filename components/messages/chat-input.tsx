@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase'
 import { Camera, CameraResultType } from '@capacitor/camera'
 import { sendHaptic, captureHaptic } from '@/lib/haptics'
+import { useEffect, useRef as useReactRef } from 'react'
 
 interface ChatInputProps {
     threadId: string
@@ -21,7 +22,72 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
     const [isUploading, setIsUploading] = useState(false)
     const [imageUrl, setImageUrl] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const channelRef = useReactRef<any>(null)
+    const typingTimeoutRef = useReactRef<NodeJS.Timeout>()
     const supabase = createClient()
+
+    // Setup broadcast channel for typing
+    useEffect(() => {
+        let channel: any
+
+        const setupChannel = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+
+            channel = supabase.channel(`thread-${threadId}`)
+            channelRef.current = channel
+            await channel.subscribe()
+        }
+
+        setupChannel()
+
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+            if (channel) {
+                supabase.removeChannel(channel)
+            }
+        }
+    }, [threadId, supabase])
+
+    // Handle typing indicator
+    const handleMessageChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setMessage(e.target.value)
+
+        if (!channelRef.current) return
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        if (e.target.value.length > 0) {
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_id: user.id, typing: true }
+            })
+
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+
+            typingTimeoutRef.current = setTimeout(() => {
+                if (channelRef.current) {
+                    channelRef.current.send({
+                        type: 'broadcast',
+                        event: 'typing',
+                        payload: { user_id: user.id, typing: false }
+                    })
+                }
+            }, 2000)
+        } else {
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_id: user.id, typing: false }
+            })
+        }
+    }
 
     const uploadFile = async (file: File) => {
         setIsUploading(true)
@@ -88,6 +154,18 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
 
         if (onCancelReply) onCancelReply()
         setIsSending(true)
+
+        // Stop typing indicator
+        if (channelRef.current) {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                channelRef.current.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { user_id: user.id, typing: false }
+                })
+            }
+        }
 
         try {
             const { data: { user } } = await supabase.auth.getUser()
@@ -169,7 +247,7 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
 
                 <Textarea
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    onChange={handleMessageChange}
                     placeholder="Escribe un mensaje..."
                     rows={1}
                     className="min-h-[50px] max-h-[150px] resize-none bg-background/50 focus:bg-background transition-colors rounded-[24px] py-[13px] px-5 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/20 scrollbar-hide"

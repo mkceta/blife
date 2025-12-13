@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { ChatBubble } from './chat-bubble'
 import { RateUserDialog } from '@/components/reviews/rate-user-dialog'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Message {
     id: string
@@ -50,6 +51,7 @@ export function ChatList({
     onReply
 }: ChatListProps) {
     const [messages, setMessages] = useState<Message[]>(initialMessages)
+    const [isTyping, setIsTyping] = useState(false)
     const bottomRef = useRef<HTMLDivElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const supabase = createClient()
@@ -61,7 +63,7 @@ export function ChatList({
     useEffect(() => {
         // Scroll to bottom on mount and when messages change
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
+    }, [messages, isTyping])
 
     useEffect(() => {
         const channel = supabase
@@ -135,6 +137,12 @@ export function ChatList({
                     )
                 }
             )
+            .on('broadcast', { event: 'typing' }, (payload) => {
+                // Only show typing if it's from the other user
+                if (payload.payload.user_id !== currentUser.id) {
+                    setIsTyping(payload.payload.typing)
+                }
+            })
             .subscribe()
 
         // Subscribe to offer updates
@@ -209,6 +217,37 @@ export function ChatList({
                     Inicia la conversación con @{otherUserAlias}
                 </div>
             )}
+
+            {/* Typing Indicator */}
+            <AnimatePresence>
+                {isTyping && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex justify-start mb-2"
+                    >
+                        <div className="bg-primary/10 rounded-2xl rounded-tl-none px-3 py-2 flex gap-0.5 items-center">
+                            <motion.div
+                                className="w-1.5 h-1.5 bg-primary rounded-full"
+                                animate={{ y: [0, -4, 0] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                            />
+                            <motion.div
+                                className="w-1.5 h-1.5 bg-primary rounded-full"
+                                animate={{ y: [0, -4, 0] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                            />
+                            <motion.div
+                                className="w-1.5 h-1.5 bg-primary rounded-full"
+                                animate={{ y: [0, -4, 0] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                            />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div ref={bottomRef} />
         </div>

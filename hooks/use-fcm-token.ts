@@ -98,11 +98,13 @@ export function useFcmToken() {
 
                 const data = action.notification.data
 
-                // Handle deep linking based on notification data
+                // Handle deep linking
                 if (data?.url) {
-                    // Navigate to the URL (you'll need to import useRouter or similar)
-                    console.log('Should navigate to:', data.url)
-                    // Example: router.push(data.url)
+                    console.log('Navigating to:', data.url)
+                    // Use window.location for navigation in Capacitor
+                    if (typeof window !== 'undefined') {
+                        window.location.href = data.url
+                    }
                 }
             })
         }
