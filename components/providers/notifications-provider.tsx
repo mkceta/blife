@@ -114,11 +114,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
                     async (payload) => {
                         const updatedNotification = payload.new as Notification
 
-                        setNotifications((prev) =>
-                            prev.map((n) =>
-                                n.id === updatedNotification.id ? updatedNotification : n
-                            )
-                        )
+                        setNotifications((prev) => {
+                            // Remove old version and add updated one at top
+                            const filtered = prev.filter((n) => n.id !== updatedNotification.id)
+                            return [updatedNotification, ...filtered]
+                        })
 
                         const { count } = await getUnreadCount()
                         setUnreadCount(count)
