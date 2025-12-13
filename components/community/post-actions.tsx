@@ -11,6 +11,9 @@ import { es } from 'date-fns/locale'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { likeHaptic, unlikeHaptic, sendHaptic } from '@/lib/haptics'
+import { motion, AnimatePresence, useAnimation } from 'framer-motion'
+import { cn } from '@/lib/utils'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface PostActionsProps {
     postId: string
@@ -19,6 +22,34 @@ interface PostActionsProps {
     hasUserReacted: boolean
     currentUserId?: string
     defaultShowComments?: boolean
+}
+
+const Particle = ({ angle }: { angle: number }) => {
+    const distance = 25 + Math.random() * 15
+    const size = 2 + Math.random() * 2
+
+    return (
+        <motion.div
+            initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+            animate={{
+                x: Math.cos(angle * (Math.PI / 180)) * distance,
+                y: Math.sin(angle * (Math.PI / 180)) * distance,
+                scale: [0, 1.5, 0],
+                opacity: [1, 1, 0]
+            }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="absolute rounded-full z-50"
+            style={{
+                width: size,
+                height: size,
+                backgroundColor: ['#FF4D4D', '#FF8585', '#FFD700', '#4D96FF', '#6AC5FE', '#9b51e0', '#2ecc71'][Math.floor(Math.random() * 7)],
+                left: '50%',
+                top: '50%',
+                marginLeft: -size / 2,
+                marginTop: -size / 2,
+            }}
+        />
+    )
 }
 
 export function PostActions({
@@ -35,10 +66,61 @@ export function PostActions({
     const [reactionsCount, setReactionsCount] = useState(initialReactionsCount)
     const [commentsCount, setCommentsCount] = useState(initialCommentsCount)
     const [userReacted, setUserReacted] = useState(hasUserReacted)
+
+    console.log('PostActions render:', { postId, hasUserReacted, userReacted, initialReactionsCount })
     const [comments, setComments] = useState<Comment[]>([])
     const [isLoadingComments, setIsLoadingComments] = useState(false)
     const [hasLoadedComments, setHasLoadedComments] = useState(false)
+    const [showParticles, setShowParticles] = useState(false)
+    const controls = useAnimation()
     const supabase = createClient()
+    const queryClient = useQueryClient()
+
+    // Particles config
+    const particleCount = 20
+    const angles = Array.from({ length: particleCount }).map((_, i) => (360 / particleCount) * i)
+
+    useEffect(() => {
+        if (showParticles) {
+            const timer = setTimeout(() => setShowParticles(false), 800)
+            return () => clearTimeout(timer)
+        }
+    }, [showParticles])
+
+    // Sync local state with prop when it changes (e.g., after query invalidation)
+    useEffect(() => {
+        setUserReacted(hasUserReacted)
+    }, [hasUserReacted])
+
+    // Sync reactions count with initial value when it changes
+    useEffect(() => {
+        setReactionsCount(initialReactionsCount)
+    }, [initialReactionsCount])
+
+    // Subscribe to realtime updates for this post's reactions_count
+    useEffect(() => {
+        const channel = supabase
+            .channel(`post-${postId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'posts',
+                    filter: `id=eq.${postId}`
+                },
+                (payload) => {
+                    if (payload.new && typeof payload.new.reactions_count === 'number') {
+                        setReactionsCount(payload.new.reactions_count)
+                    }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [postId, supabase])
 
     useEffect(() => {
         if (defaultShowComments && !hasLoadedComments) {
@@ -91,11 +173,20 @@ export function PostActions({
 
         const newReacted = !userReacted
 
-        // Emotional haptic feedback based on action
+        // Animation & Haptics
         if (newReacted) {
-            likeHaptic() // Like pattern: Medium → Light
+            likeHaptic()
+            setShowParticles(true)
+            controls.start({
+                scale: [1, 0.8, 1.4, 0.9, 1],
+                transition: { duration: 0.5, ease: "easeOut" }
+            })
         } else {
-            unlikeHaptic() // Unlike pattern: Light
+            unlikeHaptic()
+            controls.start({
+                scale: [1, 0.8, 1],
+                transition: { duration: 0.2 }
+            })
         }
 
         setUserReacted(newReacted)
@@ -107,65 +198,37 @@ export function PostActions({
                 const { error } = await supabase
                     .from('reactions')
                     .insert({
-                        target_id: postId,
-                        target_type: 'post',
+                        post_id: postId,
                         user_id: currentUserId,
                         emoji: '❤️'
                     })
 
                 if (error) {
-                    // Ignore duplicate key error (already reacted)
                     if (error.code === '23505') {
-                        // It was already there, so we didn't actually add a NEW reaction.
-                        // However, our optimistic UI showed +1.
-                        // If we want to be strictly correct, we might revert the +1, but stay "red".
-                        // But usually duplicate comes from race condition of double click.
-                        // If it's a double click:
-                        // Click 1: +1 (UI), Insert (Success), +1 (RPC)
-                        // Click 2: +1 (UI?? No, click 2 would be REMOVE if sync).
-                        // If Click 1 happened, local state is TRUE. Click 2 makes it FALSE.
-                        // So Click 2 enters the ELSE block (Remove).
-
-                        // What if we somehow got here?
-                        // If local state was FALSE, but DB had TRUE.
-                        // We set TRUE. Try Insert. User has duplicate.
-                        // We shouldn't increment RPC if we failed to insert.
+                        // Already exists, just sync state
                         return
                     }
                     throw error
                 }
 
-                // Only increment if insert succeeded
-                await (supabase as any).rpc('increment_reactions', { post_id: postId }).catch(() => { })
+                await (supabase as any).rpc('increment_reactions', { post_id: postId })
 
             } else {
                 // User wants to REMOVE reaction
-                const { data, error } = await supabase
+                const { error } = await supabase
                     .from('reactions')
                     .delete()
-                    .eq('target_id', postId)
-                    .eq('target_type', 'post')
+                    .eq('post_id', postId)
                     .eq('user_id', currentUserId)
-                    .select() // Select to know if we actually deleted something
 
                 if (error) throw error
 
-                // Only decrement if we actually deleted a row
-                if (data && data.length > 0) {
-                    await (supabase as any).rpc('decrement_reactions', { post_id: postId }).catch(() => { })
-                } else {
-                    // We tried to delete but it wasn't there.
-                    // Optimistic update did -1. Maybe we should revert that if it wasn't there?
-                    // But if it wasn't there, and we wanted not-reacted, we are fine.
-                    // Except the count went down.
-                    // If local state was TRUE, but DB was FALSE (desync).
-                    // We set FALSE. -1.
-                    // DB delete 0.
-                    // Result: Count -1.
-                    // Ideally we fetch real count periodically or revert.
-                    // For now, this is acceptable self-healing (count might drift slightly but state converges).
-                }
+                await (supabase as any).rpc('decrement_reactions', { post_id: postId })
             }
+
+            // Invalidate queries to sync across app
+            await queryClient.invalidateQueries({ queryKey: ['community-reactions'] })
+            await queryClient.invalidateQueries({ queryKey: ['community'] })
         } catch (error: any) {
             console.error('Error toggling reaction:', JSON.stringify(error, null, 2))
             toast.error('Error al reaccionar')
@@ -192,13 +255,13 @@ export function PostActions({
 
         // Optimistic update
         const newComment: Comment = {
-            id: Math.random().toString(), // Temporary ID
+            id: Math.random().toString(),
             text: text,
             created_at: new Date().toISOString(),
             user_id: currentUserId,
             user: {
                 id: currentUserId,
-                alias_inst: 'Tú', // Placeholder
+                alias_inst: 'Tú',
                 avatar_url: null
             }
         }
@@ -215,10 +278,9 @@ export function PostActions({
 
             if (error) throw error
 
-            sendHaptic() // Send pattern: Light → Medium
+            sendHaptic()
             toast.success('Comentario añadido')
 
-            // Refresh comments to get real ID and user info
             const { data: commentsData } = await supabase
                 .from('comments')
                 .select(`
@@ -245,7 +307,6 @@ export function PostActions({
     }
 
     const handleDeleteComment = async (commentId: string) => {
-        // 1. Optimistic Update
         const previousComments = comments
         const previousCount = commentsCount
 
@@ -260,12 +321,9 @@ export function PostActions({
                 .eq('id', commentId)
 
             if (error) throw error
-
-            // Success - No further action needed as UI is already updated
         } catch (error) {
             console.error('Error deleting comment:', error)
             toast.error('Error al eliminar comentario')
-            // Revert
             setComments(previousComments)
             setCommentsCount(previousCount)
         }
@@ -277,9 +335,25 @@ export function PostActions({
                 <button
                     onClick={handleReaction}
                     disabled={isPending}
-                    className={`flex items-center gap-1 text-sm hover:text-primary transition-colors ${userReacted ? 'text-red-500' : ''}`}
+                    className={cn(
+                        "group flex items-center gap-1 text-sm hover:text-primary transition-colors focus:outline-none",
+                        userReacted ? 'text-red-500' : ''
+                    )}
                 >
-                    <Heart className={`h-4 w-4 ${userReacted ? 'fill-current' : ''}`} />
+                    <div className="relative flex items-center justify-center">
+                        <AnimatePresence>
+                            {showParticles && angles.map((angle, i) => (
+                                <Particle key={i} angle={angle} />
+                            ))}
+                        </AnimatePresence>
+
+                        <motion.div animate={controls}>
+                            <Heart className={cn(
+                                "h-4 w-4 transition-colors",
+                                userReacted ? 'fill-current' : ''
+                            )} />
+                        </motion.div>
+                    </div>
                     <span>{reactionsCount}</span>
                 </button>
                 <button

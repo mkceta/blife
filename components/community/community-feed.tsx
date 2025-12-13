@@ -47,13 +47,12 @@ export function CommunityFeed({
             if (!currentUserId || !postsData || postsData.length === 0) return new Set<string>()
 
             const postIds = postsData.map((p: any) => p.id)
-            // Call server action for reactions
             const reactionIds = await fetchUserReactionsAction(postIds)
             return new Set(reactionIds as string[])
         },
         initialData: new Set(initialReactions),
         enabled: !!currentUserId && !!postsData && postsData.length > 0,
-        staleTime: 1000 * 60 * 5 // 5 mins
+        staleTime: 0 // Force refetch on invalidation
     })
 
     // 3. Client-Side Filtering for Instant Search fallback
@@ -96,7 +95,7 @@ export function CommunityFeed({
                             <PostCard
                                 post={post}
                                 currentUser={{ id: currentUserId }}
-                                hasUserReacted={userReactionsSet?.has(post.id)}
+                                hasUserReacted={userReactionsSet?.has(post.id) || false}
                                 priority={index < 5}
                             />
                         </motion.div>

@@ -25,12 +25,11 @@ export async function fetchUserReactionsAction(postIds: string[]) {
 
     const { data: reactions } = await supabase
         .from('reactions')
-        .select('target_id')
+        .select('post_id')
         .eq('user_id', user.id)
-        .eq('target_type', 'post')
-        .in('target_id', postIds)
+        .in('post_id', postIds)
 
-    return reactions ? reactions.map((r: any) => r.target_id) : []
+    return reactions ? reactions.map((r: any) => r.post_id) : []
 
 }
 

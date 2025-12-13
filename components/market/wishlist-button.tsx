@@ -90,7 +90,7 @@ export function WishlistButton({
             setShowParticles(true)
             controls.start({
                 scale: [1, 0.8, 1.4, 0.9, 1],
-                transition: { type: "spring", stiffness: 400, damping: 10 } // "Pop" effect
+                transition: { duration: 0.5, ease: "easeOut" } // Fixed: Use tween/keyframes instead of spring
             })
         } else {
             unlikeHaptic() // Subtle "unlike" pattern: Light
@@ -134,7 +134,7 @@ export function WishlistButton({
     if (!currentUserId) return null
 
     if (variant === 'icon') {
-        const particleCount = 12
+        const particleCount = 20
         const angles = Array.from({ length: particleCount }).map((_, i) => (360 / particleCount) * i)
 
         return (
