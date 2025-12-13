@@ -93,7 +93,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     const variants = isDetailPage ? fadeVariants : slideVariants
 
     return (
-        <div className="relative w-full bg-background">
+        <div className="relative w-full bg-background overflow-clip contain-paint">
             <AnimatePresence mode="popLayout" initial={false} custom={direction}>
                 <motion.div
                     key={pathname}
