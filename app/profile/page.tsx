@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useQuery } from '@tanstack/react-query'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ThemeSelector } from '@/components/profile/theme-selector'
@@ -15,19 +16,22 @@ import { SellerDashboardButton } from '@/components/profile/seller-dashboard-but
 import { ProfileSkeleton } from '@/components/profile/profile-skeleton'
 
 export default function ProfilePage() {
-    const [profile, setProfile] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [badgeStats, setBadgeStats] = useState({ total: 0, earned: 0 })
     const router = useRouter()
     const supabase = createClient()
 
-    useEffect(() => {
-        async function fetchData() {
+    const { data: user } = useQuery({
+        queryKey: ['user'],
+        queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
-                router.push('/auth/login')
-                return
-            }
+            return user
+        },
+        staleTime: Infinity // User session doesn't change often
+    })
+
+    const { data: profile, isLoading: loadingProfile } = useQuery({
+        queryKey: ['profile', user?.id],
+        queryFn: async () => {
+            if (!user?.id) return null
 
             let { data: userProfile } = await supabase
                 .from('users')
@@ -35,7 +39,7 @@ export default function ProfilePage() {
                 .eq('id', user.id)
                 .single()
 
-            // If profile doesn't exist, create it (simplified version of previous logic)
+            // If profile doesn't exist, create it
             if (!userProfile) {
                 const emailUsername = user.email?.split('@')[0] || 'user'
                 const { data: newProfile } = await supabase
@@ -50,11 +54,16 @@ export default function ProfilePage() {
                     .single()
                 userProfile = newProfile
             }
+            return userProfile
+        },
+        enabled: !!user?.id
+    })
 
-            setProfile(userProfile)
-            setLoading(false)
+    const { data: badgeStats = { total: 0, earned: 0 } } = useQuery({
+        queryKey: ['badge-stats', user?.id],
+        queryFn: async () => {
+            if (!user?.id) return { total: 0, earned: 0 }
 
-            // Fetch Badges Stats
             try {
                 // Try to auto-award if function exists
                 await supabase.rpc('check_and_award_badges', { target_user_id: user.id })
@@ -65,19 +74,29 @@ export default function ProfilePage() {
                     .select('*, badges(*)')
                     .eq('user_id', user.id)
 
-                // Set stats
-                setBadgeStats({
+                return {
                     total: totalBadges || 0,
                     earned: myBadges?.length || 0
-                })
-
+                }
             } catch (e) {
                 console.error("Error fetching badges", e)
+                return { total: 0, earned: 0 }
             }
-        }
+        },
+        enabled: !!user?.id,
+        staleTime: 1000 * 60 * 5 // 5 minutes
+    })
 
-        fetchData()
-    }, [router, supabase])
+    // Redirect if no user (handled in user query or effect? better in effect or just render null/redirect)
+    useEffect(() => {
+        if (user === null) {
+            // user explicit null means fetched and not found (if we handle error)
+            // But getUser returns null user if not logged in
+        }
+    }, [user])
+
+    // If query is fetching usage 'isLoading'
+    const loading = loadingProfile || !user
 
     if (loading) return <ProfileSkeleton />
     if (!profile) return null

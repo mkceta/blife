@@ -1,12 +1,24 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Open_Sans } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { DesktopHeader } from '@/components/layout/desktop-header'
 import { ThemeProvider } from '@/components/theme-provider'
+import { SwipeNavigator } from '@/components/layout/swipe-navigator'
+import { PwaRegister } from '@/components/pwa-register'
+import { Suspense } from 'react'
+import { PresenceUpdater } from '@/components/presence-updater'
+import { BackButtonHandler } from '@/components/back-button-handler'
+import { NotificationHandler } from '@/components/notification-handler'
+import Providers from '@/app/providers'
 
 const inter = Inter({ subsets: ['latin'] })
+export const openSans = Open_Sans({
+  subsets: ['latin'],
+  weight: ['700'],
+  variable: '--font-open-sans'
+})
 
 export const metadata: Metadata = {
   title: 'BLife - Universidad de Coruña',
@@ -26,22 +38,6 @@ export const viewport = {
   viewportFit: 'cover',
 }
 
-import { SwipeNavigator } from '@/components/layout/swipe-navigator'
-
-// ... existing imports
-
-import { PwaRegister } from '@/components/pwa-register'
-
-// ... existing imports
-
-import { Suspense } from 'react'
-
-import { PresenceUpdater } from '@/components/presence-updater'
-import { BackButtonHandler } from '@/components/back-button-handler'
-import { NotificationHandler } from '@/components/notification-handler'
-
-// ... existing imports
-
 export default function RootLayout({
   children,
 }: {
@@ -49,27 +45,29 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          themes={['light', 'dark', 'midnight', 'gold']}
-        >
-          <PresenceUpdater />
-          <PwaRegister />
-          <BackButtonHandler />
-          <NotificationHandler />
-          <Suspense>
-            <DesktopHeader />
-          </Suspense>
-          <SwipeNavigator>
-            {children}
-          </SwipeNavigator>
-          <BottomNav />
-          <Toaster />
-        </ThemeProvider>
+      <body className={`${inter.className} ${openSans.variable}`}>
+        <Providers>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+            themes={['light', 'dark', 'midnight', 'gold']}
+          >
+            <PresenceUpdater />
+            <PwaRegister />
+            <BackButtonHandler />
+            <NotificationHandler />
+            <Suspense>
+              <DesktopHeader />
+            </Suspense>
+            <SwipeNavigator>
+              {children}
+            </SwipeNavigator>
+            <BottomNav />
+            <Toaster />
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )

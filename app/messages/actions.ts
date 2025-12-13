@@ -18,6 +18,14 @@ export async function deleteFlat(flatId: string) {
 
     if (error) throw new Error(error.message)
 
+    // Attempt to delete images
+    try {
+        const { deleteFlatImages } = await import('@/lib/storage-server')
+        await deleteFlatImages(flatId)
+    } catch (cleanupError) {
+        console.error('Error cleaning up flat images:', cleanupError)
+    }
+
     revalidatePath('/flats')
     redirect('/flats')
 }

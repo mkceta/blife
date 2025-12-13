@@ -24,11 +24,19 @@ export async function deleteListingAction(listingId: string) {
         throw new Error(error.message)
     }
 
+    // Attempt to delete images (non-blocking failure, just log)
+    try {
+        const { deleteListingImages } = await import('@/lib/storage-server')
+        await deleteListingImages(listingId)
+    } catch (cleanupError) {
+        console.error('Error cleaning up listing images:', cleanupError)
+    }
+
+    // @ts-ignore
     revalidateTag('market-listings')
-    revalidatePath('/market')
-    revalidatePath('/home/market')
-    revalidatePath('/admin')
-    revalidatePath(`/user/${user.id}`)
+    revalidatePath('/market', 'page')
+    revalidatePath('/admin', 'page')
+    revalidatePath(`/user/${user.id}`, 'page')
     redirect('/market')
 }
 
@@ -57,9 +65,9 @@ export async function createListingActionWithRedirect(formData: any, photos: any
 
     if (error) throw new Error(error.message)
 
+    // @ts-ignore
     revalidateTag('market-listings')
-    revalidatePath('/market')
-    revalidatePath('/home/market')
+    revalidatePath('/market', 'page')
     redirect(`/market/product?id=${data.id}`)
 }
 
@@ -87,10 +95,10 @@ export async function updateListingAction(listingId: string, formData: any, phot
 
     if (error) throw new Error(error.message)
 
+    // @ts-ignore
     revalidateTag('market-listings')
-    revalidatePath('/market')
-    revalidatePath('/home/market')
-    revalidatePath(`/market/product?id=${listingId}`)
+    revalidatePath('/market', 'page')
+    revalidatePath(`/market/product?id=${listingId}`, 'page')
     redirect(`/market/product?id=${listingId}`)
 }
 
@@ -108,10 +116,10 @@ export async function updateListingStatusAction(listingId: string, status: strin
 
     if (error) throw new Error(error.message)
 
+    // @ts-ignore
     revalidateTag('market-listings')
-    revalidatePath('/market')
-    revalidatePath('/home/market')
-    revalidatePath(`/market/product?id=${listingId}`)
+    revalidatePath('/market', 'page')
+    revalidatePath(`/market/product?id=${listingId}`, 'page')
 }
 
 // --- FLATS (Pisos) ---
@@ -144,9 +152,12 @@ export async function createFlatAction(formData: any, photos: any[]) {
 
     if (error) throw new Error(error.message)
 
-    revalidatePath('/market')
-    revalidatePath('/home/market')
-    revalidatePath('/home/flats') // Assuming flats list is here
+    // @ts-ignore
+    revalidateTag('market-listings')
+    // @ts-ignore
+    revalidateTag('flats')
+    revalidatePath('/market', 'page')
+    revalidatePath('/flats', 'page')
     redirect(`/flats/${data.id}`)
 }
 

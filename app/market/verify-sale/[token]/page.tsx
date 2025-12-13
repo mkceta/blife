@@ -79,7 +79,7 @@ export default function VerifySalePage() {
                 </div>
                 <h1 className="text-2xl font-bold">Código Inválido o Expirado</h1>
                 <p className="text-muted-foreground">Este código de venta no es válido o el producto ya ha sido vendido.</p>
-                <Link href="/home/market">
+                <Link href="/market">
                     <Button>Volver al Mercado</Button>
                 </Link>
             </div>
@@ -93,7 +93,7 @@ export default function VerifySalePage() {
                     <AlertCircle className="h-12 w-12 text-yellow-500" />
                 </div>
                 <h1 className="text-2xl font-bold">No puedes comprar tu propio artículo</h1>
-                <Link href="/home/market">
+                <Link href="/market">
                     <Button>Volver al Mercado</Button>
                 </Link>
             </div>

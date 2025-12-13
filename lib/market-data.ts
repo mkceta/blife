@@ -1,11 +1,9 @@
 
-import { createClient } from '@supabase/supabase-js'
+import { createCacheClient } from '@/lib/supabase-cache'
 import { unstable_cache } from 'next/cache'
 
 // Use a separate client for cached requests to avoid cookie/header dependency errors in cache
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase = createCacheClient()
 
 export type MarketFilters = {
     q?: string
@@ -31,24 +29,8 @@ const getListings = async (filters: MarketFilters) => {
         query = query.eq('category', filters.category)
     }
     if (filters.degree) {
-        // Note: Filter by related table field might strictly require !inner join if filtering, 
-        // but let's assume the relation exists. 
-        // Actually Supabase syntax for filtering on joined table is:
-        // .eq('user.degree', degree) -> This works if referencing the embedded resource, 
-        // OR using !inner on the select.
-        // The original code used .eq('user.degree', degree) which assumes generic PostgREST filtering on JSON or similar? 
-        // No, in PostgREST accessing related table columns in filter key like 'user.degree' is not standard unless 'user' is a jsonb column.
-        // But the Supabase JS client might map it.
-        // Let's stick to the original logic: .eq('user.degree', degree)
-        // Check original file: market-feed.tsx line 54: .eq('user.degree', degree)
-        // Wait, 'user' is a Joined table. PostgREST usually requires `!inner` for filtering by related table:
-        // .select('*, user!inner(*)') ...
-        // The original code uses .select('*, user:users!listings_user_id_fkey(...)').
-        // If the original worked, I'll trust it.
-
-        // Actually, to be safe for cache which might run in a stricter environments or just to be correct:
-        // If filtering by relation, we generally need !inner.
-        // But I'll replicate the exact logic from the client side first.
+        // Warning: Filtering by joined relation property usually requires !inner or specific setup.
+        // If this fails, we might need to filter in-memory for cached data, or align Supabase types.
         query = query.eq('user.degree', filters.degree)
     }
     if (filters.minPrice) {
@@ -77,7 +59,8 @@ const getListings = async (filters: MarketFilters) => {
             break
         default:
             // Newest / Discovery
-            query = query.order('created_at', { ascending: false }).limit(50)
+            // Increased limit to support better client-side filtering
+            query = query.order('created_at', { ascending: false }).limit(100)
     }
 
     const { data, error } = await query
@@ -98,7 +81,7 @@ export const getCachedMarketListings = unstable_cache(
     },
     ['market-listings'], // Base tag
     {
-        revalidate: 28800, // Cache for 8 hours (8 * 60 * 60)
+        revalidate: 60, // Cache for 1 miunte
         tags: ['market-listings']
     }
 )

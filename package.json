@@ -41,7 +41,7 @@
     "@stripe/stripe-js": "^8.5.3",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.87.1",
-    "@tanstack/react-query": "^5.90.10",
+    "@tanstack/react-query": "^5.90.12",
     "@types/leaflet": "^1.9.21",
     "@vercel/analytics": "^1.5.0",
     "browser-image-compression": "^2.0.2",
@@ -53,7 +53,7 @@
     "framer-motion": "^12.23.24",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.554.0",
-    "next": "^16.0.5",
+    "next": "^16.0.10",
     "next-themes": "^0.4.6",
     "qrcode.react": "^4.2.0",
     "react": "19.2.0",
@@ -72,17 +72,22 @@
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^20",
     "@types/qrcode.react": "^1.0.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
+    "jsdom": "^27.3.0",
     "supabase": "^2.65.6",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
   }
 }

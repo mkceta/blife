@@ -1,11 +1,13 @@
 import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { markNotificationsAsReadByType } from '../notifications/mark-read-helpers';
 import { CommunityFeed } from '@/components/community/community-feed';
 import { CommunitySkeleton } from '@/components/community/community-skeleton';
-import { Input } from '@/components/ui/input';
+import { CommunitySearchBar } from '@/components/community/community-search-bar';
+import { getCachedPosts } from '@/lib/community-data';
+import { createClient } from '@/lib/supabase-server';
 
 const CATEGORIES = [
     { id: 'General', label: '🔥 General' },
@@ -16,24 +18,6 @@ const CATEGORIES = [
     { id: 'Entradas', label: '🎟️ Entradas' },
     { id: 'Offtopic', label: '🤡 Offtopic' },
 ]
-
-function CommunitySearchBar({ defaultValue }: { defaultValue: string }) {
-    return (
-        <form action="/community" method="GET" className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-                name="q"
-                defaultValue={defaultValue}
-                placeholder="Buscar en la comunidad..."
-                className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
-            />
-        </form>
-    )
-}
-
-import { createClient } from '@/lib/supabase-server'
-
-// ... existing imports ...
 
 export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ category?: string, q?: string }> }) {
     // Mark unread comment notifications as read for this user
@@ -46,31 +30,18 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Fetch Posts
-    let query = supabase
-        .from('posts')
-        .select(`
-                *,
-                user:users!posts_user_id_fkey(id, alias_inst, avatar_url)
-            `)
-        .eq('is_hidden', false)
-        .order('created_at', { ascending: false })
-        .limit(20)
+    // Fetch Posts using Cache strategy
+    // We intentionally fetch a larger set (default 20->100 in cached fn?) or reliance on client filtering
+    // Actually, getCachedPosts handles optional filtering. 
+    // To support "Instant" search we want to fetch mostly everything for the category and let client filter.
+    // If a search query exists in URL initially, we server-filter for SEO/Speed on first load.
+    const initialPosts = await getCachedPosts(currentCategory, searchQuery) // Pass params for initial load correctness
 
-    if (currentCategory && currentCategory !== 'Todos') {
-        query = query.contains('category', [currentCategory])
-    }
-
-    if (searchQuery) {
-        query = query.ilike('text', `%${searchQuery}%`)
-    }
-
-    const { data: posts } = await query
-
-    // Fetch User Reactions
+    // Fetch User Reactions - Keep this fresh or we could cache it too if we want but reactions are personalized
     let initialReactions: string[] = []
-    if (user && posts && posts.length > 0) {
-        const postIds = posts.map(p => p.id)
+    if (user && initialPosts && initialPosts.length > 0) {
+        // We can optimize this by parallelizing with getCachedPosts if we moved user fetch up
+        const postIds = initialPosts.map((p: any) => p.id)
         const { data: reactions } = await supabase
             .from('reactions')
             .select('target_id')
@@ -103,6 +74,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                                 key={cat.id}
                                 href={cat.id === 'General' ? '/community' : `/community?category=${cat.id}`}
                                 replace
+                                scroll={false} // Prevent scroll jump on tab switch
                             >
                                 <Button
                                     variant={currentCategory === cat.id ? "default" : "outline"}
@@ -122,7 +94,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                     <CommunityFeed
                         category={currentCategory}
                         searchQuery={searchQuery}
-                        initialPosts={posts || []}
+                        initialPosts={initialPosts || []}
                         initialReactions={initialReactions}
                         currentUserId={user?.id}
                     />

@@ -92,7 +92,7 @@ export default function FlatDetailPage() {
         <div className="pb-24 bg-background min-h-screen">
             <div className="fixed top-0 left-0 right-0 z-10 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
                 <Button asChild variant="secondary" size="icon" className="pointer-events-auto rounded-full h-10 w-10 bg-black/50 hover:bg-black/70 border-none text-white">
-                    <Link href="/home/flats">
+                    <Link href="/flats">
                         <ChevronLeft className="h-6 w-6" />
                     </Link>
                 </Button>

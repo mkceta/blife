@@ -15,8 +15,8 @@ export function HomeNav() {
     const activeTab = pathname.includes('/flats') ? 'flats' : 'market'
 
     const tabs = [
-        { id: 'market', label: 'Mercadillo', href: '/home/market' },
-        { id: 'flats', label: 'Pisos', href: '/home/flats' },
+        { id: 'market', label: 'Mercadillo', href: '/market' },
+        { id: 'flats', label: 'Pisos', href: '/flats' },
     ]
 
     return (

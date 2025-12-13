@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase'
+import { v4 as uuidv4 } from 'uuid'
 
 // Helper to lazy load compression library
 const getCompressionLib = async () => {
@@ -46,104 +47,68 @@ export async function createThumbnail(file: File) {
     }
 }
 
+// Internal helper to handle single image processing and upload
+async function processAndUploadImage(file: File, bucket: string, folderId: string, supabase: any) {
+    try {
+        // Parallelize compression and thumbnail generation
+        const [compressed, thumb] = await Promise.all([
+            compressImage(file),
+            createThumbnail(file)
+        ])
+
+        const ext = file.name.split('.').pop()
+        const filename = `${uuidv4()}.${ext}`
+
+        // Parallelize uploads
+        const [origResult, thumbResult] = await Promise.all([
+            supabase.storage
+                .from(bucket)
+                .upload(`${folderId}/originals/${filename}`, compressed),
+            supabase.storage
+                .from(bucket)
+                .upload(`${folderId}/thumbs/${filename}`, thumb)
+        ])
+
+        if (origResult.error) throw new Error(`Error al subir original: ${origResult.error.message}`)
+        if (thumbResult.error) throw new Error(`Error al subir miniatura: ${thumbResult.error.message}`)
+
+        // Get Public URLs (synchronous typically, but Supabase JS might verify?) 
+        // actually getPublicUrl is synchronous in v2
+        const { data: { publicUrl: url } } = supabase.storage.from(bucket).getPublicUrl(`${folderId}/originals/${filename}`)
+        const { data: { publicUrl: thumbUrl } } = supabase.storage.from(bucket).getPublicUrl(`${folderId}/thumbs/${filename}`)
+
+        return {
+            url,
+            thumb_url: thumbUrl,
+            size_bytes: compressed.size
+        }
+    } catch (error: any) {
+        console.error('Error processing image:', error)
+        throw new Error(error.message || 'Error al procesar imagen')
+    }
+}
+
+// Helper for batching promises
+async function processInBatches<T, R>(items: T[], batchSize: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+    const results: R[] = []
+    for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize)
+        const batchResults = await Promise.all(batch.map(fn))
+        results.push(...batchResults)
+    }
+    return results
+}
+
 export async function uploadListingImages(files: File[], listingId: string) {
     const supabase = createClient()
-    const uploaded = []
-
-    for (const file of files) {
-        try {
-            const compressed = await compressImage(file)
-            const thumb = await createThumbnail(file)
-
-            const ext = file.name.split('.').pop()
-            const filename = `${crypto.randomUUID()}.${ext}`
-
-            // Upload Original
-            const { data: origData, error: origError } = await supabase.storage
-                .from('listings')
-                .upload(`${listingId}/originals/${filename}`, compressed)
-
-            if (origError) {
-                console.error('Error uploading original:', origError)
-                throw new Error(`Error al subir imagen: ${origError.message}`)
-            }
-
-            // Upload Thumb
-            const { data: thumbData, error: thumbError } = await supabase.storage
-                .from('listings')
-                .upload(`${listingId}/thumbs/${filename}`, thumb)
-
-            if (thumbError) {
-                console.error('Error uploading thumbnail:', thumbError)
-                throw new Error(`Error al subir miniatura: ${thumbError.message}`)
-            }
-
-            // Get Public URLs
-            const { data: { publicUrl: url } } = supabase.storage.from('listings').getPublicUrl(`${listingId}/originals/${filename}`)
-            const { data: { publicUrl: thumbUrl } } = supabase.storage.from('listings').getPublicUrl(`${listingId}/thumbs/${filename}`)
-
-            uploaded.push({
-                url,
-                thumb_url: thumbUrl,
-                size_bytes: compressed.size
-            })
-        } catch (error: any) {
-            console.error('Error processing image:', error)
-            throw new Error(error.message || 'Error al procesar imagen')
-        }
-    }
-
-    return uploaded
+    // Limit concurrency to 3 to prevent mobile crashes
+    return processInBatches(files, 3, (file) => processAndUploadImage(file, 'listings', listingId, supabase))
 }
 
 export async function uploadFlatImages(files: File[], flatId: string) {
     const supabase = createClient()
-    const uploaded = []
-
-    for (const file of files) {
-        try {
-            const compressed = await compressImage(file)
-            const thumb = await createThumbnail(file)
-
-            const ext = file.name.split('.').pop()
-            const filename = `${crypto.randomUUID()}.${ext}`
-
-            // Upload Original
-            const { data: origData, error: origError } = await supabase.storage
-                .from('flats')
-                .upload(`${flatId}/originals/${filename}`, compressed)
-
-            if (origError) {
-                console.error('Error uploading original:', origError)
-                throw new Error(`Error al subir imagen: ${origError.message}`)
-            }
-
-            // Upload Thumb
-            const { data: thumbData, error: thumbError } = await supabase.storage
-                .from('flats')
-                .upload(`${flatId}/thumbs/${filename}`, thumb)
-
-            if (thumbError) {
-                console.error('Error uploading thumbnail:', thumbError)
-                throw new Error(`Error al subir miniatura: ${thumbError.message}`)
-            }
-
-            // Get Public URLs
-            const { data: { publicUrl: url } } = supabase.storage.from('flats').getPublicUrl(`${flatId}/originals/${filename}`)
-            const { data: { publicUrl: thumbUrl } } = supabase.storage.from('flats').getPublicUrl(`${flatId}/thumbs/${filename}`)
-
-            uploaded.push({
-                url,
-                thumb_url: thumbUrl,
-                size_bytes: compressed.size
-            })
-        } catch (error: any) {
-            console.error('Error processing image:', error)
-            throw new Error(error.message || 'Error al procesar imagen')
-        }
-    }
-
-    return uploaded
+    // Limit concurrency to 3 to prevent mobile crashes
+    return processInBatches(files, 3, (file) => processAndUploadImage(file, 'flats', flatId, supabase))
 }
 
 export async function uploadPostImage(file: File, postId: string) {
@@ -153,10 +118,7 @@ export async function uploadPostImage(file: File, postId: string) {
         const compressed = await compressImage(file)
 
         const ext = file.name.split('.').pop()
-        const filename = `${crypto.randomUUID()}.${ext}`
-
-        // Try 'posts' bucket first, fallback to 'public' if needed, but assuming 'posts'
-        // Actually, if 'listings' and 'flats' exist, 'posts' is likely.
+        const filename = `${uuidv4()}.${ext}`
         const bucketName = 'posts'
 
         const { data, error } = await supabase.storage
@@ -164,8 +126,6 @@ export async function uploadPostImage(file: File, postId: string) {
             .upload(`${postId}/${filename}`, compressed)
 
         if (error) {
-            // Fallback to listings if posts bucket doesn't exist? No, that's messy.
-            // Let's hope posts bucket exists.
             throw new Error(`Error al subir imagen: ${error.message}`)
         }
 

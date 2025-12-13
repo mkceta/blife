@@ -11,7 +11,7 @@ export default function NewListingSelectionPage() {
         <div className="container max-w-md mx-auto p-4 pt-[calc(1rem+env(safe-area-inset-top))] min-h-screen flex flex-col">
             <div className="flex items-center gap-2 mb-8">
                 <Button asChild variant="ghost" size="icon">
-                    <Link href="/home/market">
+                    <Link href="/market">
                         <ChevronLeft className="h-6 w-6" />
                     </Link>
                 </Button>

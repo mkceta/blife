@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
-export default function HomeLayout({
+export default function ProductFeedLayout({
     children,
 }: {
     children: React.ReactNode

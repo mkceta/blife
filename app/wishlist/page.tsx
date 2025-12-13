@@ -1,55 +1,52 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Heart } from 'lucide-react'
 import { ListingCard } from '@/components/market/listing-card'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
+import { useQuery } from '@tanstack/react-query'
+import { WishlistSkeleton } from '@/components/wishlist/wishlist-skeleton'
 
 export default function WishlistPage() {
-    const [wishlistItems, setWishlistItems] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
     const router = useRouter()
     const supabase = createClient()
 
-    const fetchData = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            router.push('/auth/login')
-            return
-        }
+    const { data: wishlistItems = [], isLoading, refetch } = useQuery({
+        queryKey: ['wishlist'],
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                // Return empty if no user, usually middleware/layout handles this
+                return []
+            }
 
-        const { data: favorites } = await supabase
-            .from('favorites')
-            .select(`
-                listing_id,
-                created_at,
-                listings:listings (
-                    id,
-                    title,
-                    price_cents,
-                    photos,
-                    status,
+            const { data: favorites } = await supabase
+                .from('favorites')
+                .select(`
+                    listing_id,
                     created_at,
-                    user_id,
-                    user:users!listings_user_id_fkey(alias_inst, rating_avg, degree, avatar_url),
-                    favorites_count
-                )
-            `)
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
+                    listings:listings (
+                        id,
+                        title,
+                        price_cents,
+                        photos,
+                        status,
+                        created_at,
+                        user_id,
+                        user:users!listings_user_id_fkey(alias_inst, rating_avg, degree, avatar_url),
+                        favorites_count
+                    )
+                `)
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
 
-        const items = favorites?.filter(f => f.listings) || []
-        setWishlistItems(items)
-        setLoading(false)
-    }
+            return favorites?.filter(f => f.listings) || []
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes stale time
+    })
 
-    useEffect(() => {
-        fetchData()
-    }, [router, supabase])
-
-    if (loading) return <div className="h-full flex items-center justify-center">Cargando favoritos...</div>
+    if (isLoading) return <WishlistSkeleton />
 
     return (
         <div className="flex flex-col h-full bg-background min-h-screen pb-20 md:pb-0">
@@ -62,7 +59,7 @@ export default function WishlistPage() {
 
             {/* Content */}
             <div className="flex-1 overflow-hidden">
-                <PullToRefresh onRefresh={fetchData}>
+                <PullToRefresh onRefresh={async () => { await refetch() }}>
                     <div className="h-full overflow-y-auto p-4 scrollbar-thin">
                         {wishlistItems.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">

@@ -65,10 +65,15 @@ export function DesktopHeader() {
         e.preventDefault()
         const formData = new FormData(e.currentTarget)
         const q = formData.get('q') as string
-        const target = isFlats ? '/home/flats' : '/home/market'
+        const target = isFlats ? '/flats' : '/market'
         if (q) {
             router.push(`${target}?q=${encodeURIComponent(q)}`)
         }
+    }
+
+    // Hide header on landing page and auth pages
+    if (pathname === '/' || pathname?.startsWith('/auth')) {
+        return null
     }
 
     return (
@@ -76,8 +81,8 @@ export function DesktopHeader() {
             {/* Top Navigation Row */}
             <div className="max-w-screen-xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
                 {/* Logo */}
-                <Link href="/home" className="flex-shrink-0">
-                    <h1 className="text-2xl font-bold text-primary tracking-tight">Blife</h1>
+                <Link href="/market" className="flex-shrink-0">
+                    <h1 className="text-2xl font-bold text-primary tracking-tight" style={{ fontFamily: 'var(--font-open-sans)' }}>BLife</h1>
                 </Link>
 
                 {/* Search Bar Section */}
@@ -90,10 +95,10 @@ export function DesktopHeader() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => router.push('/home/market')}>
+                            <DropdownMenuItem onClick={() => router.push('/market')}>
                                 Artículos
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push('/home/flats')}>
+                            <DropdownMenuItem onClick={() => router.push('/flats')}>
                                 Pisos
                             </DropdownMenuItem>
                         </DropdownMenuContent>

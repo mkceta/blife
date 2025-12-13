@@ -1,220 +1,127 @@
-'use client'
+'use client';
 
-import { useEffect, useState, Suspense, useRef } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import { FlatCard } from '@/components/flats/flat-card'
-import { FlatFilters } from '@/components/flats/flat-filters'
-import { Input } from '@/components/ui/input'
-import { Search } from 'lucide-react'
+import { createClient } from '@/lib/supabase';
+import { FlatCard } from '@/components/flats/flat-card';
+import { FlatsSkeleton } from '@/components/home/flats-skeleton';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
+import { useMemo } from 'react';
 
-import { PullToRefresh } from '@/components/ui/pull-to-refresh'
-import { useCallback } from 'react'
-import { FlatsSkeleton } from '@/components/home/flats-skeleton'
-import { motion } from 'framer-motion'
+interface FlatsFeedProps {
+    initialFlats: any[];
+    currentUserId?: string;
+}
 
-function FlatsFeedContent() {
-    const searchParams = useSearchParams()
-    const [flats, setFlats] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-    const [currentUser, setCurrentUser] = useState<any>(null)
-    const supabase = createClient()
+export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
+    const searchParams = useSearchParams();
+    const supabase = createClient();
 
-    const fetchData = useCallback(async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        setCurrentUser(user)
+    // Map URL params to filters object for easier handling
+    const filters = useMemo(() => ({
+        q: searchParams.get('q') || '',
+        min_rent: searchParams.get('min_rent'),
+        max_rent: searchParams.get('max_rent'),
+        min_rooms: searchParams.get('min_rooms'),
+        min_baths: searchParams.get('min_baths'),
+        min_area: searchParams.get('min_area'),
+        max_area: searchParams.get('max_area'),
+        location_area: searchParams.get('location_area'),
+        sort: searchParams.get('sort') || 'newest'
+    }), [searchParams]);
 
-        let flatsQuery = supabase
-            .from('flats')
-            .select('*, user:users!flats_user_id_fkey(alias_inst, avatar_url)')
-            .eq('is_hidden', false)
-            .eq('status', 'active')
+    // Use React Query for data fetching/caching
+    // If we want "Instant" feel, we rely on initialFlats and only refetch if filters change significantly 
+    // or if we want to ensure freshness.
+    const { data: flats, isLoading, refetch } = useQuery({
+        queryKey: ['flats', filters],
+        queryFn: async () => {
+            // We can duplicate the fetch logic here for client-side cleanliness 
+            // OR call an API route. Since we are client-side, we use Supabase client directly.
+            let query = supabase
+                .from('flats')
+                .select('*, user:users!flats_user_id_fkey(alias_inst, avatar_url)')
+                .eq('is_hidden', false)
+                .eq('status', 'active');
 
-        const q = searchParams.get('q')
-        const minRent = searchParams.get('min_rent')
-        const maxRent = searchParams.get('max_rent')
-        const minRooms = searchParams.get('min_rooms')
-        const minBaths = searchParams.get('min_baths')
-        const minArea = searchParams.get('min_area')
-        const maxArea = searchParams.get('max_area')
-        const locationArea = searchParams.get('location_area')
-        const sort = searchParams.get('sort') || 'newest'
+            if (filters.q) query = query.ilike('title', `%${filters.q}%`);
+            if (filters.min_rent) query = query.gte('rent_cents', parseFloat(filters.min_rent) * 100);
+            if (filters.max_rent) query = query.lte('rent_cents', parseFloat(filters.max_rent) * 100);
+            if (filters.min_rooms) query = query.gte('rooms', parseInt(filters.min_rooms));
+            if (filters.min_baths) query = query.gte('baths', parseInt(filters.min_baths));
+            if (filters.min_area) query = query.gte('area_m2', parseFloat(filters.min_area));
+            if (filters.max_area) query = query.lte('area_m2', parseFloat(filters.max_area));
+            if (filters.location_area) query = query.eq('location_area', filters.location_area);
 
-        if (q) {
-            flatsQuery = flatsQuery.ilike('title', `%${q}%`)
-        }
-        if (minRent) {
-            flatsQuery = flatsQuery.gte('rent_cents', parseFloat(minRent) * 100)
-        }
-        if (maxRent) {
-            flatsQuery = flatsQuery.lte('rent_cents', parseFloat(maxRent) * 100)
-        }
-        if (minRooms) {
-            flatsQuery = flatsQuery.gte('rooms', parseInt(minRooms))
-        }
-        if (minBaths) {
-            flatsQuery = flatsQuery.gte('baths', parseInt(minBaths))
-        }
-        if (minArea) {
-            flatsQuery = flatsQuery.gte('area_m2', parseFloat(minArea))
-        }
-        if (maxArea) {
-            flatsQuery = flatsQuery.lte('area_m2', parseFloat(maxArea))
-        }
-        if (locationArea) {
-            flatsQuery = flatsQuery.eq('location_area', locationArea)
-        }
-
-        switch (sort) {
-            case 'oldest':
-                flatsQuery = flatsQuery.order('created_at', { ascending: true })
-                break
-            case 'price_asc':
-                flatsQuery = flatsQuery.order('rent_cents', { ascending: true })
-                break
-            case 'price_desc':
-                flatsQuery = flatsQuery.order('rent_cents', { ascending: false })
-                break
-            default:
-                // "Discovery" shuffle for default view
-                flatsQuery = flatsQuery.order('created_at', { ascending: false }).limit(50)
-        }
-
-        const { data: flatsData } = await flatsQuery
-
-        if (flatsData) {
-            let finalFlats = flatsData
-            // Shuffle if default sort (Discovery mode)
-            const isDiscovery = !sort || sort === 'recommended'
-
-            if (isDiscovery) {
-                for (let i = finalFlats.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [finalFlats[i], finalFlats[j]] = [finalFlats[j], finalFlats[i]];
-                }
+            switch (filters.sort) {
+                case 'oldest':
+                    query = query.order('created_at', { ascending: true });
+                    break;
+                case 'price_asc':
+                    query = query.order('rent_cents', { ascending: true });
+                    break;
+                case 'price_desc':
+                    query = query.order('rent_cents', { ascending: false });
+                    break;
+                default:
+                    // Discovery/Newest
+                    query = query.order('created_at', { ascending: false }).limit(50);
             }
-            setFlats(finalFlats)
+
+            const { data } = await query;
+            return data || [];
+        },
+        initialData: initialFlats,
+        staleTime: 1000 * 60 * 2, // 2 mins
+    });
+
+    // Client-side shuffle for random/discovery if needed (optional)
+    const finalFlats = useMemo(() => {
+        if (!flats) return [];
+        let result = [...flats];
+        if (!filters.sort || filters.sort === 'recommended') {
+            // Simple shuffle
+            for (let i = result.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [result[i], result[j]] = [result[j], result[i]];
+            }
         }
-        setLoading(false)
-    }, [searchParams, supabase])
+        return result;
+    }, [flats, filters.sort]);
 
-    useEffect(() => {
-        setLoading(true)
-        fetchData()
-    }, [fetchData])
-
-    const handleRefresh = async () => {
-        await fetchData()
-    }
+    if (isLoading) return <FlatsSkeleton />;
 
     return (
-        <PullToRefresh onRefresh={handleRefresh}>
+        <PullToRefresh onRefresh={async () => { await refetch() }}>
             <div className="min-h-[calc(100vh-10rem)] bg-transparent">
-                {loading ? (
-                    <FlatsSkeleton />
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 pb-24 pt-4">
-                        {flats.map((flat, index) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 pb-24 pt-4">
+                    <AnimatePresence>
+                        {finalFlats.map((flat, index) => (
                             <motion.div
                                 key={flat.id}
+                                layout
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.3 }}
                             >
                                 <FlatCard
                                     flat={flat}
-                                    currentUserId={currentUser?.id}
+                                    currentUserId={currentUserId}
                                     priority={index < 4}
                                 />
                             </motion.div>
                         ))}
-                    </div>
-                )}
+                    </AnimatePresence>
+                </div>
 
-                {!loading && (!flats || flats.length === 0) && (
+                {finalFlats.length === 0 && (
                     <div className="text-center py-20 text-muted-foreground">
-                        No hay pisos disponibles todavía.
+                        No hay pisos disponibles con estos filtros.
                     </div>
                 )}
             </div>
         </PullToRefresh>
-    )
-}
-
-export function FlatsSearchBar({ flats }: { flats: any[] }) {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const [isStuck, setIsStuck] = useState(false)
-    const [inputValue, setInputValue] = useState(searchParams.get('q') || '')
-    const timeoutRef = useRef<NodeJS.Timeout>(null)
-
-    const handleSearch = (value: string) => {
-        setInputValue(value)
-
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current)
-        }
-
-        timeoutRef.current = setTimeout(() => {
-            const params = new URLSearchParams(searchParams.toString())
-            if (value) {
-                params.set('q', value)
-            } else {
-                params.delete('q')
-            }
-            router.replace(`/home/flats?${params.toString()}`)
-        }, 300)
-    }
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                setIsStuck(!entry.isIntersecting)
-            },
-            { threshold: [1], rootMargin: '-1px 0px 0px 0px' }
-        )
-
-        const sentinel = document.getElementById('flats-sentinel')
-        if (sentinel) {
-            observer.observe(sentinel)
-        }
-
-        return () => {
-            if (sentinel) observer.unobserve(sentinel)
-        }
-    }, [])
-
-    return (
-        <div className="md:hidden relative">
-            <div id="flats-sentinel" className="absolute -top-1 h-1 w-full" />
-            <div className={`sticky top-0 z-40 w-full bg-background border-b border-border/5 shadow-sm transition-all duration-200 ${isStuck ? 'pt-[env(safe-area-inset-top)]' : 'pt-2'}`}>
-                <div className="flex flex-col gap-2 px-3 pb-2">
-                    <div className="flex gap-2 items-center">
-                        <div className="flex-1 relative">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    value={inputValue}
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                    placeholder="Buscar pisos..."
-                                    className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex-none">
-                            <FlatFilters flats={flats || []} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-export function FlatsFeed() {
-    return (
-        <Suspense fallback={<div className="text-center py-20 text-muted-foreground">Cargando...</div>}>
-            <FlatsFeedContent />
-        </Suspense>
-    )
+    );
 }

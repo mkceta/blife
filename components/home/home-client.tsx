@@ -7,8 +7,8 @@ import { FadeIn } from '@/components/ui/fade-in'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { MarketSearchBar } from '@/components/home/market-feed'
-import { FlatsSearchBar } from '@/components/home/flats-feed'
+import { MarketSearchBar } from '@/components/home/market-search-bar'
+import { FlatsSearchBar } from '@/components/home/flats-search-bar'
 
 interface HomeClientProps {
     marketFeed: React.ReactNode
