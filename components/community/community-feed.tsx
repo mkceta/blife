@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import { fetchCommunityPostsAction, fetchUserReactionsAction } from '@/app/feed-actions'
+import { PollCard } from './poll-card'
 
 interface CommunityFeedProps {
     category?: string
@@ -55,6 +56,26 @@ export function CommunityFeed({
         staleTime: 0 // Force refetch on invalidation
     })
 
+    // 3. Fetch Polls with React Query
+    const { data: pollsData } = useQuery({
+        queryKey: ['polls', category],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('polls')
+                .select(`
+                    *,
+                    user:users(alias_inst, avatar_url),
+                    options:poll_options(*),
+                    votes:poll_votes(option_id, user_id)
+                `)
+                .eq('category', category)
+                .order('created_at', { ascending: false })
+
+            return data || []
+        },
+        staleTime: 1000 * 60 * 5
+    })
+
     // 3. Client-Side Filtering for Instant Search fallback
     // If the server action already processed searchQuery, this filter might be redundant but harmless.
     // However, fetchCommunityPostsAction does use the query.
@@ -67,7 +88,15 @@ export function CommunityFeed({
     // If the PARENT controls 'searchQuery' via URL, then each keystroke -> URL change -> Refetch.
     // That's standard.
 
-    const filteredPosts = postsData || []
+    // Combine posts and polls, sort by created_at
+    const combinedFeed = useMemo(() => {
+        const posts = (postsData || []).map((p: any) => ({ ...p, type: 'post' }))
+        const polls = (pollsData || []).map((p: any) => ({ ...p, type: 'poll' }))
+
+        return [...posts, ...polls].sort((a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+    }, [postsData, pollsData])
 
     if (isLoading) {
         return <CommunitySkeleton />
@@ -76,17 +105,17 @@ export function CommunityFeed({
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>
             <div className="space-y-4 min-h-[calc(100vh-10rem)]">
-                {isRefetching && filteredPosts.length > 0 && (
+                {isRefetching && combinedFeed.length > 0 && (
                     <div className="flex justify-center p-2">
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     </div>
                 )}
 
                 <AnimatePresence initial={false}>
-                    {filteredPosts.map((post: any, index: number) => (
+                    {combinedFeed.map((item: any, index: number) => (
                         <motion.div
-                            key={post.id}
-                            layout // Enable layout animation for smooth reordering/filtering
+                            key={item.id}
+                            layout
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -95,17 +124,30 @@ export function CommunityFeed({
                                 delay: Math.min(index * 0.05, 0.4)
                             }}
                         >
-                            <PostCard
-                                post={post}
-                                currentUser={{ id: currentUserId }}
-                                hasUserReacted={userReactionsSet?.has(post.id) || false}
-                                priority={index < 5}
-                            />
+                            {item.type === 'poll' ? (
+                                <PollCard
+                                    poll={item}
+                                    options={item.options || []}
+                                    userVotes={
+                                        item.votes
+                                            ?.filter((v: any) => v.user_id === currentUserId)
+                                            .map((v: any) => v.option_id) || []
+                                    }
+                                    currentUserId={currentUserId}
+                                />
+                            ) : (
+                                <PostCard
+                                    post={item}
+                                    currentUser={{ id: currentUserId }}
+                                    hasUserReacted={userReactionsSet?.has(item.id) || false}
+                                    priority={index < 5}
+                                />
+                            )}
                         </motion.div>
                     ))}
                 </AnimatePresence>
 
-                {filteredPosts.length === 0 && (
+                {combinedFeed.length === 0 && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}

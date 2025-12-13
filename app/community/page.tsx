@@ -7,6 +7,7 @@ import { CommunitySkeleton } from '@/components/community/community-skeleton';
 import { CommunitySearchBar } from '@/components/community/community-search-bar';
 import { CommunityFeedContent } from './community-feed-content';
 import { CommunityReadMarker } from '@/components/community/community-read-marker';
+import { CreateContentButton } from '@/components/community/create-content-button';
 
 const CATEGORIES = [
     { id: 'General', label: '🔥 General' },
@@ -67,16 +68,8 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                 </Suspense>
             </div>
 
-            <Link
-                href="/community/new"
-            >
-                <Button
-                    className="fixed bottom-[8rem] right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-[60] hover:shadow-primary/25 md:bottom-10"
-                    size="icon"
-                >
-                    <Plus className="h-7 w-7" strokeWidth={3} />
-                </Button>
-            </Link>
+            {/* Unified create button */}
+            <CreateContentButton />
         </div>
     );
 }
