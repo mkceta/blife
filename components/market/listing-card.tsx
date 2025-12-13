@@ -22,8 +22,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { calculateTotalWithFees } from '@/lib/pricing'
-import { motion } from 'framer-motion'
-import { SPRING, buttonHover, buttonTap } from '@/lib/animations'
 
 interface Listing {
     id: string
@@ -76,14 +74,7 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
     }
 
     return (
-        <motion.div
-            className="group relative flex flex-col gap-2 bg-card/40 p-2.5 rounded-xl border border-border/40 hover:bg-card/60 transition-colors duration-300"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -4, transition: { duration: 0.2, ease: 'easeOut' } }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.3 }}
-        >
+        <div className="group relative flex flex-col gap-2 bg-card/40 p-2.5 rounded-xl border border-border/40 hover:bg-card/60 transition-colors duration-300">
             {/* Image Container */}
             <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted/30">
                 <Link href={`/market/product?id=${listing.id}`} className="absolute inset-0 z-10 active-press">
@@ -91,20 +82,14 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                 </Link>
 
                 {cover ? (
-                    <motion.div
-                        className="relative w-full h-full"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3, ease: 'easeOut' }}
-                    >
-                        <Image
-                            src={cover}
-                            alt={listing.title}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                            priority={priority}
-                        />
-                    </motion.div>
+                    <Image
+                        src={cover}
+                        alt={listing.title}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                        priority={priority}
+                    />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                         <Package className="h-10 w-10 opacity-20" />
@@ -112,60 +97,26 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                 )}
 
                 {listing.status === 'sold' && (
-                    <motion.div
-                        className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-[2px]"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <motion.span
-                            className="rotate-[-12deg] border-2 border-white px-4 py-1 text-lg font-bold text-white tracking-widest uppercase"
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: -12 }}
-                            transition={SPRING.bouncy}
-                        >
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
+                        <span className="rotate-[-12deg] border-2 border-white px-4 py-1 text-lg font-bold text-white tracking-widest uppercase">
                             Vendido
-                        </motion.span>
-                    </motion.div>
+                        </span>
+                    </div>
                 )}
 
                 <div className="absolute bottom-2 left-2 z-10 flex flex-col gap-1 items-start">
                     {/* Hot Badge */}
                     {(listing.favorites_count || 0) > Math.max(averageLikes * 1.5, 2) && (
-                        <motion.div
-                            initial={{ scale: 0, x: -20 }}
-                            animate={{ scale: 1, x: 0 }}
-                            transition={SPRING.bouncy}
-                        >
-                            <Badge className="text-[10px] font-bold h-5 px-1.5 bg-orange-500 text-white border-none shadow-sm flex items-center gap-1 pointer-events-none">
-                                <motion.div
-                                    animate={{
-                                        scale: [1, 1.2, 1],
-                                        rotate: [0, 10, -10, 0]
-                                    }}
-                                    transition={{
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: 'easeInOut'
-                                    }}
-                                >
-                                    <FlameKindling className="h-3 w-3" />
-                                </motion.div>
-                                Popular
-                            </Badge>
-                        </motion.div>
+                        <Badge className="text-[10px] font-bold h-5 px-1.5 bg-orange-500 text-white border-none shadow-sm flex items-center gap-1 pointer-events-none">
+                            <FlameKindling className="h-3 w-3" />
+                            Popular
+                        </Badge>
                     )}
                     {/* Tuyo Badge */}
                     {isOwner && (
-                        <motion.div
-                            initial={{ scale: 0, x: -20 }}
-                            animate={{ scale: 1, x: 0 }}
-                            transition={{ ...SPRING.bouncy, delay: 0.1 }}
-                        >
-                            <Badge variant="secondary" className="text-[10px] font-medium h-5 px-1.5 bg-black/50 text-white border-none backdrop-blur-sm pointer-events-none">
-                                Tuyo
-                            </Badge>
-                        </motion.div>
+                        <Badge variant="secondary" className="text-[10px] font-medium h-5 px-1.5 bg-black/50 text-white border-none backdrop-blur-sm pointer-events-none">
+                            Tuyo
+                        </Badge>
                     )}
                 </div>
             </div>
@@ -190,13 +141,9 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                 <div className="absolute right-4 top-4 z-30">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <motion.button
-                                className="h-9 w-9 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md border border-white/10 hover:bg-black/60 hover:border-white/30 transition-all duration-200"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
+                            <button className="h-9 w-9 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md border border-white/10 hover:bg-black/60 hover:border-white/30 hover:scale-105 transition-all duration-200">
                                 <MoreVertical className="h-4 w-4" />
-                            </motion.button>
+                            </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => router.push(`/market/edit?id=${listing.id}`)}>
@@ -295,6 +242,6 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
                 itemType="anuncio"
                 onConfirm={handleDelete}
             />
-        </motion.div>
+        </div>
     )
 }

@@ -1,4 +1,7 @@
 
+
+import { Suspense } from 'react'
+import { FlatsSkeleton } from '@/components/home/flats-skeleton'
 import { FlatsFeed } from '@/components/home/flats-feed'
 import { FlatsSearchBar } from '@/components/home/flats-search-bar'
 import { FadeIn } from '@/components/ui/fade-in'
@@ -30,10 +33,12 @@ export default async function FlatsPage({ searchParams }: { searchParams: Promis
     return (
         <ProductFeedLayout>
             <div className="min-h-[50vh] outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <FlatsSearchBar flats={initialFlats} />
-                <FadeIn>
-                    <FlatsFeed initialFlats={initialFlats} currentUserId={user?.id} />
-                </FadeIn>
+                <Suspense fallback={<FlatsSkeleton />}>
+                    <FlatsSearchBar flats={initialFlats} />
+                    <FadeIn>
+                        <FlatsFeed initialFlats={initialFlats} currentUserId={user?.id} />
+                    </FadeIn>
+                </Suspense>
             </div>
         </ProductFeedLayout>
     )

@@ -1,5 +1,6 @@
-// imports remain same
-import { useEffect, useState, useRef, useMemo } from 'react'
+'use client'
+
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { MessageSquare } from 'lucide-react'
@@ -10,38 +11,20 @@ import { MessagesSkeleton } from '@/components/messages/messages-skeleton'
 
 interface MessageListProps {
     searchQuery?: string
-    initialThreads?: any[]
-    initialUnreadCounts?: Record<string, number>
-    currentUserId?: string
 }
 
-export function MessageList({
-    searchQuery = '',
-    initialThreads,
-    initialUnreadCounts,
-    currentUserId: initialUserId
-}: MessageListProps) {
-    const [threads, setThreads] = useState<any[]>(initialThreads || [])
-    const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>(initialUnreadCounts || {})
-    const [loading, setLoading] = useState(!initialThreads)
+export function MessageList({ searchQuery = '' }: MessageListProps) {
+    const [threads, setThreads] = useState<any[]>([])
+    const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
+    const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [currentUserId, setCurrentUserId] = useState<string | null>(initialUserId || null)
-
-    // Update state when initial props change (e.g. navigation)
-    useEffect(() => {
-        if (initialThreads) setThreads(initialThreads)
-        if (initialUnreadCounts) setUnreadCounts(initialUnreadCounts)
-        if (initialUserId) setCurrentUserId(initialUserId)
-    }, [initialThreads, initialUnreadCounts, initialUserId])
-
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null)
     const router = useRouter()
     const supabase = createClient()
     const scrollContainerRef = useRef<HTMLDivElement>(null)
 
     const fetchData = async () => {
-        // Only show full loading if we have no data
-        if (threads.length === 0) setLoading(true)
-
+        setLoading(true)
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
             setLoading(false)
@@ -69,7 +52,19 @@ export function MessageList({
             console.error('Error fetching threads:', threadsError)
             setError(threadsError.message)
         } else {
-            setThreads(threadsData || [])
+            let filteredThreads = threadsData || []
+            if (searchQuery) {
+                const lowerQuery = searchQuery.toLowerCase()
+                filteredThreads = filteredThreads.filter((thread: any) => {
+                    const otherUser = thread.buyer_id === user.id ? thread.seller : thread.buyer
+                    const itemName = thread.listing?.title || thread.flat?.title || ''
+                    return (
+                        otherUser?.alias_inst?.toLowerCase().includes(lowerQuery) ||
+                        itemName.toLowerCase().includes(lowerQuery)
+                    )
+                })
+            }
+            setThreads(filteredThreads)
         }
 
         // Fetch unread counts
@@ -88,33 +83,9 @@ export function MessageList({
         setLoading(false)
     }
 
-    // Only fetch on mount if no initial data
     useEffect(() => {
-        if (!initialThreads) {
-            fetchData()
-        } else if (!currentUserId) {
-            // Ensure we have currentUserId even if threads passed (rare case if props passed correctly)
-            supabase.auth.getUser().then(({ data }) => {
-                if (data.user) setCurrentUserId(data.user.id)
-            })
-        }
-    }, [])
-
-    // Client-side filtering
-    const filteredThreads = useMemo(() => {
-        if (!searchQuery) return threads
-        if (!currentUserId) return threads
-
-        const lowerQuery = searchQuery.toLowerCase()
-        return threads.filter((thread: any) => {
-            const otherUser = thread.buyer_id === currentUserId ? thread.seller : thread.buyer
-            const itemName = thread.listing?.title || thread.flat?.title || ''
-            return (
-                otherUser?.alias_inst?.toLowerCase().includes(lowerQuery) ||
-                itemName.toLowerCase().includes(lowerQuery)
-            )
-        })
-    }, [threads, searchQuery, currentUserId])
+        fetchData()
+    }, [supabase, searchQuery])
 
     if (loading) return <MessagesSkeleton />
 
@@ -128,31 +99,17 @@ export function MessageList({
         </div>
     )
 
-    if (filteredThreads.length === 0 && !loading) {
-        // If we have threads but filtered list is empty -> Show "No results"
-        // If we have NO threads at all -> Show "No messages"
-        const isSearchEmpty = threads.length > 0 && searchQuery
-
+    if (threads.length === 0) {
         return (
             <PullToRefresh onRefresh={async () => { await fetchData() }}>
                 <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground min-h-[50vh]">
-                    {isSearchEmpty ? (
-                        <>
-                            <Search className="h-10 w-10 opacity-50 mb-4" />
-                            <h3 className="font-semibold mb-1">Sin resultados</h3>
-                            <p className="text-sm">No se encontraron conversaciones.</p>
-                        </>
-                    ) : (
-                        <>
-                            <div className="bg-muted/50 p-6 rounded-full mb-4">
-                                <MessageSquare className="h-10 w-10 opacity-50" />
-                            </div>
-                            <h3 className="font-semibold mb-1">Sin mensajes</h3>
-                            <p className="text-sm max-w-[250px]">
-                                Todavía no tienes conversaciones activas.
-                            </p>
-                        </>
-                    )}
+                    <div className="bg-muted/50 p-6 rounded-full mb-4">
+                        <MessageSquare className="h-10 w-10 opacity-50" />
+                    </div>
+                    <h3 className="font-semibold mb-1">Sin mensajes</h3>
+                    <p className="text-sm max-w-[250px]">
+                        Todavía no tienes conversaciones activas.
+                    </p>
                 </div>
             </PullToRefresh>
         )
@@ -166,7 +123,7 @@ export function MessageList({
                     className="h-full overflow-y-auto px-0 scrollbar-thin pb-20 md:pb-0"
                 >
                     <ThreadList
-                        initialThreads={filteredThreads}
+                        initialThreads={threads}
                         currentUserId={currentUserId!}
                         unreadCounts={unreadCounts}
                     />
@@ -175,6 +132,3 @@ export function MessageList({
         </div>
     )
 }
-
-// Add import for Search icon
-import { Search } from 'lucide-react'

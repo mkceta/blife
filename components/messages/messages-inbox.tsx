@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MessageSquare, Bell, Search } from 'lucide-react'
 import { MessageList } from '@/components/messages/message-list'
@@ -9,20 +9,14 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { useNotifications } from '@/hooks/use-notifications'
 import { mediumHaptic } from '@/lib/haptics'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Skeleton } from '@/components/ui/skeleton'
 
-interface MessagesInboxProps {
-    className?: string
-    initialThreads?: any[]
-    initialUnreadCounts?: Record<string, number>
-    currentUserId?: string
-}
-
-function MessagesInboxContent({ className, initialThreads, initialUnreadCounts, currentUserId }: MessagesInboxProps) {
+function MessagesInboxContent({ className }: { className?: string }) {
     const router = useRouter()
     const searchParams = useSearchParams()
 
     // Read 'tab' from URL properly, default to 'messages'
+    // If not present in URL, maintain internal state
     const tabParam = searchParams.get('tab')
     const [activeTab, setActiveTab] = useState<'messages' | 'notifications'>('messages')
     const [searchQuery, setSearchQuery] = useState('')
@@ -37,32 +31,17 @@ function MessagesInboxContent({ className, initialThreads, initialUnreadCounts, 
 
     // Update URL when tab changes without full reload
     const handleTabChange = (tab: 'messages' | 'notifications') => {
-        mediumHaptic()
+        mediumHaptic() // Add haptic feedback here
         setActiveTab(tab)
+        // Only push state if we are tracking tabs in URL globally
+        // const newUrl = tab === 'messages' ? '/messages' : '/messages?tab=notifications'
+        // router.replace(newUrl, { scroll: false })
     }
 
     // Get unread counts
     const { notifications } = useNotifications()
     const unreadNotifications = notifications.filter(n => !n.read && n.type !== 'message').length
     const unreadMessages = notifications.filter(n => !n.read && n.type === 'message').length
-
-    // Animation logic
-    const direction = activeTab === 'notifications' ? 1 : -1
-
-    const tabVariants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? 20 : -20,
-            opacity: 0,
-        }),
-        center: {
-            x: 0,
-            opacity: 1,
-        },
-        exit: (direction: number) => ({
-            x: direction > 0 ? -20 : 20,
-            opacity: 0,
-        }),
-    }
 
     return (
         <div className={cn("flex flex-col h-full bg-background border-r border-border/50", className)}>
@@ -91,10 +70,7 @@ function MessagesInboxContent({ className, initialThreads, initialUnreadCounts, 
                             </span>
                         )}
                         {activeTab === 'messages' && (
-                            <motion.span
-                                layoutId="active-tab-indicator"
-                                className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-t-full"
-                            />
+                            <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-t-full" />
                         )}
                     </button>
                     <button
@@ -114,69 +90,64 @@ function MessagesInboxContent({ className, initialThreads, initialUnreadCounts, 
                             </span>
                         )}
                         {activeTab === 'notifications' && (
-                            <motion.span
-                                layoutId="active-tab-indicator"
-                                className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-t-full"
-                            />
+                            <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-t-full" />
                         )}
                     </button>
                 </div>
             </div>
 
             {/* Search Bar (Only for Messages) */}
-            <AnimatePresence mode="popLayout">
-                {activeTab === 'messages' && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden bg-background/50 backdrop-blur-sm border-b border-border/40 z-20 flex-shrink-0"
-                    >
-                        <div className="p-3">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Buscar en mensajes..."
-                                    className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {activeTab === 'messages' && (
+                <div className="p-3 border-b border-border/40 bg-background/50 backdrop-blur-sm sticky top-[6.5rem] z-20 flex-shrink-0">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Buscar en mensajes..."
+                            className="pl-9 h-9 bg-muted/50 border-border/50 focus-visible:ring-1 rounded-full text-sm"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Content Area */}
             <div className="flex-1 overflow-hidden relative">
-                <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-                    <motion.div
-                        key={activeTab}
-                        custom={direction}
-                        variants={tabVariants}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                        className="absolute inset-0 w-full h-full bg-background"
-                    >
-                        {activeTab === 'messages' ? (
-                            <MessageList
-                                searchQuery={searchQuery}
-                                initialThreads={initialThreads}
-                                initialUnreadCounts={initialUnreadCounts}
-                                currentUserId={currentUserId}
-                            />
-                        ) : (
-                            <NotificationList />
-                        )}
-                    </motion.div>
-                </AnimatePresence>
+                {activeTab === 'messages' ? (
+                    <MessageList searchQuery={searchQuery} />
+                ) : (
+                    <NotificationList />
+                )}
             </div>
         </div>
     )
 }
 
-export function MessagesInbox(props: MessagesInboxProps) {
-    return <MessagesInboxContent {...props} />
+export function MessagesInbox(props: { className?: string }) {
+    return (
+        <Suspense fallback={
+            <div className="h-full flex flex-col">
+                <div className="p-4 pt-safe border-b border-border/50">
+                    <Skeleton className="h-8 w-32 mb-4" />
+                    <div className="flex gap-4">
+                        <Skeleton className="h-10 flex-1 rounded-full" />
+                        <Skeleton className="h-10 flex-1 rounded-full" />
+                    </div>
+                </div>
+                <div className="p-4 space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex gap-3">
+                            <Skeleton className="h-12 w-12 rounded-full" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-3 w-1/2" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        }>
+            <MessagesInboxContent {...props} />
+        </Suspense>
+    )
 }

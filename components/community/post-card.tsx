@@ -19,8 +19,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { motion } from 'framer-motion'
-import { SPRING, fadeInUp } from '@/lib/animations'
 
 interface PostCardProps {
     post: any
@@ -60,25 +58,13 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, 
     const isOwner = currentUser?.id === post.user_id
 
     return (
-        <motion.div
-            className="bg-card rounded-xl p-4 border border-border space-y-3 relative"
-            initial="hidden"
-            animate="visible"
-            variants={fadeInUp}
-            whileHover={{ y: -2, transition: { duration: 0.2 } }}
-        >
+        <div className="bg-card rounded-xl p-4 border border-border space-y-3 relative">
             <div className="flex items-start gap-3">
                 <Link href={`/user/${user?.alias_inst}`}>
-                    <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={SPRING.snappy}
-                    >
-                        <Avatar className="h-10 w-10 border border-border cursor-pointer">
-                            {user?.avatar_url && <AvatarImage src={user.avatar_url} />}
-                            <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                    </motion.div>
+                    <Avatar className="h-10 w-10 border border-border cursor-pointer hover:opacity-80 transition-opacity">
+                        {user?.avatar_url && <AvatarImage src={user.avatar_url} />}
+                        <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
                 </Link>
                 <div className="flex-1 min-w-0 pr-8">
                     <div className="flex items-center gap-2">
@@ -93,14 +79,9 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, 
                     <div className="absolute top-4 right-4">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground hover:text-foreground">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </motion.div>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground hover:text-foreground">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
@@ -118,14 +99,9 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, 
                 <Link href={`/community/post/${post.id}`} className="block group">
                     <p className="text-sm whitespace-pre-wrap leading-relaxed group-hover:text-foreground/90 transition-colors">{post.text}</p>
                     {post.category && post.category[0] && post.category[0] !== 'General' && (
-                        <motion.span
-                            className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
+                        <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">
                             {post.category[0]}
-                        </motion.span>
+                        </span>
                     )}
                 </Link>
             ) : (
@@ -133,16 +109,10 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, 
                     <p className="text-lg md:text-xl font-medium whitespace-pre-wrap leading-relaxed text-foreground/90">{post.text}</p>
                     {post.category && post.category[0] && (
                         <div className="flex gap-2 mt-3">
-                            {post.category.map((cat: string, index: number) => (
-                                <motion.span
-                                    key={cat}
-                                    className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: index * 0.1 }}
-                                >
+                            {post.category.map((cat: string) => (
+                                <span key={cat} className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">
                                     {cat}
-                                </motion.span>
+                                </span>
                             ))}
                         </div>
                     )}
@@ -150,11 +120,7 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, 
             )}
 
             {post.photo_url && (
-                <motion.div
-                    className="relative aspect-video rounded-lg overflow-hidden bg-muted"
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ duration: 0.3 }}
-                >
+                <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
                     <Image
                         src={post.photo_url}
                         alt="Post image"
@@ -163,7 +129,7 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, 
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         priority={priority}
                     />
-                </motion.div>
+                </div>
             )}
 
             <PostActions
@@ -174,6 +140,6 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, 
                 currentUserId={currentUser?.id}
                 defaultShowComments={isDetail}
             />
-        </motion.div>
+        </div>
     )
 }

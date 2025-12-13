@@ -8,9 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useNotifications } from '@/hooks/use-notifications'
-import { lightHaptic } from '@/lib/haptics'
-import { motion, AnimatePresence } from 'framer-motion'
-import { SPRING } from '@/lib/animations'
+import { mediumHaptic } from '@/lib/haptics'
 
 export function BottomNav() {
     const pathname = usePathname()
@@ -101,111 +99,52 @@ export function BottomNav() {
                             key={item.href}
                             href={item.href}
                             aria-label={item.label}
-                            onClick={() => lightHaptic()}
+                            onClick={() => mediumHaptic()}
                             className={cn(
-                                "flex flex-col items-center justify-center space-y-0.5 w-full h-full relative",
+                                "flex flex-col items-center justify-center space-y-0.5 active-press w-full h-full",
                                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground/80"
                             )}
                         >
-                            <motion.div
-                                className="relative h-6 w-6"
-                                whileTap={{ scale: 0.85 }}
-                                animate={{
-                                    scale: isActive ? [1, 1.15, 1] : 1,
-                                }}
-                                transition={isActive ? {
-                                    duration: 0.4,
-                                    times: [0, 0.5, 1],
-                                    ease: "easeOut"
-                                } : { duration: 0.2 }}
-                            >
+                            <div className="relative h-6 w-6">
                                 {item.isProfile && user ? (
-                                    <motion.div
-                                        animate={{
-                                            scale: isActive ? 1.05 : 1,
-                                        }}
-                                        transition={SPRING.smooth}
-                                    >
-                                        <Avatar className={cn("h-6 w-6 border-2 transition-all", isActive ? "border-primary" : "border-transparent")}>
-                                            <AvatarImage src={avatarUrl || undefined} />
-                                            <AvatarFallback className="text-[10px]">
-                                                {user.alias_inst?.substring(0, 2).toUpperCase()}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                    </motion.div>
+                                    <Avatar className={cn("h-6 w-6 border-2 transition-all", isActive ? "border-primary" : "border-transparent")}>
+                                        <AvatarImage src={avatarUrl || undefined} />
+                                        <AvatarFallback className="text-[10px]">
+                                            {user.alias_inst?.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
                                 ) : (
                                     <>
                                         {isActive && item.label === 'Comunidad' ? (
-                                            <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                transition={SPRING.bouncy}
-                                            >
+                                            <>
                                                 {/* Filled Layer - Orange Fire */}
                                                 <item.icon className="absolute inset-0 h-6 w-6 text-primary fill-primary stroke-0" />
                                                 {/* Outline Layer - Accent Color */}
                                                 <item.icon className="absolute inset-0 h-6 w-6 text-primary stroke-[2.5] fill-none" />
-                                            </motion.div>
+                                            </>
                                         ) : (
-                                            <motion.div
-                                                animate={{
-                                                    rotate: isActive && item.label === 'Vender' ? [0, -10, 10, 0] : 0,
-                                                }}
-                                                transition={{
-                                                    duration: 0.5,
-                                                    ease: "easeInOut"
-                                                }}
-                                            >
-                                                <item.icon className={cn(
-                                                    "h-6 w-6 transition-all absolute inset-0",
-                                                    isActive
-                                                        ? (item.icon === Search)
-                                                            ? "stroke-[2.5]"
-                                                            : "stroke-0 fill-current"
-                                                        : "stroke-2"
-                                                )} />
-                                            </motion.div>
+                                            <item.icon className={cn(
+                                                "h-6 w-6 transition-all absolute inset-0",
+                                                isActive
+                                                    ? (item.icon === Search)
+                                                        ? "stroke-[2.5]"
+                                                        : "stroke-0 fill-current"
+                                                    : "stroke-2"
+                                            )} />
                                         )}
                                     </>
                                 )}
 
-                                {/* Notification Badge with Pulse */}
-                                <AnimatePresence>
-                                    {item.hasNotifications && (
-                                        (item.label === 'Comunidad' && unreadCommunity > 0) ||
-                                        (item.label === 'Mensajes' && unreadMessages > 0)
-                                    ) && (
-                                            <motion.span
-                                                className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive border-[1.5px] border-background z-10"
-                                                initial={{ scale: 0 }}
-                                                animate={{
-                                                    scale: [1, 1.2, 1],
-                                                }}
-                                                exit={{ scale: 0 }}
-                                                transition={{
-                                                    scale: {
-                                                        duration: 2,
-                                                        repeat: Infinity,
-                                                        ease: "easeInOut"
-                                                    }
-                                                }}
-                                            />
-                                        )}
-                                </AnimatePresence>
-                            </motion.div>
-
-                            <motion.span
-                                className={cn("text-[10px] font-medium")}
-                                animate={{
-                                    y: isActive ? [0, -2, 0] : 0,
-                                }}
-                                transition={{
-                                    duration: 0.3,
-                                    ease: "easeOut"
-                                }}
-                            >
+                                {item.hasNotifications && (
+                                    (item.label === 'Comunidad' && unreadCommunity > 0) ||
+                                    (item.label === 'Mensajes' && unreadMessages > 0)
+                                ) && (
+                                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive border-[1.5px] border-background z-10" />
+                                    )}
+                            </div>
+                            <span className={cn("text-[10px] font-medium")}>
                                 {item.label}
-                            </motion.span>
+                            </span>
                         </Link>
                     )
                 })}
