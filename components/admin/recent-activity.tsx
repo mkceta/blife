@@ -53,7 +53,7 @@ export function RecentActivity({ newUsers, newListings, newFlats }: RecentActivi
                             <div className="flex items-center gap-3">
                                 <div className="h-9 w-9 rounded bg-muted overflow-hidden relative">
                                     {listing.photos?.[0]?.url && (
-                                        <img src={listing.photos[0].url} alt="" className="object-cover w-full h-full" />
+                                        <img src={listing.photos[0].url} alt="" className="object-cover w-full h-full" loading="lazy" />
                                     )}
                                 </div>
                                 <div>
@@ -84,7 +84,7 @@ export function RecentActivity({ newUsers, newListings, newFlats }: RecentActivi
                             <div className="flex items-center gap-3">
                                 <div className="h-9 w-9 rounded bg-muted overflow-hidden relative">
                                     {flat.photos?.[0]?.url && (
-                                        <img src={flat.photos[0].url} alt="" className="object-cover w-full h-full" />
+                                        <img src={flat.photos[0].url} alt="" className="object-cover w-full h-full" loading="lazy" />
                                     )}
                                 </div>
                                 <div>

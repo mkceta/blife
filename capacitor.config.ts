@@ -8,14 +8,32 @@ const config: CapacitorConfig = {
     url: 'https://blife-udc.vercel.app',
     cleartext: true
   },
+  android: {
+    // Optimizaciones de WebView para mejor rendimiento
+    allowMixedContent: false,
+    captureInput: true,
+    webContentsDebuggingEnabled: false, // Desactivar en producción
+    backgroundColor: '#000000',
+    // Habilitar aceleración de hardware
+    loggingBehavior: 'none',
+  },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 1500, // Reducido para carga más rápida
+      launchAutoHide: false, // Control manual para mejor UX
       backgroundColor: "#000000",
       showSpinner: false,
       androidScaleType: "FIT_CENTER",
       splashFullScreen: true,
       splashImmersive: true,
+    },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"],
+    },
+    Keyboard: {
+      resize: "native",
+      style: "dark",
+      resizeOnFullScreen: true,
     },
   },
 };

@@ -41,7 +41,11 @@ export function DesktopHeader() {
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
-                const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
+                const { data: profile } = await supabase
+                    .from('users')
+                    .select('id, alias_inst, avatar_url, role')
+                    .eq('id', user.id)
+                    .single()
                 setUser(profile)
             } else {
                 setUser(null)

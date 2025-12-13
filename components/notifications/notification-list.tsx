@@ -22,18 +22,18 @@ export function NotificationList() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
-        // Fetch all notifications
+        // Fetch all notifications (only necessary fields)
         const { data: all } = await supabase
             .from('notifications')
-            .select('*')
+            .select('id, type, title, body, read, created_at, metadata')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(100)
 
-        // Fetch unread notifications
+        // Fetch unread notifications (only necessary fields)
         const { data: unread } = await supabase
             .from('notifications')
-            .select('*')
+            .select('id, type, title, body, read, created_at, metadata')
             .eq('user_id', user.id)
             .eq('read', false)
             .order('created_at', { ascending: false })

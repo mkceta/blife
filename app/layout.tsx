@@ -12,6 +12,7 @@ import { PresenceUpdater } from '@/components/presence-updater'
 import { BackButtonHandler } from '@/components/back-button-handler'
 import { NotificationHandler } from '@/components/notification-handler'
 import Providers from '@/app/providers'
+import { RoutePrefetcher } from '@/components/route-prefetcher'
 
 const inter = Inter({ subsets: ['latin'] })
 export const openSans = Open_Sans({
@@ -58,6 +59,7 @@ export default function RootLayout({
             <PwaRegister />
             <BackButtonHandler />
             <NotificationHandler />
+            <RoutePrefetcher />
             <Suspense>
               <DesktopHeader />
             </Suspense>
