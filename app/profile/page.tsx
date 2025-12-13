@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { BadgesSheet } from '@/components/profile/badges-sheet'
 import { SellerDashboardButton } from '@/components/profile/seller-dashboard-button'
+import { motion } from 'framer-motion'
 
 export default function ProfilePage() {
     const router = useRouter()
@@ -133,24 +134,39 @@ export default function ProfilePage() {
             </div>
 
             {/* Menu List */}
-            <div className="px-4 space-y-1">
+            <motion.div
+                className="px-4 space-y-1"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                    visible: { transition: { staggerChildren: 0.05 } }
+                }}
+            >
                 {/* Stripe Connect Section */}
-                <SellerDashboardButton userId={profile.id} />
+                <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+                    <SellerDashboardButton userId={profile.id} />
+                </motion.div>
                 <div className="h-px bg-border/40 my-2 mx-4" />
                 {menuItems.map((item, index) => {
                     if (item.show === false) return null
 
                     const Content = () => (
-                        <div className={cn(
-                            "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg cursor-pointer",
-                            item.variant === 'destructive' && "text-red-500 hover:bg-red-50",
-                            item.variant === 'secondary' && "text-blue-500 hover:bg-blue-50/50"
-                        )}>
+                        <motion.div
+                            className={cn(
+                                "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg cursor-pointer",
+                                item.variant === 'destructive' && "text-red-500 hover:bg-red-50",
+                                item.variant === 'secondary' && "text-blue-500 hover:bg-blue-50/50"
+                            )}
+                            variants={{
+                                hidden: { opacity: 0, x: -20 },
+                                visible: { opacity: 1, x: 0 }
+                            }}
+                        >
                             <item.icon className="h-6 w-6" strokeWidth={1.5} />
                             <span className="flex-1 font-medium">{item.label}</span>
                             {item.count && <span className="text-muted-foreground text-sm">{item.count}</span>}
                             {!item.count && <ChevronRight className="h-5 w-5 text-muted-foreground/50" />}
-                        </div>
+                        </motion.div>
                     )
 
                     if (item.label === 'Insignias ganadas') {
@@ -205,7 +221,7 @@ export default function ProfilePage() {
                         </div>
                     )
                 })}
-            </div>
+            </motion.div>
         </div>
     )
 }
