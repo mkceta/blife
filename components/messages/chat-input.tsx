@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo, useEffect, useRef as useReactRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Send, X, Loader2, Paperclip, Camera as CameraIcon, Image as ImageIcon } from 'lucide-react'
@@ -8,7 +8,6 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase'
 import { Camera, CameraResultType } from '@capacitor/camera'
 import { sendHaptic, captureHaptic } from '@/lib/haptics'
-import { useEffect, useRef as useReactRef } from 'react'
 
 interface ChatInputProps {
     threadId: string
@@ -24,7 +23,8 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const channelRef = useReactRef<any>(null)
     const typingTimeoutRef = useReactRef<NodeJS.Timeout | undefined>(undefined)
-    const supabase = createClient()
+    // Use useMemo to prevent creating new supabase instance on every render
+    const supabase = useMemo(() => createClient(), [])
 
     // Setup broadcast channel for typing
     useEffect(() => {

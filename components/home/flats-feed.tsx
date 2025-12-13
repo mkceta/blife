@@ -36,7 +36,7 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
     // Use React Query for data fetching/caching
     // If we want "Instant" feel, we rely on initialFlats and only refetch if filters change significantly 
     // or if we want to ensure freshness.
-    const { data: flats, isLoading, refetch } = useQuery({
+    const { data: flats, refetch } = useQuery({
         queryKey: ['flats', filters],
         queryFn: async () => {
             // Cast filters to FlatsFilters as they are mostly compatible strings/undefined
@@ -54,7 +54,7 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
             const data = await fetchFlatsAction(actionFilters as any)
             return data || []
         },
-        initialData: initialFlats.length > 0 ? initialFlats : undefined,
+        initialData: initialFlats, // Always use initialData to prevent loading state
         staleTime: 1000 * 60 * 5, // 5 mins
     });
 
@@ -71,8 +71,6 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
         }
         return result;
     }, [flats, filters.sort]);
-
-    if (isLoading) return <FlatsSkeleton />;
 
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,7 +34,8 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
     const [isLoading, setIsLoading] = useState(false)
     const [isTyping, setIsTyping] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
-    const supabase = createClient()
+    // Use useMemo to prevent creating new supabase instance on every render
+    const supabase = useMemo(() => createClient(), [])
     const channelRef = useRef<any>(null)
     const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 

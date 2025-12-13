@@ -38,7 +38,7 @@ export function MarketFeed({
 
     const filters = getFilters()
 
-    const { data: listings, isLoading, refetch } = useQuery({
+    const { data: listings, refetch } = useQuery({
         queryKey: ['market-listings', filters, currentUserId],
         queryFn: async () => {
             // Use Server Action here
@@ -56,19 +56,28 @@ export function MarketFeed({
             }
             return processed
         },
-        initialData: initialListings.length > 0 ? initialListings : undefined,
+        initialData: initialListings, // Always use initialData to prevent loading state
         staleTime: 1000 * 60 * 5, // 5 minutes cache
     })
 
-    const favoritesSet = new Set(initialFavorites)
+    // Make favorites reactive with React Query
+    const { data: favorites = initialFavorites } = useQuery({
+        queryKey: ['favorites', currentUserId],
+        queryFn: async () => {
+            if (!currentUserId) return []
+            const supabase = createClient()
+            const { data } = await supabase
+                .from('favorites')
+                .select('listing_id')
+                .eq('user_id', currentUserId)
+            return data?.map(f => f.listing_id) || []
+        },
+        initialData: initialFavorites,
+        enabled: !!currentUserId,
+        staleTime: 1000 * 30, // 30 seconds
+    })
 
-    if (isLoading) {
-        return (
-            <div className="min-h-[calc(100vh-10rem)] bg-transparent pt-4 px-3">
-                <FeedSkeleton />
-            </div>
-        )
-    }
+    const favoritesSet = new Set(favorites)
 
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>
