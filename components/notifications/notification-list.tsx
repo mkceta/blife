@@ -142,7 +142,7 @@ export function NotificationList() {
                                 <div className="bg-muted/50 p-6 rounded-full mb-4">
                                     <Bell className="h-10 w-10 opacity-50" />
                                 </div>
-                                <p className="text-sm">{activeFilter === 'all' ? 'No tienes notificaciones' : 'Estás al día'}</p>
+                                <p className="text-sm">{activeFilter === 'all' ? 'No tienes notificaciones' : 'Estás al día :)'}</p>
                             </div>
                         )}
                     </div>

@@ -3,11 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { markNotificationsAsReadByType } from '../notifications/mark-read-helpers';
-import { CommunityFeed } from '@/components/community/community-feed';
 import { CommunitySkeleton } from '@/components/community/community-skeleton';
 import { CommunitySearchBar } from '@/components/community/community-search-bar';
-import { getCachedPosts } from '@/lib/community-data';
-import { createClient } from '@/lib/supabase-server';
+import { CommunityFeedContent } from './community-feed-content';
+import { CommunityReadMarker } from '@/components/community/community-read-marker';
 
 const CATEGORIES = [
     { id: 'General', label: '🔥 General' },
@@ -20,42 +19,15 @@ const CATEGORIES = [
 ]
 
 export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ category?: string, q?: string }> }) {
-    // Mark unread comment notifications as read for this user
-    await markNotificationsAsReadByType('comment');
-
     const params = await searchParams
     const currentCategory = params.category || 'General'
     const searchQuery = params.q || ''
 
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // Fetch Posts using Cache strategy
-    // We intentionally fetch a larger set (default 20->100 in cached fn?) or reliance on client filtering
-    // Actually, getCachedPosts handles optional filtering. 
-    // To support "Instant" search we want to fetch mostly everything for the category and let client filter.
-    // If a search query exists in URL initially, we server-filter for SEO/Speed on first load.
-    const initialPosts = await getCachedPosts(currentCategory, searchQuery) // Pass params for initial load correctness
-
-    // Fetch User Reactions - Keep this fresh or we could cache it too if we want but reactions are personalized
-    let initialReactions: string[] = []
-    if (user && initialPosts && initialPosts.length > 0) {
-        // We can optimize this by parallelizing with getCachedPosts if we moved user fetch up
-        const postIds = initialPosts.map((p: any) => p.id)
-        const { data: reactions } = await supabase
-            .from('reactions')
-            .select('target_id')
-            .eq('user_id', user.id)
-            .eq('target_type', 'post')
-            .in('target_id', postIds)
-
-        if (reactions) {
-            initialReactions = reactions.map((r: any) => r.target_id)
-        }
-    }
-
     return (
         <div className="min-h-screen bg-background pb-20">
+            {/* Non-blocking background action */}
+            <CommunityReadMarker />
+
             {/* Standard App Header Style */}
             <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md shadow-sm">
                 <div className="pt-[calc(env(safe-area-inset-top)+0.5rem)] px-4 pb-3 flex flex-col md:flex-row md:items-center gap-4 justify-between max-w-5xl mx-auto w-full">
@@ -91,13 +63,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
 
             <div className="max-w-3xl mx-auto p-4 space-y-4">
                 <Suspense fallback={<CommunitySkeleton />}>
-                    <CommunityFeed
-                        category={currentCategory}
-                        searchQuery={searchQuery}
-                        initialPosts={initialPosts || []}
-                        initialReactions={initialReactions}
-                        currentUserId={user?.id}
-                    />
+                    <CommunityFeedContent searchParams={searchParams} />
                 </Suspense>
             </div>
 

@@ -1,4 +1,3 @@
-
 'use client'
 
 import { PostActions } from '@/components/community/post-actions'
@@ -8,7 +7,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 import { Trash2, MoreVertical, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -19,6 +17,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useQueryClient } from '@tanstack/react-query'
 
 interface PostCardProps {
     post: any
@@ -32,26 +31,48 @@ export function PostCard({ post, currentUser, hasUserReacted, isDetail = false, 
     const user = Array.isArray(post.user) ? post.user[0] : post.user
     const displayName = `@${user?.alias_inst || 'Usuario'}`
     const router = useRouter()
+    const queryClient = useQueryClient()
     const [isDeleting, setIsDeleting] = useState(false)
 
     const handleDelete = async () => {
         if (!confirm('¿Seguro que quieres borrar este post?')) return
 
         setIsDeleting(true)
+
+        // Optimistic UI Update
+        toast.success('Post eliminado')
+
+        // 1. Snapshot previous state for rollback
+        const previousData = queryClient.getQueriesData({ queryKey: ['community'] })
+
+        // 2. Optimistically update all community lists
+        queryClient.setQueriesData({ queryKey: ['community'] }, (oldData: any) => {
+            if (!oldData) return oldData
+            if (Array.isArray(oldData)) {
+                return oldData.filter((p: any) => p.id !== post.id)
+            }
+            return oldData
+        })
+
+        if (isDetail) {
+            router.push('/community')
+        }
+
         try {
             const { deletePostAction } = await import('@/app/community/actions')
             await deletePostAction(post.id)
 
-            toast.success('Post eliminado')
-            if (isDetail) {
-                router.push('/community')
-            }
-            // No need to router.refresh() if revalidatePath worked, but no harm keeping it if needed, 
-            // though server action revalidation should be enough.
+            // Success - invalidate to ensure consistency eventually
+            queryClient.invalidateQueries({ queryKey: ['community'] })
         } catch (error) {
             console.error(error)
             toast.error('Error al eliminar')
             setIsDeleting(false)
+
+            // Rollback
+            previousData.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data)
+            })
         }
     }
 

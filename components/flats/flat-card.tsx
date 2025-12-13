@@ -17,6 +17,7 @@ import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmatio
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Flat {
     id: string
@@ -42,6 +43,7 @@ export function FlatCard({ flat, currentUserId, priority = false }: { flat: Flat
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const router = useRouter()
     const supabase = createClient()
+    const queryClient = useQueryClient()
 
     const handleContact = async () => {
         if (!currentUserId) {
@@ -95,22 +97,7 @@ export function FlatCard({ flat, currentUserId, priority = false }: { flat: Flat
             const { data: existing } = await supabase
                 .from('favorites')
                 .select('id')
-                .eq('flat_id', flat.id) // Assuming flats have favorites too? The original code imported toggleFavorite from listing-actions which handled listings.
-                // Wait, does toggleFavorite handle flats?
-                // The original code: export async function toggleFavorite(listingId: string) ... .eq('listing_id', listingId)
-                // It seems it ONLY handled listings.
-                // But FlatCard was using it.
-                // Does the favorites table have a flat_id column?
-                // If not, maybe flats cannot be favorited?
-                // Or maybe they reused listing_id?
-                // Let's assume for now we need to check if favorites table supports flats.
-                // If the original code used `toggleFavorite(flat.id)`, and `toggleFavorite` used `listing_id`, then it was probably broken or flats are stored as listings?
-                // Flats are in 'flats' table. Listings in 'listings'.
-                // If `favorites` table has `flat_id`, we should use it.
-                // If not, maybe we can't favorite flats yet?
-                // I'll assume `flat_id` exists or I should skip this if it was broken.
-                // But the user wants "Arregla todos los errores".
-                // I'll try to use `flat_id`.
+                .eq('flat_id', flat.id)
                 .eq('user_id', currentUserId)
                 .maybeSingle()
 
@@ -131,6 +118,22 @@ export function FlatCard({ flat, currentUserId, priority = false }: { flat: Flat
     }
 
     const handleDelete = async () => {
+        // Optimistic UI
+        setShowDeleteDialog(false)
+        toast.success('Piso eliminado')
+
+        // Snapshot
+        const previousData = queryClient.getQueriesData({ queryKey: ['flats'] })
+
+        // Update Cache - Wildcard 'flats' update
+        queryClient.setQueriesData({ queryKey: ['flats'] }, (oldData: any) => {
+            if (!oldData) return oldData
+            if (Array.isArray(oldData)) {
+                return oldData.filter((item: any) => item.id !== flat.id)
+            }
+            return oldData
+        })
+
         try {
             const { error } = await supabase
                 .from('flats')
@@ -139,11 +142,14 @@ export function FlatCard({ flat, currentUserId, priority = false }: { flat: Flat
 
             if (error) throw error
 
-            toast.success('Piso eliminado')
-            router.refresh()
+            // router.refresh() 
         } catch (error) {
             console.error('Error deleting flat:', error)
             toast.error('Error al eliminar el piso')
+            // Revert
+            previousData.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data)
+            })
         }
     }
 

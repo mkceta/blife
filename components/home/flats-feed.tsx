@@ -8,6 +8,8 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
+import { fetchFlatsAction } from '@/app/feed-actions'
+import { FlatsFilters } from '@/lib/flats-data'
 
 interface FlatsFeedProps {
     initialFlats: any[];
@@ -37,43 +39,16 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
     const { data: flats, isLoading, refetch } = useQuery({
         queryKey: ['flats', filters],
         queryFn: async () => {
-            // We can duplicate the fetch logic here for client-side cleanliness 
-            // OR call an API route. Since we are client-side, we use Supabase client directly.
-            let query = supabase
-                .from('flats')
-                .select('*, user:users!flats_user_id_fkey(alias_inst, avatar_url)')
-                .eq('is_hidden', false)
-                .eq('status', 'active');
-
-            if (filters.q) query = query.ilike('title', `%${filters.q}%`);
-            if (filters.min_rent) query = query.gte('rent_cents', parseFloat(filters.min_rent) * 100);
-            if (filters.max_rent) query = query.lte('rent_cents', parseFloat(filters.max_rent) * 100);
-            if (filters.min_rooms) query = query.gte('rooms', parseInt(filters.min_rooms));
-            if (filters.min_baths) query = query.gte('baths', parseInt(filters.min_baths));
-            if (filters.min_area) query = query.gte('area_m2', parseFloat(filters.min_area));
-            if (filters.max_area) query = query.lte('area_m2', parseFloat(filters.max_area));
-            if (filters.location_area) query = query.eq('location_area', filters.location_area);
-
-            switch (filters.sort) {
-                case 'oldest':
-                    query = query.order('created_at', { ascending: true });
-                    break;
-                case 'price_asc':
-                    query = query.order('rent_cents', { ascending: true });
-                    break;
-                case 'price_desc':
-                    query = query.order('rent_cents', { ascending: false });
-                    break;
-                default:
-                    // Discovery/Newest
-                    query = query.order('created_at', { ascending: false }).limit(50);
+            // Cast filters to FlatsFilters as they are mostly compatible strings/undefined
+            const actionFilters: FlatsFilters = {
+                ...filters,
+                sort: filters.sort === 'recommended' ? undefined : filters.sort // Action doesn't know 'recommended' maybe?
             }
-
-            const { data } = await query;
-            return data || [];
+            const data = await fetchFlatsAction(actionFilters as any)
+            return data || []
         },
-        initialData: initialFlats,
-        staleTime: 1000 * 60 * 2, // 2 mins
+        initialData: initialFlats.length > 0 ? initialFlats : undefined,
+        staleTime: 1000 * 60 * 5, // 5 mins
     });
 
     // Client-side shuffle for random/discovery if needed (optional)
@@ -82,10 +57,10 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
         let result = [...flats];
         if (!filters.sort || filters.sort === 'recommended') {
             // Simple shuffle
-            for (let i = result.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [result[i], result[j]] = [result[j], result[i]];
-            }
+            // Sort happens on server too, but if we want random stability?
+            // Actually shuffling on every render is bad.
+            // We'll trust the server order or just use index.
+            // Let's keep it simple.
         }
         return result;
     }, [flats, filters.sort]);

@@ -6,9 +6,9 @@ import { FeedSkeleton } from '@/components/home/feed-skeleton'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
-import { getCachedMarketListings } from '@/lib/market-data'
 import { MarketFilters as MarketFiltersType } from '@/lib/market-data'
 import { useSearchParams } from 'next/navigation'
+import { fetchMarketListingsAction } from '@/app/feed-actions'
 
 interface MarketFeedProps {
     initialListings?: any[]
@@ -41,7 +41,8 @@ export function MarketFeed({
     const { data: listings, isLoading, refetch } = useQuery({
         queryKey: ['market-listings', filters, currentUserId],
         queryFn: async () => {
-            const raw = await getCachedMarketListings(filters)
+            // Use Server Action here
+            const raw = await fetchMarketListingsAction(filters)
 
             // Filter own listings
             let processed = currentUserId ? raw.filter(l => l.user_id !== currentUserId) : raw
@@ -55,8 +56,8 @@ export function MarketFeed({
             }
             return processed
         },
-        initialData: initialListings,
-        staleTime: 1000 * 60 * 2, // 2 minutes
+        initialData: initialListings.length > 0 ? initialListings : undefined,
+        staleTime: 1000 * 60 * 5, // 5 minutes cache
     })
 
     const favoritesSet = new Set(initialFavorites)

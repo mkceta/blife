@@ -22,6 +22,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { calculateTotalWithFees } from '@/lib/pricing'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Listing {
     id: string
@@ -55,8 +56,25 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const router = useRouter()
     const supabase = createClient()
+    const queryClient = useQueryClient()
 
     const handleDelete = async () => {
+        // Optimistic UI
+        setShowDeleteDialog(false)
+        toast.success('Anuncio eliminado')
+
+        // Snapshot
+        const previousData = queryClient.getQueriesData({ queryKey: ['market-listings'] })
+
+        // Update Cache
+        queryClient.setQueriesData({ queryKey: ['market-listings'] }, (oldData: any) => {
+            if (!oldData) return oldData
+            if (Array.isArray(oldData)) {
+                return oldData.filter((item: any) => item.id !== listing.id)
+            }
+            return oldData
+        })
+
         try {
             const { error } = await supabase
                 .from('listings')
@@ -65,11 +83,14 @@ export function ListingCard({ listing, currentUserId, isFavorited, priority = fa
 
             if (error) throw error
 
-            toast.success('Anuncio eliminado')
-            router.refresh()
+            // router.refresh() 
         } catch (error) {
             console.error('Error deleting listing:', error)
             toast.error('Error al eliminar el anuncio')
+            // Revert
+            previousData.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data)
+            })
         }
     }
 

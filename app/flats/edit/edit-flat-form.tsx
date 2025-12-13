@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
 import { deleteFlat } from '@/app/messages/actions'
+import { useQueryClient } from '@tanstack/react-query'
 
 const formSchema = z.object({
     title: z.string().min(10, 'Mínimo 10 caracteres').max(100),
@@ -37,6 +38,7 @@ export function EditFlatForm({ flat }: EditFlatFormProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const router = useRouter()
+    const queryClient = useQueryClient()
     const form = useForm<any>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -72,6 +74,9 @@ export function EditFlatForm({ flat }: EditFlatFormProps) {
             if (error) throw error
 
             toast.success('Piso actualizado')
+            // Invalidate cache to show updates
+            queryClient.invalidateQueries({ queryKey: ['flats'] })
+
             router.push(`/flats/${flat.id}`)
             router.refresh()
 
@@ -80,6 +85,31 @@ export function EditFlatForm({ flat }: EditFlatFormProps) {
             toast.error(error.message || 'Error al actualizar')
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        // Optimistic UI: Remove from cache immediately
+        queryClient.setQueriesData({ queryKey: ['flats'] }, (oldData: any) => {
+            if (!oldData) return oldData
+            if (Array.isArray(oldData)) {
+                return oldData.filter((item: any) => item.id !== flat.id)
+            }
+            return oldData
+        })
+
+        // This will redirect, so we don't need to try/catch for UI revert here as we'll be gone.
+        // But if it fails continuously, user is stuck. 
+        // Ideally we wrap in try/catch to revert if NOT redirecting error.
+        try {
+            await deleteFlat(flat.id)
+        } catch (error: any) {
+            // If error is not a redirect...
+            if (error.message !== 'NEXT_REDIRECT') {
+                console.error(error)
+                toast.error('Error al eliminar')
+                queryClient.invalidateQueries({ queryKey: ['flats'] })
+            }
         }
     }
 
@@ -245,7 +275,7 @@ export function EditFlatForm({ flat }: EditFlatFormProps) {
                 onOpenChange={setShowDeleteDialog}
                 title={flat.title}
                 itemType="piso"
-                onConfirm={() => deleteFlat(flat.id)}
+                onConfirm={handleDelete}
             />
         </>
     )

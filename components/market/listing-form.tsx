@@ -19,6 +19,7 @@ import { ImageUpload } from '@/components/ui/image-upload'
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
 import { StripeConnectModal } from '@/components/payment/stripe-connect-modal'
 import { SuccessCelebration } from '@/components/ui/success-celebration'
+import { useQueryClient } from '@tanstack/react-query'
 
 const CATEGORIES = ['Electronica', 'LibrosApuntes', 'Material', 'Ropa', 'Muebles', 'Transporte', 'Servicios', 'Ocio', 'Otros']
 
@@ -52,6 +53,7 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
 
     const router = useRouter()
     const supabase = createClient()
+    const queryClient = useQueryClient()
 
     const form = useForm<any>({
         resolver: zodResolver(formSchema),
@@ -98,7 +100,6 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
         setIsLoading(true)
         try {
             // STRIPE CHECK FOR PAID ITEMS
-            // We still do this client side for now as it involves interaction
             if (Number(values.price) > 0) {
                 const { data: { user } } = await supabase.auth.getUser()
                 if (user) {
@@ -116,87 +117,13 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                 }
             }
 
-            // Client-side image upload first
-            // We need a Listing ID for the upload path... 
-            // If creating, we don't have one?  
-            // Actually uploadListingImages uses passed ID. If we don't have one, we can generate a temporary UUID or just use a placeholder.
-            // But wait, uploadListingImages uploads to `${listingId}/originals/...`.
-            // If we are creating, we don't have the ID yet.
-            // Strategies:
-            // 1. Create row first, then upload? (Current strat).
-            // 2. Upload to a temp folder, then move? (Hard).
-            // 3. Generate UUID on client?
-
-            // Revert to Hybrid approach:
-            // Create/Update ROW via Server Action? No, if we need ID for images.
-
-            // Correction: To be "Instant", we mostly care about the FINAL redirect.
-            // The bottleneck is Image Upload.
-            // If we stick to:
-            // 1. Create Row (Server Action?) -> Returns ID.
-            // 2. Upload Images (Client).
-            // 3. Update Row with Photos (Server Action + Revalidate + Redirect).
-
-            // This is actually 2 server calls.
-
-            // Better: Generate UUID on client (for folder path only), upload images, then create row with that ID (unlikely allowed due to security policies often requiring matching IDs) OR 
-            // Just use a random UUID for the folder folder. The DB ID doesn't HAVE to match the storage folder, but it helps organization.
-
-            // Let's stick to the flow working, but use the ACTIONS for the final "Commit".
-
-            // Step 1: Resolve Target ID
-            let targetId = listingId
-            let isNew = !listingId
-
-            if (!targetId) {
-                // We need an ID to upload images.
-                // Let's create the row first to get the ID.
-                // But if we create the row, we want to do it "silently" or knowing it's incomplete?
-                // Or just use a random folder ID.
-                // Let's use crypto.randomUUID() for the storage folder.
-                // Wait, `uploadListingImages` puts it in `${listingId}/...`
-                // If we upload to `temp-new-id/...`, we can store that in the DB.
-            }
-
-            // To minimize refactor risk while ensuring "Instant" RELOAD:
-            // We can keep the current logic but REPLACE the final router.push with a Server Action that does nothing but revalidate and redirect?
-            // No, that's silly.
-
-            // The best way for instant "Delete" is easy -> Server Action.
-            // For "Create", the user sees a spinner anyway.
-            // The issue is likely that after creation, the list is stale.
-            // So executing the INSERT on the server side (via action) ensures revalidation happens.
-
-            // Modified Flow:
-            // 1. Upload Images (if any). If new, we need an ID.
-            //    - If we don't have an ID, we can't upload to the final folder.
-            //    - We can create the Listing *first* via Server Action (returning ID), but NOT redirect yet.
-            // 2. Upload images to that ID.
-            // 3. Call `updateListingAction` with the photos and redirect.
-
-            // Let's import the actions.
             const { createListingActionWithRedirect, updateListingAction, deleteListingAction } = await import('@/app/market/actions')
 
-            // Wait, I didn't export createListingActionReturnId. 
-            // For now, let's just use the client-side ID generation (Supabase allows client generated IDs if RLS permits, or we just utilize the system).
-
-            // Actually, `uploadListingImages` depends on `listingId`.
-            // Let's use `crypto.randomUUID()` if no listingId exists, use that for storage, and pass it to createListing.
-            // Supabase 'listings' table 'id' is uuid default gen_random_uuid().
-            // We can override it? Or just store the bucket path separately?
-            // The `uploadListingImages` function uses `listingId` for the path: `${listingId}/originals/...`
-
-            // Simple approach:
-            // 1. If NEW: Create a "Draft" or just Create empty listing via Server Action to get ID?
-            //    Or just upload to a random UUID folder.
-
-            // Let's use a random UUID for the folder if it's new.
             const storageId = listingId || crypto.randomUUID()
 
             // Upload New Images
             let uploadedPhotos: any[] = []
             if (files.length > 0) {
-                // Note: uploadListingImages uses client supabase.
                 uploadedPhotos = await uploadListingImages(files, storageId)
             }
 
@@ -205,15 +132,13 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
             if (listingId) {
                 // Update
                 await updateListingAction(listingId, values, finalPhotos)
+                // Start refetching instantly so user sees update
+                queryClient.invalidateQueries({ queryKey: ['market-listings'] })
             } else {
                 // Create
-                // We need to support passing the ID if we want the storage folder to match, or we just accept they might differ if we don't force it.
-                // Actually, if we use `storageId` for storage, we can't easily force the DB row ID to match unless we insert it.
-                // But does it matter? The photo URL is full path.
-                // Photos array contains full URLs.
-                // So it DOES NOT MATTER if the folder name is different from the Listing ID.
-
                 await createListingActionWithRedirect(values, finalPhotos)
+                // Start refetching instantly so user sees update
+                queryClient.invalidateQueries({ queryKey: ['market-listings'] })
             }
 
             // Show celebration for new listings
@@ -238,15 +163,34 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
 
     const handleDelete = async () => {
         if (!listingId) return
+
+        // Optimistic UI: Remove confirmation dialog immediately if open
+        setShowDeleteDialog(false)
+
+        // Show success immediately
+        toast.success('Anuncio eliminado')
+
         setIsLoading(true)
+
+        // Optimistic Cache Update: Remove from list immediately
+        queryClient.setQueriesData({ queryKey: ['market-listings'] }, (oldData: any) => {
+            if (!oldData) return oldData
+            if (Array.isArray(oldData)) {
+                return oldData.filter((item: any) => item.id !== listingId)
+            }
+            return oldData
+        })
+
         try {
             const { deleteListingAction } = await import('@/app/market/actions')
             await deleteListingAction(listingId)
-            toast.success('Anuncio eliminado')
+            // Redirect is handled by action
         } catch (error: any) {
             console.error('Error deleting listing:', error)
             toast.error('Error al eliminar el anuncio')
             setIsLoading(false)
+            // Revert cache if error
+            queryClient.invalidateQueries({ queryKey: ['market-listings'] })
         }
     }
 

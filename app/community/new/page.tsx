@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { uploadPostImage } from '@/lib/upload'
 import { createPostAction } from '@/app/community/actions'
+import { useQueryClient } from '@tanstack/react-query'
 
 const CATEGORIES = [
     { id: 'General', label: 'General' },
@@ -35,6 +36,7 @@ export default function NewPostPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [files, setFiles] = useState<File[]>([])
     const router = useRouter()
+    const queryClient = useQueryClient()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -63,23 +65,24 @@ export default function NewPostPage() {
 
             let photoUrl = undefined
             if (files.length > 0) {
-                // We use a temporary ID for the upload path if we don't have the post ID yet.
-                // Ideally we'd prefer the ID, but for now we'll use a random UUID which effectively organizes it.
-                // Alternatively we could create the post first? But that risks empty post if upload fails.
-                // Better to upload first.
                 const tempId = crypto.randomUUID()
                 photoUrl = await uploadPostImage(files[0], tempId)
             }
 
+            // Invalidate cache immediately so next page load fetches fresh data
+            queryClient.invalidateQueries({ queryKey: ['community'] })
+
             await createPostAction(values.text, values.categories, photoUrl)
 
             toast.success('Post publicado')
-            // Redirect handled by action, but we can also push if we want to be sure client side
-            // Action calls redirect() which throws NEXT_REDIRECT, so this code might not be reached if successful.
+            // Redirect handled by action
         } catch (error: any) {
             console.error(error)
-            toast.error(error.message || 'Error al publicar')
-            setIsLoading(false)
+            // If redirect, it's not an error in Next logic, but we can't easily distinguish unless we check message or use transition
+            if (error.message !== 'NEXT_REDIRECT') {
+                toast.error(error.message || 'Error al publicar')
+                setIsLoading(false)
+            }
         }
     }
 

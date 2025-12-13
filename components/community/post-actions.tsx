@@ -244,6 +244,33 @@ export function PostActions({
         }
     }
 
+    const handleDeleteComment = async (commentId: string) => {
+        // 1. Optimistic Update
+        const previousComments = comments
+        const previousCount = commentsCount
+
+        setComments(prev => prev.filter(c => c.id !== commentId))
+        setCommentsCount(prev => prev - 1)
+        toast.success('Comentario eliminado')
+
+        try {
+            const { error } = await supabase
+                .from('comments')
+                .delete()
+                .eq('id', commentId)
+
+            if (error) throw error
+
+            // Success - No further action needed as UI is already updated
+        } catch (error) {
+            console.error('Error deleting comment:', error)
+            toast.error('Error al eliminar comentario')
+            // Revert
+            setComments(previousComments)
+            setCommentsCount(previousCount)
+        }
+    }
+
     return (
         <div className="space-y-3">
             <div className="flex items-center gap-4 pt-2 text-muted-foreground">
@@ -289,7 +316,11 @@ export function PostActions({
                             Cargando comentarios...
                         </div>
                     ) : (
-                        <PostComments comments={comments} currentUserId={currentUserId} />
+                        <PostComments
+                            comments={comments}
+                            currentUserId={currentUserId}
+                            onDeleteComment={handleDeleteComment}
+                        />
                     )}
                 </div>
             )}
@@ -312,27 +343,11 @@ interface Comment {
 interface PostCommentsProps {
     comments: Comment[]
     currentUserId?: string
+    onDeleteComment: (id: string) => void
 }
 
-export function PostComments({ comments, currentUserId }: PostCommentsProps) {
-    const supabase = createClient()
+export function PostComments({ comments, currentUserId, onDeleteComment }: PostCommentsProps) {
     const [isPending, startTransition] = useTransition()
-
-    const handleDeleteComment = async (commentId: string) => {
-        try {
-            const { error } = await supabase
-                .from('comments')
-                .delete()
-                .eq('id', commentId)
-
-            if (error) throw error
-            toast.success('Comentario eliminado')
-            // Ideally we should update the parent state, but for now this is okay
-        } catch (error) {
-            console.error('Error deleting comment:', error)
-            toast.error('Error al eliminar comentario')
-        }
-    }
 
     if (comments.length === 0) return null
 
@@ -340,7 +355,7 @@ export function PostComments({ comments, currentUserId }: PostCommentsProps) {
         <div className="space-y-2 pt-2 border-t border-border">
             {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-2 text-sm">
-                    <Link href={`/user/@${comment.user.alias_inst}`}>
+                    <Link href={`/user/${comment.user.alias_inst}`}>
                         <Avatar className="h-6 w-6 cursor-pointer hover:opacity-80">
                             <AvatarImage src={comment.user.avatar_url || undefined} />
                             <AvatarFallback className="text-xs">
@@ -351,7 +366,7 @@ export function PostComments({ comments, currentUserId }: PostCommentsProps) {
                     <div className="flex-1 min-w-0 bg-muted rounded-lg p-2">
                         <div className="flex items-center gap-2 mb-1">
                             <Link
-                                href={`/user/@${comment.user.alias_inst}`}
+                                href={`/user/${comment.user.alias_inst}`}
                                 className="font-medium text-xs hover:text-primary"
                             >
                                 @{comment.user.alias_inst}
@@ -361,7 +376,7 @@ export function PostComments({ comments, currentUserId }: PostCommentsProps) {
                             </span>
                             {currentUserId === comment.user_id && (
                                 <button
-                                    onClick={() => handleDeleteComment(comment.id)}
+                                    onClick={() => onDeleteComment(comment.id)}
                                     disabled={isPending}
                                     className="ml-auto text-muted-foreground hover:text-destructive"
                                 >
