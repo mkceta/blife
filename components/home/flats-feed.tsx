@@ -41,8 +41,15 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
         queryFn: async () => {
             // Cast filters to FlatsFilters as they are mostly compatible strings/undefined
             const actionFilters: FlatsFilters = {
-                ...filters,
-                sort: filters.sort === 'recommended' ? undefined : filters.sort // Action doesn't know 'recommended' maybe?
+                q: filters.q,
+                min_rent: filters.min_rent || undefined,
+                max_rent: filters.max_rent || undefined,
+                min_rooms: filters.min_rooms || undefined,
+                min_baths: filters.min_baths || undefined,
+                min_area: filters.min_area || undefined,
+                max_area: filters.max_area || undefined,
+                location_area: filters.location_area || undefined,
+                sort: filters.sort === 'recommended' ? undefined : filters.sort
             }
             const data = await fetchFlatsAction(actionFilters as any)
             return data || []

@@ -23,7 +23,7 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
     const [imageUrl, setImageUrl] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const channelRef = useReactRef<any>(null)
-    const typingTimeoutRef = useReactRef<NodeJS.Timeout>()
+    const typingTimeoutRef = useReactRef<NodeJS.Timeout | undefined>(undefined)
     const supabase = createClient()
 
     // Setup broadcast channel for typing

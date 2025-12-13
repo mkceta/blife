@@ -36,7 +36,7 @@ export function ChatWindow({ threadId, currentUserId, otherUser, listingTitle }:
     const scrollRef = useRef<HTMLDivElement>(null)
     const supabase = createClient()
     const channelRef = useRef<any>(null)
-    const typingTimeoutRef = useRef<NodeJS.Timeout>()
+    const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
     // Fetch initial messages and setup realtime
     useEffect(() => {

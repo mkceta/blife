@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    // Optimizaciones de producción
-    output: 'export', // Para Capacitor
-
     // Optimizar imágenes
     images: {
         unoptimized: true, // Requerido para export estático
