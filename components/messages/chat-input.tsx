@@ -7,6 +7,7 @@ import { Send, X, Loader2, Paperclip, Camera as CameraIcon, Image as ImageIcon }
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase'
 import { Camera, CameraResultType } from '@capacitor/camera'
+import { sendHaptic, captureHaptic } from '@/lib/haptics'
 
 interface ChatInputProps {
     threadId: string
@@ -64,6 +65,7 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
             })
 
             if (image.webPath) {
+                captureHaptic() // Camera shutter feel
                 const response = await fetch(image.webPath)
                 const blob = await response.blob()
                 const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' })
@@ -102,6 +104,9 @@ export function ChatInput({ threadId, replyTo, onCancelReply }: ChatInputProps) 
                 })
 
             if (error) throw error
+
+            // Haptic feedback for successful send
+            sendHaptic()
 
             // Update thread last_message_at
             await supabase

@@ -10,7 +10,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { mediumHaptic } from '@/lib/haptics'
+import { likeHaptic, unlikeHaptic, sendHaptic } from '@/lib/haptics'
 
 interface PostActionsProps {
     postId: string
@@ -89,9 +89,15 @@ export function PostActions({
             return
         }
 
-        mediumHaptic()
-
         const newReacted = !userReacted
+
+        // Emotional haptic feedback based on action
+        if (newReacted) {
+            likeHaptic() // Like pattern: Medium → Light
+        } else {
+            unlikeHaptic() // Unlike pattern: Light
+        }
+
         setUserReacted(newReacted)
         setReactionsCount(prev => newReacted ? prev + 1 : prev - 1)
 
@@ -209,6 +215,7 @@ export function PostActions({
 
             if (error) throw error
 
+            sendHaptic() // Send pattern: Light → Medium
             toast.success('Comentario añadido')
 
             // Refresh comments to get real ID and user info

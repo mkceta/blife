@@ -1,5 +1,3 @@
-import { Suspense } from 'react'
-import { FeedSkeleton } from '@/components/home/feed-skeleton'
 import { MarketFeed } from '@/components/home/market-feed'
 import { MarketSearchBar } from '@/components/home/market-search-bar'
 import { FadeIn } from '@/components/ui/fade-in'
@@ -65,17 +63,15 @@ export default async function MarketPage({
     return (
         <ProductFeedLayout>
             <div className="min-h-[50vh] outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <Suspense fallback={<FeedSkeleton />}>
-                    <MarketSearchBar />
-                    <FadeIn>
-                        <MarketFeed
-                            initialListings={initialListings}
-                            initialFavorites={initialFavorites}
-                            initialAverageLikes={avgLikes || 0}
-                            currentUserId={user?.id}
-                        />
-                    </FadeIn>
-                </Suspense>
+                <MarketSearchBar />
+                <FadeIn>
+                    <MarketFeed
+                        initialListings={initialListings}
+                        initialFavorites={initialFavorites}
+                        initialAverageLikes={avgLikes || 0}
+                        currentUserId={user?.id}
+                    />
+                </FadeIn>
             </div>
         </ProductFeedLayout>
     )

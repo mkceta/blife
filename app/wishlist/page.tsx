@@ -6,7 +6,6 @@ import { Heart } from 'lucide-react'
 import { ListingCard } from '@/components/market/listing-card'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useQuery } from '@tanstack/react-query'
-import { WishlistSkeleton } from '@/components/wishlist/wishlist-skeleton'
 
 export default function WishlistPage() {
     const router = useRouter()
@@ -45,8 +44,6 @@ export default function WishlistPage() {
         },
         staleTime: 1000 * 60 * 5, // 5 minutes stale time
     })
-
-    if (isLoading) return <WishlistSkeleton />
 
     return (
         <div className="flex flex-col h-full bg-background min-h-screen pb-20 md:pb-0">

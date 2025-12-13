@@ -72,7 +72,7 @@ export function DesktopHeader() {
     }
 
     // Hide header on landing page and auth pages
-    if (pathname === '/' || pathname?.startsWith('/auth')) {
+    if (pathname === '/landing' || pathname?.startsWith('/auth')) {
         return null
     }
 

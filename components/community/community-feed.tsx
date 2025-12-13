@@ -94,29 +94,23 @@ export function CommunityFeed({
         )
     }, [postsData, searchQuery])
 
-
-    if (isLoading) {
-        return <CommunitySkeleton />
-    }
-
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>
             <div className="space-y-4 min-h-[calc(100vh-10rem)]">
-                {isRefetching && filteredPosts.length > 0 && (
-                    <div className="flex justify-center p-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    </div>
-                )}
 
-                <AnimatePresence initial={false}>
+                <AnimatePresence initial={false} mode="popLayout">
                     {filteredPosts.map((post: any, index: number) => (
                         <motion.div
                             key={post.id}
-                            layout // Enable layout animation for smooth reordering/filtering
+                            layout
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.3 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                            transition={{
+                                duration: 0.3,
+                                delay: index < 5 ? index * 0.05 : 0, // Stagger first 5 items
+                                layout: { duration: 0.3 }
+                            }}
                         >
                             <PostCard
                                 post={post}

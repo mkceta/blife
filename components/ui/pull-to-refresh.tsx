@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, useAnimation } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
+import { refreshHaptic, lightHaptic } from '@/lib/haptics'
 
 interface PullToRefreshProps {
     onRefresh: () => Promise<void>
@@ -75,8 +76,13 @@ export function PullToRefresh({ onRefresh, children, scrollContainerRef }: PullT
             // Snap to threshold
             contentControls.start({ y: THRESHOLD })
 
+            // Haptic feedback when refresh is triggered
+            lightHaptic()
+
             try {
                 await onRefresh()
+                // Success haptic pattern after refresh completes
+                refreshHaptic()
             } finally {
                 setIsRefreshing(false)
             }

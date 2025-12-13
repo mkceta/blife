@@ -13,7 +13,6 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { BadgesSheet } from '@/components/profile/badges-sheet'
 import { SellerDashboardButton } from '@/components/profile/seller-dashboard-button'
-import { ProfileSkeleton } from '@/components/profile/profile-skeleton'
 
 export default function ProfilePage() {
     const router = useRouter()
@@ -95,10 +94,6 @@ export default function ProfilePage() {
         }
     }, [user])
 
-    // If query is fetching usage 'isLoading'
-    const loading = loadingProfile || !user
-
-    if (loading) return <ProfileSkeleton />
     if (!profile) return null
 
     const menuItems = [

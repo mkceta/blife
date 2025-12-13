@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { mediumHaptic, successHaptic } from '@/lib/haptics'
+import { likeHaptic, unlikeHaptic } from '@/lib/haptics'
 import { motion, AnimatePresence, useAnimation } from 'framer-motion'
 
 interface WishlistButtonProps {
@@ -86,14 +86,14 @@ export function WishlistButton({
 
         // 2. Animation & Haptics
         if (newState) {
-            successHaptic() // Stronger haptic for "Like"
+            likeHaptic() // Emotional "like" pattern: Medium → Light
             setShowParticles(true)
             controls.start({
                 scale: [1, 0.8, 1.4, 0.9, 1],
                 transition: { type: "spring", stiffness: 400, damping: 10 } // "Pop" effect
             })
         } else {
-            mediumHaptic()
+            unlikeHaptic() // Subtle "unlike" pattern: Light
             controls.start({
                 scale: [1, 0.8, 1],
                 transition: { duration: 0.2 }

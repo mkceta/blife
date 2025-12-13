@@ -18,6 +18,7 @@ import { uploadListingImages } from '@/lib/upload'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
 import { StripeConnectModal } from '@/components/payment/stripe-connect-modal'
+import { SuccessCelebration } from '@/components/ui/success-celebration'
 
 const CATEGORIES = ['Electronica', 'LibrosApuntes', 'Material', 'Ropa', 'Muebles', 'Transporte', 'Servicios', 'Ocio', 'Otros']
 
@@ -45,6 +46,9 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
     // Stripe States
     const [showStripeInfoDialog, setShowStripeInfoDialog] = useState(false)
     const [showConnectModal, setShowConnectModal] = useState(false)
+
+    // Celebration state
+    const [showCelebration, setShowCelebration] = useState(false)
 
     const router = useRouter()
     const supabase = createClient()
@@ -212,9 +216,16 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                 await createListingActionWithRedirect(values, finalPhotos)
             }
 
-            // Toast handled by action? No, actions run on server.
-            // We should show toast here.
-            toast.success(listingId ? 'Anuncio actualizado' : 'Anuncio publicado')
+            // Show celebration for new listings
+            if (!listingId) {
+                setShowCelebration(true)
+                // Toast will show after celebration
+                setTimeout(() => {
+                    toast.success('¡Anuncio publicado con éxito!')
+                }, 1500)
+            } else {
+                toast.success('Anuncio actualizado')
+            }
 
             // Redirect is handled by the action.
 
@@ -512,6 +523,17 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                         toast.error('No se ha podido verificar la cuenta. Inténtalo de nuevo en unos segundos.')
                     }
                 }}
+            />
+
+            {/* Success Celebration */}
+            <SuccessCelebration
+                show={showCelebration}
+                title="¡Publicado!"
+                description="Tu anuncio ya está visible para todos"
+                type="default"
+                confettiType="default"
+                duration={3000}
+                onComplete={() => setShowCelebration(false)}
             />
         </Form>
     )
