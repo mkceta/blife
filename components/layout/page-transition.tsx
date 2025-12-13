@@ -48,38 +48,44 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         }
     }, [pathname, prevPath])
 
-    // Slide variants - optimized for super fluid transitions
+    // Slide variants - optimized for natural fluid motion
     const slideVariants = {
         enter: (direction: 'left' | 'right' | 'none') => ({
-            x: direction === 'left' ? 15 : direction === 'right' ? -15 : 0,
+            x: direction === 'left' ? 20 : direction === 'right' ? -20 : 0,
             opacity: 0,
-            scale: 0.995,
+            scale: 0.98,
+            zIndex: 1, // Ensure entering page is on top
         }),
         center: {
             x: 0,
             opacity: 1,
             scale: 1,
+            zIndex: 1,
         },
         exit: (direction: 'left' | 'right' | 'none') => ({
-            x: direction === 'left' ? -15 : direction === 'right' ? 15 : 0,
+            x: direction === 'left' ? -20 : direction === 'right' ? 20 : 0,
             opacity: 0,
-            scale: 0.995,
+            scale: 0.98,
+            zIndex: 0, // Exiting page goes back
         }),
     }
 
-    // Fade-only variants for detail pages - ultra fast
+    // Fade-only variants for detail pages
     const fadeVariants = {
         enter: {
             opacity: 0,
-            scale: 0.995,
+            scale: 0.98,
+            zIndex: 1,
         },
         center: {
             opacity: 1,
             scale: 1,
+            zIndex: 1,
         },
         exit: {
             opacity: 0,
-            scale: 0.995,
+            scale: 0.98,
+            zIndex: 0,
         },
     }
 
@@ -92,7 +98,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     const variants = isDetailPage ? fadeVariants : slideVariants
 
     return (
-        <div className="relative w-full overflow-x-hidden">
+        <div className="relative w-full min-h-screen overflow-x-hidden bg-background">
             <AnimatePresence mode="popLayout" initial={false} custom={direction}>
                 <motion.div
                     key={pathname}
@@ -103,9 +109,9 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
                     exit="exit"
                     transition={{
                         type: 'spring',
-                        stiffness: 600,
-                        damping: 40,
-                        mass: 0.4,
+                        stiffness: 260,  // Much softer (was 600)
+                        damping: 30,     // Natural friction (was 40)
+                        mass: 1,         // Standard weight (was 0.4)
                     }}
                     className="w-full min-h-screen bg-background"
                 >

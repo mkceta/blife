@@ -1,227 +1,74 @@
-'use client'
+import { createClient } from '@/lib/supabase-server'
+import { Award, Heart, Users, Palette, Settings, LogOut, Shield } from 'lucide-react'
+import ProfileClient from './profile-client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import { useQuery } from '@tanstack/react-query'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { ThemeSelector } from '@/components/profile/theme-selector'
-import { Award, Heart, Users, Wallet, Package, Rocket, SlidersHorizontal, Percent, LogOut, Shield, ChevronRight, Trophy, BookOpen, Cpu, Shirt, Star, Key, Crown, Settings, Palette, TestTube } from 'lucide-react'
-import { LogoutButton } from '@/components/auth/logout-button'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
-import { BadgesSheet } from '@/components/profile/badges-sheet'
-import { SellerDashboardButton } from '@/components/profile/seller-dashboard-button'
-import { motion } from 'framer-motion'
+export const dynamic = 'force-dynamic'
 
-export default function ProfilePage() {
-    const router = useRouter()
-    const supabase = createClient()
+export default async function ProfilePage() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    const { data: user } = useQuery({
-        queryKey: ['user'],
-        queryFn: async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            return user
-        },
-        staleTime: Infinity // User session doesn't change often
-    })
+    if (!user) return null
 
-    const { data: profile, isLoading: loadingProfile } = useQuery({
-        queryKey: ['profile', user?.id],
-        queryFn: async () => {
-            if (!user?.id) return null
+    // Fetch Profile
+    let { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
 
-            let { data: userProfile } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', user.id)
-                .single()
+    // If profile doesn't exist, create it (safe-guard)
+    if (!profile) {
+        const emailUsername = user.email?.split('@')[0] || 'user'
+        const { data: newProfile } = await supabase
+            .from('users')
+            .insert({
+                id: user.id,
+                email: user.email || '',
+                uni: 'udc.es',
+                alias_inst: emailUsername,
+            })
+            .select()
+            .single()
+        profile = newProfile
+    }
 
-            // If profile doesn't exist, create it
-            if (!userProfile) {
-                const emailUsername = user.email?.split('@')[0] || 'user'
-                const { data: newProfile } = await supabase
-                    .from('users')
-                    .insert({
-                        id: user.id,
-                        email: user.email || '',
-                        uni: 'udc.es',
-                        alias_inst: emailUsername,
-                    })
-                    .select()
-                    .single()
-                userProfile = newProfile
-            }
-            return userProfile
-        },
-        enabled: !!user?.id
-    })
+    // Fetch Badges
+    let badgeStats = { total: 0, earned: 0 }
+    try {
+        // Try to auto-award if function exists
+        // Note: RPC calls might fail if function not present, safe to ignore or log
+        await supabase.rpc('check_and_award_badges', { target_user_id: user.id })
 
-    const { data: badgeStats = { total: 0, earned: 0 } } = useQuery({
-        queryKey: ['badge-stats', user?.id],
-        queryFn: async () => {
-            if (!user?.id) return { total: 0, earned: 0 }
+        const { count: totalBadges } = await supabase.from('badges').select('*', { count: 'exact', head: true })
+        const { count: myBadgesCount } = await supabase
+            .from('user_badges')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
 
-            try {
-                // Try to auto-award if function exists
-                await supabase.rpc('check_and_award_badges', { target_user_id: user.id })
-
-                const { count: totalBadges } = await supabase.from('badges').select('*', { count: 'exact', head: true })
-                const { data: myBadges } = await supabase
-                    .from('user_badges')
-                    .select('*, badges(*)')
-                    .eq('user_id', user.id)
-
-                return {
-                    total: totalBadges || 0,
-                    earned: myBadges?.length || 0
-                }
-            } catch (e) {
-                console.error("Error fetching badges", e)
-                return { total: 0, earned: 0 }
-            }
-        },
-        enabled: !!user?.id,
-        staleTime: 1000 * 60 * 5 // 5 minutes
-    })
-
-    // Redirect if no user (handled in user query or effect? better in effect or just render null/redirect)
-    useEffect(() => {
-        if (user === null) {
-            // user explicit null means fetched and not found (if we handle error)
-            // But getUser returns null user if not logged in
+        badgeStats = {
+            total: totalBadges || 0,
+            earned: myBadgesCount || 0
         }
-    }, [user])
+    } catch (e) {
+        console.error("Error fetching badges", e)
+    }
 
-    if (!profile) return null
-
+    // Prepare Menu Items Data
     const menuItems = [
-        { icon: Award, label: 'Insignias ganadas', count: `${badgeStats.earned} de ${badgeStats.total}` },
-        { icon: Heart, label: 'Artículos Favoritos', href: '/wishlist' },
-        { icon: Users, label: 'Invitar amigos' },
-        { icon: Palette, label: 'Apariencia' },
-        { icon: Settings, label: 'Ajustes y Perfil', href: '/profile/edit' },
-        { icon: LogOut, label: 'Cerrar sesión', action: 'logout', variant: 'destructive' },
-        { icon: Shield, label: 'Admin', href: '/admin', show: profile?.role === 'admin', variant: 'destructive' }
+        { iconName: 'Award', label: 'Insignias ganadas', count: `${badgeStats.earned} de ${badgeStats.total}`, action: 'badges' },
+        { iconName: 'Heart', label: 'Artículos Favoritos', href: '/wishlist' },
+        { iconName: 'Users', label: 'Invitar amigos' },
+        { iconName: 'Palette', label: 'Apariencia', action: 'theme' },
+        { iconName: 'Settings', label: 'Ajustes y Perfil', href: '/profile/edit' },
+        { iconName: 'LogOut', label: 'Cerrar sesión', action: 'logout', variant: 'destructive' },
+        { iconName: 'Shield', label: 'Admin', href: '/admin', show: profile?.role === 'admin', variant: 'destructive' }
     ]
 
     return (
-        <div className="pb-20 bg-background min-h-screen text-foreground">
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md pt-safe shadow-sm">
-                <div className="flex items-center p-4">
-                    <h1 className="text-xl font-bold">Perfil</h1>
-                </div>
-            </div>
-
-            {/* User Card */}
-            <div className="px-4 pb-4 pt-0">
-                <Link href={`/user/${profile.alias_inst}`} className="flex items-center gap-4 p-4 border border-border rounded-xl bg-card hover:bg-muted/50 transition-colors">
-                    <Avatar className="h-16 w-16 border border-border/50">
-                        <AvatarImage src={profile.avatar_url} />
-                        <AvatarFallback>{profile.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                        <h2 className="font-bold text-xl truncate">{profile.alias_inst}</h2>
-                        <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                            <span>Ver perfil público</span>
-                            <ChevronRight className="h-3 w-3" />
-                        </div>
-                    </div>
-                </Link>
-            </div>
-
-            {/* Menu List */}
-            <motion.div
-                className="px-4 space-y-1"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                    visible: { transition: { staggerChildren: 0.05 } }
-                }}
-            >
-                {/* Stripe Connect Section */}
-                <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
-                    <SellerDashboardButton userId={profile.id} />
-                </motion.div>
-                <div className="h-px bg-border/40 my-2 mx-4" />
-                {menuItems.map((item, index) => {
-                    if (item.show === false) return null
-
-                    const Content = () => (
-                        <motion.div
-                            className={cn(
-                                "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg cursor-pointer",
-                                item.variant === 'destructive' && "text-red-500 hover:bg-red-50",
-                                item.variant === 'secondary' && "text-blue-500 hover:bg-blue-50/50"
-                            )}
-                            variants={{
-                                hidden: { opacity: 0, x: -20 },
-                                visible: { opacity: 1, x: 0 }
-                            }}
-                        >
-                            <item.icon className="h-6 w-6" strokeWidth={1.5} />
-                            <span className="flex-1 font-medium">{item.label}</span>
-                            {item.count && <span className="text-muted-foreground text-sm">{item.count}</span>}
-                            {!item.count && <ChevronRight className="h-5 w-5 text-muted-foreground/50" />}
-                        </motion.div>
-                    )
-
-                    if (item.label === 'Insignias ganadas') {
-                        return (
-                            <BadgesSheet key={index} userId={profile.id}>
-                                <div>
-                                    <Content />
-                                </div>
-                            </BadgesSheet>
-                        )
-                    }
-
-                    if (item.label === 'Apariencia') {
-                        return (
-                            <Sheet key={index}>
-                                <SheetTrigger asChild>
-                                    <div>
-                                        <Content />
-                                    </div>
-                                </SheetTrigger>
-                                <SheetContent side="bottom" className="h-[90vh] sm:h-auto rounded-t-[20px]">
-                                    <SheetHeader className="mb-6">
-                                        <SheetTitle>Apariencia</SheetTitle>
-                                    </SheetHeader>
-                                    <div className="pb-10">
-                                        <ThemeSelector />
-                                    </div>
-                                </SheetContent>
-                            </Sheet>
-                        )
-                    }
-
-                    if (item.action === 'logout') {
-                        return (
-                            <div key={index} onClick={async () => {
-                                await supabase.auth.signOut()
-                                router.refresh()
-                                router.push('/auth/login')
-                            }}>
-                                <Content />
-                            </div>
-                        )
-                    }
-
-                    return item.href ? (
-                        <Link href={item.href} key={index}>
-                            <Content />
-                        </Link>
-                    ) : (
-                        <div key={index}>
-                            <Content />
-                        </div>
-                    )
-                })}
-            </motion.div>
-        </div>
+        <ProfileClient
+            profile={profile}
+            menuItems={menuItems}
+        />
     )
 }
