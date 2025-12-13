@@ -56,7 +56,7 @@ export function MarketFeed({
             }
             return processed
         },
-        initialData: initialListings, // Always use initialData to prevent loading state
+        initialData: initialListings.length > 0 ? initialListings : undefined, // Only use if we have data
         staleTime: 1000 * 60 * 5, // 5 minutes cache
     })
 

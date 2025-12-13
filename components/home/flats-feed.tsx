@@ -54,7 +54,7 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
             const data = await fetchFlatsAction(actionFilters as any)
             return data || []
         },
-        initialData: initialFlats, // Always use initialData to prevent loading state
+        initialData: initialFlats.length > 0 ? initialFlats : undefined, // Only use if we have data
         staleTime: 1000 * 60 * 5, // 5 mins
     });
 
