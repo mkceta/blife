@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -41,3 +42,58 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Android
+/android/app/build
+/android/app/release
+/android/build
+/android/.gradle
+/android/local.properties
+*.apk
+*.aab
+*.zip
+
+# iOS (if added later)
+/ios/App/Pods
+/ios/App/build
+
+# Capacitor
+/android/app/src/main/assets/public
+/ios/App/public
+
+# Development & Debug files
+*.sql
+*.md
+!README.md
+!LICENSE.md
+!CONTRIBUTING.md
+*.bat
+*.js.map
+
+# Test files
+/tests
+check_*.js
+check_*.ts
+test-*.ts
+verify_*.js
+verify_*.ts
+
+# Documentation (keep only README)
+/documentation
+ANDROID_GUIDE.md
+COMMIT_SUMMARY.md
+DEBUG_*.md
+DEPLOY_*.md
+DEVELOPMENT_WORKFLOW.md
+FCM_SETUP_GUIDE.md
+MICROANIMATIONS_ANALYSIS.md
+NOTIFICATIONS_SETUP.md
+PHASE3_STATUS.md
+POLLS_IMPLEMENTATION.md
+POLLS-FINAL-SOLUTION.md
+REFACTORING_COMPLETE.md
+setup-push-webhook.md
+walkthrough.md
+
+# Bug reports
+bugreport-*.zip
