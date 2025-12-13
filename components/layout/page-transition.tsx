@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 
 // Define page hierarchy for slide direction
 const PAGE_HIERARCHY: Record<string, number> = {
@@ -18,13 +18,9 @@ const PAGE_HIERARCHY: Record<string, number> = {
 
 // Get base path for hierarchy comparison
 function getBasePath(path: string): string {
-    // Remove query params and hash
     const cleanPath = path.split('?')[0].split('#')[0]
-
-    // Get first two segments for nested routes
     const segments = cleanPath.split('/').filter(Boolean)
     if (segments.length === 0) return '/market'
-
     const basePath = `/${segments[0]}`
     return basePath
 }
@@ -33,13 +29,11 @@ function getBasePath(path: string): string {
 function getSlideDirection(from: string, to: string): 'left' | 'right' | 'none' {
     const fromIndex = PAGE_HIERARCHY[from] ?? -1
     const toIndex = PAGE_HIERARCHY[to] ?? -1
-
     if (fromIndex === -1 || toIndex === -1) return 'none'
-
     return toIndex > fromIndex ? 'left' : 'right'
 }
 
-export default function Template({ children }: { children: React.ReactNode }) {
+export function PageTransition({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const [prevPath, setPrevPath] = useState(pathname)
     const [direction, setDirection] = useState<'left' | 'right' | 'none'>('none')
@@ -49,7 +43,6 @@ export default function Template({ children }: { children: React.ReactNode }) {
             const fromBase = getBasePath(prevPath)
             const toBase = getBasePath(pathname)
             const slideDir = getSlideDirection(fromBase, toBase)
-
             setDirection(slideDir)
             setPrevPath(pathname)
         }
@@ -90,7 +83,6 @@ export default function Template({ children }: { children: React.ReactNode }) {
         },
     }
 
-    // Use fade for detail pages, slide for main navigation
     const isDetailPage = pathname.includes('/product/') ||
         pathname.includes('/post/') ||
         pathname.includes('/user/') ||
@@ -100,22 +92,24 @@ export default function Template({ children }: { children: React.ReactNode }) {
     const variants = isDetailPage ? fadeVariants : slideVariants
 
     return (
-        <motion.div
-            key={pathname}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-                type: 'spring',
-                stiffness: 600,  // Súper rápido
-                damping: 40,     // Súper suave
-                mass: 0.4,       // Súper ligero
-            }}
-            className="h-full w-full"
-        >
-            {children}
-        </motion.div>
+        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+            <motion.div
+                key={pathname}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                    type: 'spring',
+                    stiffness: 600,
+                    damping: 40,
+                    mass: 0.4,
+                }}
+                className="h-full w-full"
+            >
+                {children}
+            </motion.div>
+        </AnimatePresence>
     )
 }

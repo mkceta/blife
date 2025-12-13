@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { DesktopHeader } from '@/components/layout/desktop-header'
 import { ThemeProvider } from '@/components/theme-provider'
-import { SwipeNavigator } from '@/components/layout/swipe-navigator'
+import { PageTransition } from '@/components/layout/page-transition'
 import { PwaRegister } from '@/components/pwa-register'
 import { Suspense } from 'react'
 import { PresenceUpdater } from '@/components/presence-updater'
@@ -61,9 +61,9 @@ export default function RootLayout({
             <Suspense>
               <DesktopHeader />
             </Suspense>
-            <SwipeNavigator>
+            <PageTransition>
               {children}
-            </SwipeNavigator>
+            </PageTransition>
             <BottomNav />
             <Toaster />
           </ThemeProvider>
