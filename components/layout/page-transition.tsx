@@ -92,24 +92,26 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     const variants = isDetailPage ? fadeVariants : slideVariants
 
     return (
-        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-            <motion.div
-                key={pathname}
-                custom={direction}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                    type: 'spring',
-                    stiffness: 600,
-                    damping: 40,
-                    mass: 0.4,
-                }}
-                className="h-full w-full"
-            >
-                {children}
-            </motion.div>
-        </AnimatePresence>
+        <div className="relative w-full overflow-x-hidden">
+            <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+                <motion.div
+                    key={pathname}
+                    custom={direction}
+                    variants={variants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                        type: 'spring',
+                        stiffness: 600,
+                        damping: 40,
+                        mass: 0.4,
+                    }}
+                    className="w-full min-h-screen bg-background"
+                >
+                    {children}
+                </motion.div>
+            </AnimatePresence>
+        </div>
     )
 }
