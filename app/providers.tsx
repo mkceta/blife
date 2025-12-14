@@ -14,7 +14,18 @@ function PrefetchWrapper({ children }: { children: React.ReactNode }) {
 }
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-    const [persister] = useState(() => createIDBPersister())
+    const [persister] = useState(() => {
+        // Only create persister on client-side to avoid SSR errors
+        if (typeof window !== 'undefined') {
+            return createIDBPersister()
+        }
+        // Return a noop persister for SSR
+        return {
+            persistClient: async () => { },
+            restoreClient: async () => undefined,
+            removeClient: async () => { },
+        }
+    })
 
     return (
         <PersistQueryClientProvider

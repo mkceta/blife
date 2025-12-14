@@ -16,6 +16,7 @@ export function BottomNav() {
     const pathname = usePathname()
     const [user, setUser] = useState<any>(null)
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+    const [mounted, setMounted] = useState(false)
     const { notifications } = useNotifications()
 
     // Prefetch hooks for instant navigation
@@ -26,6 +27,8 @@ export function BottomNav() {
     const unreadMessages = notifications.filter((n) => !n.read && n.type === 'message').length
 
     useEffect(() => {
+        setMounted(true)
+
         const supabase = createClient()
         async function loadUser() {
             const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -71,6 +74,11 @@ export function BottomNav() {
     ]
 
     if (pathname.startsWith('/auth') || pathname === '/landing') return null
+
+    // Prevent hydration mismatch
+    if (!mounted) {
+        return <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border pb-safe h-14 md:hidden" />
+    }
 
     const isChatDetail = pathname.startsWith('/messages/') && pathname !== '/messages'
     const isMarketDetail = pathname.startsWith('/market/') && pathname !== '/market'

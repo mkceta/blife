@@ -61,7 +61,7 @@ export default function RootLayout({
             <BackButtonHandler />
             <NotificationHandler />
             <RoutePrefetcher />
-            <Suspense>
+            <Suspense fallback={<div className="h-16" />}>
               <DesktopHeader />
             </Suspense>
             <SwipeNavigator>

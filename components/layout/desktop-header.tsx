@@ -33,11 +33,14 @@ export function DesktopHeader() {
     const pathname = usePathname()
     const isFlats = pathname?.includes('/flats')
     const [user, setUser] = useState<any>(null)
+    const [mounted, setMounted] = useState(false)
     const { notifications } = useNotifications()
     const unreadMessages = notifications.filter(n => !n.read && n.type === 'message').length
     const supabase = createClient()
 
     useEffect(() => {
+        setMounted(true)
+
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
@@ -78,6 +81,11 @@ export function DesktopHeader() {
     // Hide header on landing page and auth pages
     if (pathname === '/landing' || pathname?.startsWith('/auth')) {
         return null
+    }
+
+    // Prevent hydration mismatch by showing skeleton during SSR
+    if (!mounted) {
+        return <div className="hidden md:block w-full border-b border-border/40 bg-background h-16" />
     }
 
     return (
