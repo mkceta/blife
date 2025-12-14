@@ -1,11 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Home, FlameKindling, MessageCircle, Heart, User, Search, PlusCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, startTransition } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useNotifications } from '@/hooks/use-notifications'
 import { mediumHaptic } from '@/lib/haptics'
@@ -14,6 +14,7 @@ import { usePrefetchMarket, usePrefetchCommunity } from '@/hooks/use-prefetch'
 
 export function BottomNav() {
     const pathname = usePathname()
+    const router = useRouter()
     const [user, setUser] = useState<any>(null)
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
     const [mounted, setMounted] = useState(false)
@@ -109,13 +110,18 @@ export function BottomNav() {
                     }
 
                     return (
-                        <Link
+                        <button
                             key={item.href}
-                            href={item.href}
-                            aria-label={item.label}
-                            onClick={() => mediumHaptic()}
+                            onClick={() => {
+                                mediumHaptic()
+                                // Use startTransition for instant navigation without waiting
+                                startTransition(() => {
+                                    router.push(item.href)
+                                })
+                            }}
                             onMouseEnter={item.prefetch?.handleMouseEnter}
                             onTouchStart={item.prefetch?.handleTouchStart}
+                            aria-label={item.label}
                             className={cn(
                                 "flex flex-col items-center justify-center space-y-0.5 active-press w-full h-full",
                                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground/80"
@@ -161,7 +167,7 @@ export function BottomNav() {
                             <span className={cn("text-[10px] font-medium")}>
                                 {item.label}
                             </span>
-                        </Link>
+                        </button>
                     )
                 })}
             </nav>

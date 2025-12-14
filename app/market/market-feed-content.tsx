@@ -2,12 +2,8 @@
 
 import { MarketFeed } from '@/components/home/market-feed'
 
-export function MarketFeedContent({
-    searchParams,
-}: {
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}) {
-    // Just pass through - MarketFeed will handle everything with React Query
+export function MarketFeedContent() {
+    // MarketFeed will handle everything with React Query
     return (
         <MarketFeed
             initialListings={[]}

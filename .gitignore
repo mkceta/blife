@@ -62,8 +62,6 @@ next-env.d.ts
 /ios/App/public
 
 # Development & Debug files
-*.sql
-*.md
 !README.md
 !LICENSE.md
 !CONTRIBUTING.md

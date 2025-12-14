@@ -6,10 +6,9 @@ import { FeedSkeleton } from '@/components/home/feed-skeleton'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MarketFilters as MarketFiltersType } from '@/lib/market-data'
-import { useSearchParams } from 'next/navigation'
 import { fetchMarketListingsAction } from '@/app/feed-actions'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 
 interface MarketFeedProps {
     initialListings?: any[]
@@ -26,10 +25,17 @@ export function MarketFeed({
     currentUserId,
     initialFilters
 }: MarketFeedProps) {
-    const searchParams = useSearchParams()
     const parentRef = useRef<HTMLDivElement>(null)
     const queryClient = useQueryClient()
     const supabase = createClient()
+    const [clientSearchParams, setClientSearchParams] = useState<URLSearchParams | null>(null)
+
+    // Get search params on client side after mount to avoid Suspense blocking
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setClientSearchParams(new URLSearchParams(window.location.search))
+        }
+    }, [])
 
     // Fetch current user
     const { data: user } = useQuery({
@@ -45,13 +51,13 @@ export function MarketFeed({
 
     // Construct filters from search params or initial props
     const filters: MarketFiltersType = {
-        q: searchParams.get('q') || initialFilters?.q,
-        category: searchParams.get('category') || initialFilters?.category,
-        sort: searchParams.get('sort') || initialFilters?.sort,
-        degree: searchParams.get('degree') || initialFilters?.degree,
-        size: searchParams.get('size') || initialFilters?.size,
-        minPrice: searchParams.get('min_price') ? parseFloat(searchParams.get('min_price')!) : initialFilters?.minPrice,
-        maxPrice: searchParams.get('max_price') ? parseFloat(searchParams.get('max_price')!) : initialFilters?.maxPrice,
+        q: clientSearchParams?.get('q') || initialFilters?.q,
+        category: clientSearchParams?.get('category') || initialFilters?.category,
+        sort: clientSearchParams?.get('sort') || initialFilters?.sort,
+        degree: clientSearchParams?.get('degree') || initialFilters?.degree,
+        size: clientSearchParams?.get('size') || initialFilters?.size,
+        minPrice: clientSearchParams?.get('min_price') ? parseFloat(clientSearchParams.get('min_price')!) : initialFilters?.minPrice,
+        maxPrice: clientSearchParams?.get('max_price') ? parseFloat(clientSearchParams.get('max_price')!) : initialFilters?.maxPrice,
     }
 
     const { data: listings, refetch, isPending } = useQuery({
@@ -108,8 +114,9 @@ export function MarketFeed({
         overscan: 2,
     })
 
-    // Show skeleton only on absolute first load (isPending = no data at all)
-    if (isPending) return <FeedSkeleton />
+    // Show skeleton only on absolute first load when there's no data at all
+    // Don't block on isPending if we have cached data (placeholderData)
+    if (!listings && isPending) return <FeedSkeleton />
 
     // Show empty state when no listings
     if (!listings || listings.length === 0) {

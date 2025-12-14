@@ -5,12 +5,12 @@ import { usePathname } from 'next/navigation'
 import { useRef, useEffect, useState } from 'react'
 
 const routes = [
+    { path: '/market/new', index: 2 },  // Must be before /market
     { path: '/market', index: 0 },
     { path: '/flats', index: 0 },
     { path: '/home', index: 0 },
     { path: '/community', index: 1 },
     { path: '/search', index: 1 },
-    { path: '/market/new', index: 2 },
     { path: '/messages', index: 3 },
     { path: '/profile', index: 4 },
 ]
@@ -31,10 +31,18 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
     }
 
     const getIndex = (path: string) => {
-        // Find the most specific match first (longest path) is not strictly needed here 
-        // as our paths are distinct enough or we verify 'startsWith' carefully.
-        const route = routes.find(r => path.startsWith(r.path))
-        return route ? route.index : -1
+        // Find the longest matching path (most specific)
+        let longestMatch = -1
+        let matchedIndex = -1
+
+        for (const route of routes) {
+            if (path.startsWith(route.path) && route.path.length > longestMatch) {
+                longestMatch = route.path.length
+                matchedIndex = route.index
+            }
+        }
+
+        return matchedIndex
     }
 
     // Effect to calculate direction BEFORE the render cycle that commits the new view? 
@@ -60,15 +68,12 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
     const variants = {
         enter: (direction: number) => ({
             x: direction > 0 ? '100%' : '-100%',
-            opacity: 1,
         }),
         center: {
             x: 0,
-            opacity: 1,
         },
         exit: (direction: number) => ({
             x: direction > 0 ? '-100%' : '100%',
-            opacity: 1,
         }),
     }
 
@@ -84,8 +89,8 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground w-full">
-            <AnimatePresence mode="wait" custom={currentDirection} initial={false}>
+        <div className="relative min-h-screen bg-background text-foreground w-full overflow-hidden">
+            <AnimatePresence custom={currentDirection} initial={false}>
                 <motion.div
                     key={pathname}
                     custom={currentDirection}
@@ -95,10 +100,10 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
                     exit="exit"
                     transition={{
                         type: 'tween',
-                        duration: 0.05,
-                        ease: "linear"
+                        duration: 0.2,
+                        ease: "easeInOut"
                     }}
-                    className="min-h-screen w-full bg-background"
+                    className="absolute inset-0 min-h-screen w-full bg-background"
                     style={{ pointerEvents: 'auto' }}
                 >
                     {children}
