@@ -61,17 +61,14 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
         enter: (direction: number) => ({
             x: direction > 0 ? '100%' : '-100%',
             opacity: 1,
-            zIndex: 1
         }),
         center: {
             x: 0,
             opacity: 1,
-            zIndex: 0
         },
         exit: (direction: number) => ({
-            x: direction > 0 ? '-20%' : '20%',
-            opacity: 1, // Keep full opacity for the background layer to avoid "ghosting" transparency
-            zIndex: -1
+            x: direction > 0 ? '-100%' : '100%',
+            opacity: 1,
         }),
     }
 
@@ -87,8 +84,8 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="relative min-h-screen bg-background text-foreground overflow-hidden w-full">
-            <AnimatePresence mode="popLayout" custom={currentDirection} initial={false}>
+        <div className="min-h-screen bg-background text-foreground w-full">
+            <AnimatePresence mode="wait" custom={currentDirection} initial={false}>
                 <motion.div
                     key={pathname}
                     custom={currentDirection}
@@ -97,12 +94,12 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
                     animate="center"
                     exit="exit"
                     transition={{
-                        type: 'spring',
-                        stiffness: 300,
-                        damping: 30,
-                        mass: 1
+                        type: 'tween',
+                        duration: 0.05,
+                        ease: "linear"
                     }}
-                    className="absolute inset-0 w-full h-full bg-background"
+                    className="min-h-screen w-full bg-background"
+                    style={{ pointerEvents: 'auto' }}
                 >
                     {children}
                 </motion.div>

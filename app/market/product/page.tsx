@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useEffect, useState, Suspense, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Image from 'next/image'
@@ -19,66 +19,72 @@ import { ListingMapWrapper } from '@/components/market/listing-map-wrapper'
 import { RelatedListings } from '@/components/market/related-listings'
 import { ProductActions } from '@/components/market/product-actions'
 import { calculateTotalWithFees } from '@/lib/pricing'
+import { useQuery } from '@tanstack/react-query'
 
-function ProductContent() {
+export default function ListingDetailPage() {
     const searchParams = useSearchParams()
     const id = searchParams.get('id')
     const router = useRouter()
-    const [listing, setListing] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [user, setUser] = useState<any>(null)
-    const [isFavorite, setIsFavorite] = useState(false)
     const supabase = createClient()
     const viewIncremented = useRef(false)
+
+    // Fetch user with caching
+    const { data: user } = useQuery({
+        queryKey: ['current-user'],
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            return user
+        },
+        staleTime: 1000 * 60 * 5,
+    })
+
+    // Fetch listing with caching
+    const { data: listing, isPending } = useQuery({
+        queryKey: ['listing', id],
+        queryFn: async () => {
+            if (!id) return null
+            const { data, error } = await supabase
+                .from('listings')
+                .select('*, user:users!listings_user_id_fkey(*)')
+                .eq('id', id)
+                .single()
+
+            if (error) throw error
+            return data
+        },
+        enabled: !!id,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        placeholderData: (previousData) => previousData,
+    })
+
+    // Fetch favorite status with caching
+    const { data: isFavorite = false } = useQuery({
+        queryKey: ['favorite', id, user?.id],
+        queryFn: async () => {
+            if (!id || !user) return false
+            const { data } = await supabase
+                .from('favorites')
+                .select('*')
+                .eq('listing_id', id)
+                .eq('user_id', user.id)
+                .single()
+            return !!data
+        },
+        enabled: !!id && !!user,
+        staleTime: 1000 * 30,
+    })
 
     useEffect(() => {
         if (id && !viewIncremented.current) {
             viewIncremented.current = true
-            // Fire and forget view increment
             supabase.rpc('increment_listing_views', { listing_id: id }).then(({ error }) => {
                 if (error) console.error('Error incrementing views:', error)
             })
         }
     }, [id, supabase])
 
-    useEffect(() => {
-        async function fetchData() {
-            if (!id) return
-
-            const { data: { user } } = await supabase.auth.getUser()
-            setUser(user)
-
-            const { data: listingData, error } = await supabase
-                .from('listings')
-                .select('*, user:users!listings_user_id_fkey(*)')
-                .eq('id', id)
-                .single()
-
-            if (error || !listingData) {
-                console.error('Error fetching listing:', error)
-                return
-            }
-
-            setListing(listingData)
-
-            if (user) {
-                const { data: favorite } = await supabase
-                    .from('favorites')
-                    .select('*')
-                    .eq('listing_id', id)
-                    .eq('user_id', user.id)
-                    .single()
-
-                setIsFavorite(!!favorite)
-            }
-            setLoading(false)
-        }
-
-        fetchData()
-    }, [id, supabase])
-
     if (!id) return <div>No ID provided</div>
-    if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    if (isPending) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
     if (!listing) return <div className="min-h-screen flex items-center justify-center">Listing not found</div>
 
     const photos = listing.photos as any[] || []
@@ -330,13 +336,5 @@ function Star({ className }: { className?: string }) {
         >
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
-    )
-}
-
-export default function ListingDetailPage() {
-    return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-            <ProductContent />
-        </Suspense>
     )
 }

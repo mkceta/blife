@@ -293,23 +293,6 @@
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
 }
 
-/* Page Transitions */
-.page-transition {
-  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Stagger Animation for Grids */
 @keyframes fadeInStagger {
   from {

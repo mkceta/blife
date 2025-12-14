@@ -1,6 +1,4 @@
 
-import { Suspense } from 'react'
-import { FlatsSkeleton } from '@/components/home/flats-skeleton'
 import ProductFeedLayout from '@/app/product-feed-layout'
 import { FlatsFeedContent } from './flats-feed-content'
 
@@ -8,9 +6,7 @@ export default function FlatsPage({ searchParams }: { searchParams: Promise<{ [k
     return (
         <ProductFeedLayout>
             <div className="min-h-[50vh] outline-none">
-                <Suspense fallback={<FlatsSkeleton />}>
-                    <FlatsFeedContent searchParams={searchParams} />
-                </Suspense>
+                <FlatsFeedContent searchParams={searchParams} />
             </div>
         </ProductFeedLayout>
     )

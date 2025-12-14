@@ -24,33 +24,7 @@ export default function ProductFeedLayout({
                 </div>
 
                 <div className="mt-0 grid grid-cols-1 grid-rows-1">
-                    <AnimatePresence mode="popLayout" initial={false}>
-                        <motion.div
-                            key={usePathname()?.includes('flats') ? 'flats' : 'market'}
-                            initial={{
-                                opacity: 0,
-                                x: usePathname()?.includes('flats') ? 20 : -20,
-                                scale: 0.95,
-                                filter: 'brightness(0.9)'
-                            }}
-                            animate={{
-                                opacity: 1,
-                                x: 0,
-                                scale: 1,
-                                filter: 'brightness(1)'
-                            }}
-                            exit={{
-                                opacity: 0,
-                                x: usePathname()?.includes('flats') ? -20 : 20,
-                                scale: 0.95,
-                                filter: 'brightness(0.9)'
-                            }}
-                            transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="col-start-1 row-start-1 w-full"
-                        >
-                            {children}
-                        </motion.div>
-                    </AnimatePresence>
+                    {children}
                 </div>
             </div>
 

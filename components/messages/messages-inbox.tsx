@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MessageSquare, Bell, Search } from 'lucide-react'
 import { MessageList } from '@/components/messages/message-list'
@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { useNotifications } from '@/hooks/use-notifications'
 import { mediumHaptic } from '@/lib/haptics'
-import { Skeleton } from '@/components/ui/skeleton'
 
 function MessagesInboxContent({ className }: { className?: string }) {
     const router = useRouter()
@@ -124,30 +123,5 @@ function MessagesInboxContent({ className }: { className?: string }) {
 }
 
 export function MessagesInbox(props: { className?: string }) {
-    return (
-        <Suspense fallback={
-            <div className="h-full flex flex-col">
-                <div className="p-4 pt-safe border-b border-border/50">
-                    <Skeleton className="h-8 w-32 mb-4" />
-                    <div className="flex gap-4">
-                        <Skeleton className="h-10 flex-1 rounded-full" />
-                        <Skeleton className="h-10 flex-1 rounded-full" />
-                    </div>
-                </div>
-                <div className="p-4 space-y-4">
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} className="flex gap-3">
-                            <Skeleton className="h-12 w-12 rounded-full" />
-                            <div className="flex-1 space-y-2">
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-3 w-1/2" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        }>
-            <MessagesInboxContent {...props} />
-        </Suspense>
-    )
+    return <MessagesInboxContent {...props} />
 }

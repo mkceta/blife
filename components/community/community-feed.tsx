@@ -32,7 +32,7 @@ export function CommunityFeed({
     const queryClient = useQueryClient()
 
     // 1. Fetch Posts with React Query
-    const { data: postsData, isLoading, isRefetching, refetch } = useQuery({
+    const { data: postsData, isPending, isRefetching, refetch } = useQuery({
         queryKey: ['community', category, searchQuery],
         queryFn: async () => {
             const data = await fetchCommunityPostsAction(category, searchQuery)
@@ -41,6 +41,7 @@ export function CommunityFeed({
         initialData: initialPosts.length > 0 ? initialPosts : undefined,
         initialDataUpdatedAt: initialPosts.length > 0 ? Date.now() : undefined, // Mark as fresh
         staleTime: 1000 * 60 * 10, // 10 minutes
+        placeholderData: (previousData) => previousData, // Keep old data while refetching
     })
 
     // 2. Fetch Polls in parallel (not dependent on posts)
@@ -62,7 +63,8 @@ export function CommunityFeed({
         },
         initialData: initialPolls.length > 0 ? initialPolls : undefined,
         initialDataUpdatedAt: initialPolls.length > 0 ? Date.now() : undefined,
-        staleTime: 1000 * 60 * 10 // 10 minutes
+        staleTime: 1000 * 60 * 10, // 10 minutes
+        placeholderData: (previousData) => previousData, // Keep old data while refetching
     })
 
     // 3. Fetch User Reactions in parallel (use initialData to avoid waiting)
@@ -106,7 +108,7 @@ export function CommunityFeed({
         )
     }, [postsData, pollsData])
 
-    if (isLoading) {
+    if (isPending) {
         return <CommunitySkeleton />
     }
 
