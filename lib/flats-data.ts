@@ -26,6 +26,8 @@ export const getCachedFlats = async (filters: FlatsFilters, limit: number = 50) 
 
     const { q, min_rent, max_rent, min_rooms, min_baths, min_area, max_area, location_area, sort } = filters
 
+    console.log('GET CACHED FLATS FILTERS:', filters)
+
     if (q) query = query.ilike('title', `%${q}%`)
     if (min_rent) query = query.gte('rent_cents', parseFloat(min_rent) * 100)
     if (max_rent) query = query.lte('rent_cents', parseFloat(max_rent) * 100)

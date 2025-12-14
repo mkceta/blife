@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { SlidersHorizontal } from 'lucide-react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Separator } from '@/components/ui/separator'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const CATEGORIES = [
     'Todos',
@@ -201,9 +202,17 @@ export function MarketFilters() {
             <SheetTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" className="relative rounded-full h-10 w-10 hover:bg-white/10 transition-colors">
                     <SlidersHorizontal className="h-5 w-5" />
-                    {activeFiltersCount > 0 && (
-                        <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-primary ring-2 ring-background shadow-glow-primary" />
-                    )}
+                    <AnimatePresence>
+                        {activeFiltersCount > 0 && (
+                            <motion.span
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                exit={{ scale: 0 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                className="absolute top-0 right-0 h-3 w-3 rounded-full bg-primary ring-2 ring-background shadow-glow-primary"
+                            />
+                        )}
+                    </AnimatePresence>
                 </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full sm:max-w-md border-l border-white/10 bg-background/80 backdrop-blur-xl p-6">

@@ -7,7 +7,7 @@ import { FlatsFeedContent } from './flats-feed-content'
 export default function FlatsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     return (
         <ProductFeedLayout>
-            <div className="min-h-[50vh] outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="min-h-[50vh] outline-none">
                 <Suspense fallback={<FlatsSkeleton />}>
                     <FlatsFeedContent searchParams={searchParams} />
                 </Suspense>

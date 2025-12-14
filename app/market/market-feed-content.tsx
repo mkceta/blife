@@ -46,25 +46,12 @@ export async function MarketFeedContent({
 
     // Pass real initial data instead of empty array
     return (
-        <>
-            {/* SERVER DEBUG BANNER */}
-            <div className="fixed bottom-20 right-4 z-[9999] bg-black/90 text-green-400 p-4 rounded-lg font-mono text-xs border border-green-500/50 shadow-2xl pointer-events-none opacity-80 hover:opacity-100 transition-opacity">
-                <div className="font-bold mb-1 text-white border-b border-white/20 pb-1">SERVER SIDE DEBUG</div>
-                <div>Sort Param: <span className="text-yellow-400">{filters.sort || 'None'}</span></div>
-                <div>Filter JSON: {JSON.stringify(filters).slice(0, 50)}...</div>
-                <div>Items Fetched: {initialListings?.length}</div>
-                <div>1st Price: <span className="text-xl font-bold">{initialListings?.[0]?.price_cents}</span></div>
-                <div>Last Price: {initialListings?.[initialListings.length - 1]?.price_cents}</div>
-            </div>
-
-            <MarketFeed
-                key={JSON.stringify(filters)}
-                initialListings={initialListings || []}
-                initialFavorites={initialFavorites}
-                initialAverageLikes={avgLikes || 0}
-                currentUserId={user?.id}
-                initialFilters={filters}
-            />
-        </>
+        <MarketFeed
+            initialListings={initialListings || []}
+            initialFavorites={initialFavorites}
+            initialAverageLikes={avgLikes || 0}
+            currentUserId={user?.id}
+            initialFilters={filters}
+        />
     )
 }

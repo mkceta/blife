@@ -1,18 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { Capacitor } from '@capacitor/core'
 import { PushNotifications } from '@capacitor/push-notifications'
 import { LocalNotifications } from '@capacitor/local-notifications'
-import { createClient } from '@/lib/supabase'
 
 export function NotificationPermission() {
     const [permission, setPermission] = useState<NotificationPermission>('default')
     const [mounted, setMounted] = useState(false)
-    const [debugInfo, setDebugInfo] = useState<string>('')
-    const supabase = createClient()
 
     useEffect(() => {
         setMounted(true)
@@ -34,9 +30,6 @@ export function NotificationPermission() {
                 }
             } catch (e: any) {
                 console.error('Error checking native permissions:', e)
-                if (e.message?.includes('not implemented')) {
-                    setDebugInfo('Error: Plugin no implementado. Reconstruye la app (npx cap sync).')
-                }
             }
         } else if (typeof window !== 'undefined' && 'Notification' in window) {
             setPermission(Notification.permission)
@@ -129,41 +122,6 @@ export function NotificationPermission() {
         }
     }
 
-
-
-    const testServerPush = async () => {
-        try {
-            toast.loading('Enviando prueba al servidor...')
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            const { data, error } = await supabase.functions.invoke('push-notification', {
-                body: {
-                    record: {
-                        user_id: user.id,
-                        title: 'Prueba de Servidor',
-                        message: 'Si lees esto, la configuración de servidor es correcta',
-                        id: 'test-' + Date.now()
-                    }
-                }
-            })
-
-            if (error) {
-                console.error('Function error:', error)
-                toast.error('Error en servidor: ' + error.message)
-                setDebugInfo('Error: ' + error.message)
-            } else {
-                console.log('Function success:', data)
-                toast.success('Prueba enviada. Espera la notificación.')
-                setDebugInfo('Respuesta servidor: ' + JSON.stringify(data))
-            }
-            toast.dismiss()
-        } catch (e: any) {
-            toast.error('Error al invocar función')
-            setDebugInfo('Excepción: ' + e.message)
-        }
-    }
-
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between rounded-lg border p-4">
@@ -179,30 +137,6 @@ export function NotificationPermission() {
                     disabled={permission === 'denied'}
                 />
             </div>
-
-            {/* Warning for dev environment/build issues */}
-            {debugInfo && debugInfo.includes('sync') && (
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg text-xs">
-                    <p className="font-bold">Configuración Requerida</p>
-                    <p>{debugInfo}</p>
-                </div>
-            )}
-
-            {permission === 'granted' && (
-                <div className="p-4 bg-muted rounded-lg text-xs font-mono space-y-2">
-                    <p className="font-bold">Diagnóstico:</p>
-                    <p>Estado: {permission}</p>
-                    <p>Plataforma: {Capacitor.getPlatform()}</p>
-                    <Button variant="outline" size="sm" onClick={testServerPush} className="w-full mt-2">
-                        Probar Notificación de Servidor
-                    </Button>
-                    {debugInfo && (
-                        <div className="mt-2 p-2 bg-background rounded border overflow-auto max-h-32">
-                            {debugInfo}
-                        </div>
-                    )}
-                </div>
-            )}
         </div>
     )
 }

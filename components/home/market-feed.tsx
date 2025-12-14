@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase'
 import { ListingCard } from '@/components/market/listing-card'
 import { FeedSkeleton } from '@/components/home/feed-skeleton'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MarketFilters as MarketFiltersType } from '@/lib/market-data'
 import { useSearchParams } from 'next/navigation'
@@ -101,80 +101,76 @@ export function MarketFeed({
     })
 
     return (
-        <>
-            <PullToRefresh onRefresh={async () => { await refetch() }}>
-                <div
-                    ref={parentRef}
-                    className="min-h-[calc(100vh-10rem)] bg-transparent overflow-auto"
-                    style={{ height: '100%' }}
-                >
-                    {/* Vinted style grid: tighter gaps, 2 cols on mobile, 5 on desktop */}
-                    <div
-                        style={{
-                            height: `${rowVirtualizer.getTotalSize()}px`,
-                            width: '100%',
-                            position: 'relative',
-                        }}
-                    >
-                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                            const startIndex = virtualRow.index * columnCount
-                            const rowListings = listings?.slice(startIndex, startIndex + columnCount) || []
+        <PullToRefresh onRefresh={async () => { await refetch() }}>
+            <div
+                ref={parentRef}
+                className="min-h-[calc(100vh-10rem)] bg-transparent overflow-auto"
+                style={{ height: '100%' }}
+            >
+                <AnimatePresence mode="wait">
+                    {listings && listings.length > 0 ? (
+                        <motion.div
+                            key={JSON.stringify(filters)}
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                            style={{
+                                height: `${rowVirtualizer.getTotalSize()}px`,
+                                width: '100%',
+                                position: 'relative',
+                            }}
+                        >
+                            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                                const startIndex = virtualRow.index * columnCount
+                                const rowListings = listings?.slice(startIndex, startIndex + columnCount) || []
 
-                            return (
-                                <div
-                                    key={virtualRow.key}
-                                    data-index={virtualRow.index}
-                                    ref={rowVirtualizer.measureElement}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        transform: `translateY(${virtualRow.start}px)`,
-                                    }}
-                                >
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-4 px-3 py-2">
-                                        {rowListings.map((listing, colIndex) => {
-                                            const index = startIndex + colIndex
-                                            return (
-                                                <motion.div
-                                                    key={listing.id}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ duration: 0.3, delay: Math.min(colIndex * 0.02, 0.1) }}
-                                                >
-                                                    <ListingCard
-                                                        listing={listing}
-                                                        currentUserId={currentUserId}
-                                                        isFavorited={favoritesSet.has(listing.id)}
-                                                        priority={index < 4}
-                                                        averageLikes={initialAverageLikes}
-                                                    />
-                                                </motion.div>
-                                            )
-                                        })}
+                                return (
+                                    <div
+                                        key={virtualRow.key}
+                                        data-index={virtualRow.index}
+                                        ref={rowVirtualizer.measureElement}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            transform: `translateY(${virtualRow.start}px)`,
+                                        }}
+                                    >
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-4 px-3 py-2">
+                                            {rowListings.map((listing, colIndex) => {
+                                                const index = startIndex + colIndex
+                                                return (
+                                                    <div key={listing.id}>
+                                                        <ListingCard
+                                                            listing={listing}
+                                                            currentUserId={currentUserId}
+                                                            isFavorited={favoritesSet.has(listing.id)}
+                                                            priority={index < 4}
+                                                            averageLikes={initialAverageLikes}
+                                                        />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-
-                    {(!listings || listings.length === 0) && (
-                        <div className="text-center py-20 text-muted-foreground">
+                                )
+                            })}
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="empty"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="text-center py-20 text-muted-foreground"
+                        >
                             No hay anuncios todavía.
-                        </div>
+                        </motion.div>
                     )}
-                </div>
-            </PullToRefresh>
-
-            {/* CLIENT DEBUG BANNER */}
-            <div className="fixed bottom-20 left-4 z-[9999] bg-black/90 text-red-400 p-4 rounded-lg font-mono text-xs border border-red-500/50 shadow-2xl pointer-events-none opacity-80 hover:opacity-100 transition-opacity">
-                <div className="font-bold mb-1 text-white border-b border-white/20 pb-1">CLIENT SIDE DEBUG</div>
-                <div>Constructed Sort: <span className="text-yellow-400">{filters.sort || 'None'}</span></div>
-                <div>Listings Count: {listings?.length}</div>
-                <div>1st Price: <span className="text-xl font-bold">{listings?.[0]?.price_cents}</span></div>
-                <div className="mt-1 text-muted-foreground">Params Sort: {searchParams.get('sort')}</div>
+                </AnimatePresence>
             </div>
-        </>
+        </PullToRefresh>
     )
 }

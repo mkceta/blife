@@ -14,13 +14,11 @@ export default function MarketPage({
 }) {
     return (
         <ProductFeedLayout>
-            <div className="min-h-[50vh] outline-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="min-h-[50vh] outline-none">
                 <MarketSearchBar />
-                <FadeIn>
-                    <Suspense fallback={<FeedSkeleton />}>
-                        <MarketFeedContent searchParams={searchParams} />
-                    </Suspense>
-                </FadeIn>
+                <Suspense fallback={<FeedSkeleton />}>
+                    <MarketFeedContent searchParams={searchParams} />
+                </Suspense>
             </div>
         </ProductFeedLayout>
     )

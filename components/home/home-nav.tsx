@@ -37,7 +37,7 @@ export function HomeNav() {
                         {activeTab === tab.id && (
                             <motion.div
                                 layoutId="active-tab-indicator"
-                                className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary rounded-t-full"
+                                className="absolute inset-2 bg-white/10 rounded-full"
                                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             />
                         )}

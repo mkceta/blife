@@ -13,6 +13,7 @@ import { BackButtonHandler } from '@/components/back-button-handler'
 import { NotificationHandler } from '@/components/notification-handler'
 import Providers from '@/app/providers'
 import { RoutePrefetcher } from '@/components/route-prefetcher'
+import { MainTransition } from '@/components/layout/main-transition'
 
 const inter = Inter({ subsets: ['latin'] })
 export const openSans = Open_Sans({
@@ -64,7 +65,9 @@ export default function RootLayout({
               <DesktopHeader />
             </Suspense>
             <SwipeNavigator>
-              {children}
+              <MainTransition>
+                {children}
+              </MainTransition>
             </SwipeNavigator>
             <BottomNav />
             <Toaster />

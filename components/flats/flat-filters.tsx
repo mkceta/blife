@@ -124,6 +124,7 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
         }
 
         router.push(`${pathname}?${params.toString()}`)
+        router.refresh()
         handleOpenChange(false)
     }
 
@@ -150,6 +151,7 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
         })
 
         router.push(`${pathname}?${params.toString()}`)
+        router.refresh()
         handleOpenChange(false)
     }
 
@@ -256,7 +258,7 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
                             <div className="space-y-2">
                                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Habitaciones</Label>
                                 <Select
-                                    value={filters.minRooms}
+                                    value={filters.minRooms || '0'}
                                     onValueChange={(value) => setFilters({ ...filters, minRooms: value })}
                                 >
                                     <SelectTrigger className="h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 transition-all focus:ring-primary/20">
@@ -275,7 +277,7 @@ export function FlatFilters({ flats = [] }: { flats?: any[] }) {
                             <div className="space-y-2">
                                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Baños</Label>
                                 <Select
-                                    value={filters.minBaths}
+                                    value={filters.minBaths || '0'}
                                     onValueChange={(value) => setFilters({ ...filters, minBaths: value })}
                                 >
                                     <SelectTrigger className="h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 transition-all focus:ring-primary/20">

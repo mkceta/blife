@@ -58,6 +58,5 @@ const getListings = async (filters: MarketFilters) => {
 }
 
 export const getMarketListingsDirect = async (filters: MarketFilters) => {
-    console.log('[MARKET-DATA] Fetching listings with filters:', JSON.stringify(filters))
     return getListings(filters)
 }
