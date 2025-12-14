@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Image from 'next/image'
@@ -21,7 +21,7 @@ import { ProductActions } from '@/components/market/product-actions'
 import { calculateTotalWithFees } from '@/lib/pricing'
 import { useQuery } from '@tanstack/react-query'
 
-export default function ListingDetailPage() {
+function ListingDetailContent() {
     const searchParams = useSearchParams()
     const id = searchParams.get('id')
     const router = useRouter()
@@ -319,6 +319,14 @@ export default function ListingDetailPage() {
                 </div>
             )}
         </div>
+    )
+}
+
+export default function ListingDetailPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+            <ListingDetailContent />
+        </Suspense>
     )
 }
 

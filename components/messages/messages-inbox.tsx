@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MessageSquare, Bell, Search } from 'lucide-react'
 import { MessageList } from '@/components/messages/message-list'
@@ -123,5 +123,13 @@ function MessagesInboxContent({ className }: { className?: string }) {
 }
 
 export function MessagesInbox(props: { className?: string }) {
-    return <MessagesInboxContent {...props} />
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center h-full">
+                <div className="text-muted-foreground">Cargando...</div>
+            </div>
+        }>
+            <MessagesInboxContent {...props} />
+        </Suspense>
+    )
 }
