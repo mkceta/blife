@@ -9,12 +9,18 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useNotifications } from '@/hooks/use-notifications'
 import { mediumHaptic } from '@/lib/haptics'
+import { usePrefetchMarket, usePrefetchCommunity } from '@/hooks/use-prefetch'
+
 
 export function BottomNav() {
     const pathname = usePathname()
     const [user, setUser] = useState<any>(null)
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
     const { notifications } = useNotifications()
+
+    // Prefetch hooks for instant navigation
+    const marketPrefetch = usePrefetchMarket()
+    const communityPrefetch = usePrefetchCommunity()
 
     const unreadCommunity = notifications.filter((n) => !n.read && (n.type === 'comment' || n.type === 'reaction')).length
     const unreadMessages = notifications.filter((n) => !n.read && n.type === 'message').length
@@ -57,8 +63,8 @@ export function BottomNav() {
     // Let's stick to Blife's content but Vinted's *Visual Style*.
 
     const blifeItems = [
-        { href: '/market', icon: Home, label: 'Inicio' },
-        { href: '/community', icon: FlameKindling, label: 'Comunidad' },
+        { href: '/market', icon: Home, label: 'Inicio', prefetch: marketPrefetch },
+        { href: '/community', icon: FlameKindling, label: 'Comunidad', prefetch: communityPrefetch },
         { href: '/market/new', icon: PlusCircle, label: 'Vender', isMiddle: false }, // Changed isMiddle to false to remove floating effect if we want strict Vinted style, or keep it if user likes the emphasis. Vinted has it inline.
         { href: '/messages', icon: MessageCircle, label: 'Mensajes', hasNotifications: true },
         { href: '/profile', icon: User, label: 'Perfil', isProfile: true },
@@ -100,6 +106,8 @@ export function BottomNav() {
                             href={item.href}
                             aria-label={item.label}
                             onClick={() => mediumHaptic()}
+                            onMouseEnter={item.prefetch?.handleMouseEnter}
+                            onTouchStart={item.prefetch?.handleTouchStart}
                             className={cn(
                                 "flex flex-col items-center justify-center space-y-0.5 active-press w-full h-full",
                                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground/80"

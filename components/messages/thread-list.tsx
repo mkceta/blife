@@ -108,7 +108,7 @@ export function ThreadList({ initialThreads, currentUserId, unreadCounts: initia
                         key={thread.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.5) }}
+                        transition={{ duration: 0.3, delay: Math.min(index * 0.01, 0.1) }}
                     >
                         <Link
                             href={`/messages/chat?id=${thread.id}`}

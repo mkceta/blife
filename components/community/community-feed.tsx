@@ -6,7 +6,7 @@ import { CommunitySkeleton } from '@/components/community/community-skeleton'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { fetchCommunityPostsAction, fetchUserReactionsAction } from '@/app/feed-actions'
 import { PollCard } from './poll-card'
@@ -15,6 +15,7 @@ interface CommunityFeedProps {
     category?: string
     searchQuery?: string
     initialPosts?: any[]
+    initialPolls?: any[]
     initialReactions?: string[]
     currentUserId?: string
 }
@@ -23,6 +24,7 @@ export function CommunityFeed({
     category = 'General',
     searchQuery = '',
     initialPosts = [],
+    initialPolls = [],
     initialReactions = [],
     currentUserId
 }: CommunityFeedProps) {
@@ -31,32 +33,17 @@ export function CommunityFeed({
 
     // 1. Fetch Posts with React Query
     const { data: postsData, isLoading, isRefetching, refetch } = useQuery({
-        // Include searchQuery in key to support deep server search if needed
         queryKey: ['community', category, searchQuery],
         queryFn: async () => {
-            const data = await fetchCommunityPostsAction(category, searchQuery) // Pass searchQuery to server
+            const data = await fetchCommunityPostsAction(category, searchQuery)
             return data || []
         },
         initialData: initialPosts.length > 0 ? initialPosts : undefined,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        initialDataUpdatedAt: initialPosts.length > 0 ? Date.now() : undefined, // Mark as fresh
+        staleTime: 1000 * 60 * 10, // 10 minutes
     })
 
-    // 2. Fetch User Reactions with React Query
-    const { data: userReactionsSet } = useQuery({
-        queryKey: ['community-reactions', currentUserId, category], // Simplify key
-        queryFn: async () => {
-            if (!currentUserId || !postsData || postsData.length === 0) return new Set<string>()
-
-            const postIds = postsData.map((p: any) => p.id)
-            const reactionIds = await fetchUserReactionsAction(postIds)
-            return new Set(reactionIds as string[])
-        },
-        initialData: new Set(initialReactions),
-        enabled: !!currentUserId && !!postsData && postsData.length > 0,
-        staleTime: 0 // Force refetch on invalidation
-    })
-
-    // 3. Fetch Polls with React Query
+    // 2. Fetch Polls in parallel (not dependent on posts)
     const { data: pollsData } = useQuery({
         queryKey: ['polls', category],
         queryFn: async () => {
@@ -73,7 +60,28 @@ export function CommunityFeed({
 
             return data || []
         },
-        staleTime: 1000 * 60 * 5
+        initialData: initialPolls.length > 0 ? initialPolls : undefined,
+        initialDataUpdatedAt: initialPolls.length > 0 ? Date.now() : undefined,
+        staleTime: 1000 * 60 * 10 // 10 minutes
+    })
+
+    // 3. Fetch User Reactions in parallel (use initialData to avoid waiting)
+    const { data: userReactionsSet } = useQuery({
+        queryKey: ['community-reactions', currentUserId],
+        queryFn: async () => {
+            if (!currentUserId) return new Set<string>()
+
+            // Fetch ALL user reactions at once (not filtered by visible posts)
+            const { data } = await supabase
+                .from('reactions')
+                .select('post_id')
+                .eq('user_id', currentUserId)
+
+            return new Set(data?.map(r => r.post_id) || [])
+        },
+        initialData: new Set(initialReactions),
+        enabled: !!currentUserId,
+        staleTime: 1000 * 60 * 2, // 2 minutes
     })
 
     // 3. Client-Side Filtering for Instant Search fallback
@@ -121,7 +129,7 @@ export function CommunityFeed({
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{
                                 duration: 0.3,
-                                delay: Math.min(index * 0.05, 0.4)
+                                delay: Math.min(index * 0.01, 0.1)
                             }}
                         >
                             {item.type === 'poll' ? (

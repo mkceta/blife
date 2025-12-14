@@ -5,15 +5,18 @@ import { ListingCard } from '@/components/market/listing-card'
 import { FeedSkeleton } from '@/components/home/feed-skeleton'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 import { motion } from 'framer-motion'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MarketFilters as MarketFiltersType } from '@/lib/market-data'
 import { useSearchParams } from 'next/navigation'
 import { fetchMarketListingsAction } from '@/app/feed-actions'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useRef, useEffect } from 'react'
 
 interface MarketFeedProps {
     initialListings?: any[]
     initialFavorites?: string[] // IDs
     initialAverageLikes?: number
+    initialFilters?: MarketFiltersType
     currentUserId?: string
 }
 
@@ -21,22 +24,23 @@ export function MarketFeed({
     initialListings = [],
     initialFavorites = [],
     initialAverageLikes = 0,
-    currentUserId
+    currentUserId,
+    initialFilters
 }: MarketFeedProps) {
     const searchParams = useSearchParams()
+    const parentRef = useRef<HTMLDivElement>(null)
+    const queryClient = useQueryClient()
 
-    // Construct filters from search params
-    const getFilters = (): MarketFiltersType => ({
-        q: searchParams.get('q') || undefined,
-        category: searchParams.get('category') || undefined,
-        sort: searchParams.get('sort') || undefined,
-        degree: searchParams.get('degree') || undefined,
-        size: searchParams.get('size') || undefined,
-        minPrice: searchParams.get('min_price') ? parseFloat(searchParams.get('min_price')!) : undefined,
-        maxPrice: searchParams.get('max_price') ? parseFloat(searchParams.get('max_price')!) : undefined,
-    })
-
-    const filters = getFilters()
+    // Construct filters from search params or initial props
+    const filters: MarketFiltersType = {
+        q: searchParams.get('q') || initialFilters?.q,
+        category: searchParams.get('category') || initialFilters?.category,
+        sort: searchParams.get('sort') || initialFilters?.sort,
+        degree: searchParams.get('degree') || initialFilters?.degree,
+        size: searchParams.get('size') || initialFilters?.size,
+        minPrice: searchParams.get('min_price') ? parseFloat(searchParams.get('min_price')!) : initialFilters?.minPrice,
+        maxPrice: searchParams.get('max_price') ? parseFloat(searchParams.get('max_price')!) : initialFilters?.maxPrice,
+    }
 
     const { data: listings, refetch } = useQuery({
         queryKey: ['market-listings', filters, currentUserId],
@@ -56,8 +60,9 @@ export function MarketFeed({
             }
             return processed
         },
-        initialData: initialListings.length > 0 ? initialListings : undefined, // Only use if we have data
-        staleTime: 1000 * 60 * 5, // 5 minutes cache
+        initialData: initialListings.length > 0 ? initialListings : undefined,
+        initialDataUpdatedAt: initialListings.length > 0 ? Date.now() : undefined,
+        staleTime: 1000 * 60 * 10, // 10 minutes cache
     })
 
     // Make favorites reactive with React Query
@@ -74,32 +79,83 @@ export function MarketFeed({
         },
         initialData: initialFavorites,
         enabled: !!currentUserId,
-        staleTime: 1000 * 30, // 30 seconds
+        staleTime: 1000 * 60, // 1 minute
     })
 
     const favoritesSet = new Set(favorites)
 
+    // Virtual scrolling setup
+    const columnCount = typeof window !== 'undefined' && window.innerWidth >= 1024 ? 5 :
+        typeof window !== 'undefined' && window.innerWidth >= 768 ? 3 : 2
+
+    const rowVirtualizer = useVirtualizer({
+        count: Math.ceil((listings?.length || 0) / columnCount),
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 320, // Measured closer to mobile height
+        overscan: 2,
+    })
+
+    console.log('MarketFeed Listings State:', {
+        listingsCount: listings?.length,
+        firstPrice: listings?.[0]?.price_cents
+    })
+
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>
-            <div className="min-h-[calc(100vh-10rem)] bg-transparent">
+            <div
+                ref={parentRef}
+                className="min-h-[calc(100vh-10rem)] bg-transparent overflow-auto"
+                style={{ height: '100%' }}
+            >
                 {/* Vinted style grid: tighter gaps, 2 cols on mobile, 5 on desktop */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-6 gap-x-4 px-3 pb-24 pt-4 auto-rows-max">
-                    {listings && listings.map((listing, index) => (
-                        <motion.div
-                            key={listing.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
-                        >
-                            <ListingCard
-                                listing={listing}
-                                currentUserId={currentUserId}
-                                isFavorited={favoritesSet.has(listing.id)}
-                                priority={index < 4}
-                                averageLikes={initialAverageLikes}
-                            />
-                        </motion.div>
-                    ))}
+                <div
+                    style={{
+                        height: `${rowVirtualizer.getTotalSize()}px`,
+                        width: '100%',
+                        position: 'relative',
+                    }}
+                >
+                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const startIndex = virtualRow.index * columnCount
+                        const rowListings = listings?.slice(startIndex, startIndex + columnCount) || []
+
+                        return (
+                            <div
+                                key={virtualRow.key}
+                                data-index={virtualRow.index}
+                                ref={rowVirtualizer.measureElement}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    transform: `translateY(${virtualRow.start}px)`,
+                                }}
+                            >
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-4 px-3 py-2">
+                                    {rowListings.map((listing, colIndex) => {
+                                        const index = startIndex + colIndex
+                                        return (
+                                            <motion.div
+                                                key={listing.id}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.3, delay: Math.min(colIndex * 0.02, 0.1) }}
+                                            >
+                                                <ListingCard
+                                                    listing={listing}
+                                                    currentUserId={currentUserId}
+                                                    isFavorited={favoritesSet.has(listing.id)}
+                                                    priority={index < 4}
+                                                    averageLikes={initialAverageLikes}
+                                                />
+                                            </motion.div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
 
                 {(!listings || listings.length === 0) && (

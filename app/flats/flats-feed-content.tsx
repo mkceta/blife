@@ -11,25 +11,34 @@ export async function FlatsFeedContent({
 }) {
     const params = await searchParams
 
-    // We don't fetch listings here to avoid blocking execution.
-    // We delegate fetching to the client component.
+    const filters: FlatsFilters = {
+        q: params.q as string || undefined,
+        min_rent: params.min_rent as string || undefined,
+        max_rent: params.max_rent as string || undefined,
+        min_rooms: params.min_rooms as string || undefined,
+        min_baths: params.min_baths as string || undefined,
+        min_area: params.min_area as string || undefined,
+        max_area: params.max_area as string || undefined,
+        location_area: params.location_area as string || undefined,
+        sort: params.sort as string || undefined,
+    }
 
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+
+    // Fetch data in parallel
+    const [
+        { data: { user } },
+        initialFlats
+    ] = await Promise.all([
+        supabase.auth.getUser(),
+        getCachedFlats(filters)
+    ])
 
     return (
         <>
-            {/* Note: FlatsMenuBar / SearchBar is inside the Suspense boundary but currently renders fast as we don't query data */}
-            {/* We pass empty flats to SearchBar, assuming it handles it gracefully or fetches distinct locations internally if needed? */}
-            {/* Actually FlatsSearchBar just uses `flats` to calculate unique locations for filter dropdown. 
-                 If we pass empty, the location filter might be empty initially. 
-                 This is a trade-off. We might want to fetch lightweight locations separately or just let it be empty until loaded?
-                 Or we fetch ONLY locations here? Locations is fast.
-            */}
-
-            <FlatsSearchBar flats={[]} />
+            <FlatsSearchBar flats={initialFlats} />
             <FadeIn>
-                <FlatsFeed initialFlats={[]} currentUserId={user?.id} />
+                <FlatsFeed initialFlats={initialFlats} currentUserId={user?.id} />
             </FadeIn>
         </>
     )

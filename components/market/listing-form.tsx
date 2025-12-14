@@ -17,7 +17,7 @@ import { toast } from 'sonner'
 import { uploadListingImages } from '@/lib/upload'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
-import { StripeConnectModal } from '@/components/payment/stripe-connect-modal'
+import { StripeConnectModalWrapper as StripeConnectModal } from '@/components/payment/stripe-connect-modal-wrapper'
 import { SuccessCelebration } from '@/components/ui/success-celebration'
 import { useQueryClient } from '@tanstack/react-query'
 

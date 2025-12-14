@@ -54,7 +54,8 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
             const data = await fetchFlatsAction(actionFilters as any)
             return data || []
         },
-        initialData: initialFlats.length > 0 ? initialFlats : undefined, // Only use if we have data
+        initialData: initialFlats.length > 0 ? initialFlats : undefined,
+        initialDataUpdatedAt: initialFlats.length > 0 ? Date.now() : undefined,
         staleTime: 1000 * 60 * 5, // 5 mins
     });
 
@@ -75,7 +76,7 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>
             <div className="min-h-[calc(100vh-10rem)] bg-transparent">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 pb-24 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 px-4 pb-24 pt-4">
                     <AnimatePresence>
                         {finalFlats.map((flat, index) => (
                             <motion.div
@@ -86,7 +87,7 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{
                                     duration: 0.3,
-                                    delay: Math.min(index * 0.05, 0.4)
+                                    delay: Math.min(index * 0.01, 0.1)
                                 }}
                             >
                                 <FlatCard

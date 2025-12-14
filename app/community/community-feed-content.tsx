@@ -14,16 +14,40 @@ export async function CommunityFeedContent({
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Skip server-side data fetching for posts to allow instant navigation.
-    // Client side React Query will handle cache and background fetching.
+    // Fetch all data in parallel on server
+    const [
+        initialPosts,
+        { data: initialPolls },
+        { data: initialReactions }
+    ] = await Promise.all([
+        getCachedPosts(currentCategory, searchQuery),
+        // Fetch polls
+        supabase
+            .from('polls')
+            .select(`
+                *,
+                user:users(alias_inst, avatar_url),
+                options:poll_options(*),
+                votes:poll_votes(option_id, user_id)
+            `)
+            .eq('category', currentCategory)
+            .order('created_at', { ascending: false }),
+        // Fetch user reactions if logged in
+        user ? supabase
+            .from('reactions')
+            .select('post_id')
+            .eq('user_id', user.id)
+            : Promise.resolve({ data: [] })
+    ])
 
-    // We pass empty arrays to force client fetch/cache usage
+    // Pass all initial data to avoid client-side queries
     return (
         <CommunityFeed
             category={currentCategory}
             searchQuery={searchQuery}
-            initialPosts={[]}
-            initialReactions={[]}
+            initialPosts={initialPosts || []}
+            initialPolls={initialPolls || []}
+            initialReactions={initialReactions?.map(r => r.post_id) || []}
             currentUserId={user?.id}
         />
     )
