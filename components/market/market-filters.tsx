@@ -60,7 +60,8 @@ export function MarketFilters() {
     const pathname = usePathname()
     const [isOpen, setIsOpen] = useState(false)
 
-    // Handle back button closing the sheet using Hash
+    // Handle back button closing the sheet using Hash - COMMENTED OUT TO FIX ROUTING
+    /*
     useEffect(() => {
         const handleHashChange = () => {
             if (window.location.hash !== '#filters') {
@@ -85,6 +86,7 @@ export function MarketFilters() {
             }
         }
     }, [isOpen])
+    */
 
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open)
@@ -158,6 +160,7 @@ export function MarketFilters() {
         }
 
         router.push(`${pathname}?${params.toString()}`)
+        router.refresh()
         handleOpenChange(false)
     }
 
@@ -180,6 +183,7 @@ export function MarketFilters() {
         })
 
         router.push(`${pathname}?${params.toString()}`)
+        router.refresh()
         handleOpenChange(false)
     }
 

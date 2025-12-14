@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
 import { FeedSkeleton } from '@/components/home/feed-skeleton'
+
+export const dynamic = 'force-dynamic'
 import { MarketSearchBar } from '@/components/home/market-search-bar'
 import { FadeIn } from '@/components/ui/fade-in'
 import ProductFeedLayout from '@/app/product-feed-layout'

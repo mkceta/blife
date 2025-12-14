@@ -1,12 +1,12 @@
 'use server'
 
-import { getCachedMarketListings, MarketFilters } from '@/lib/market-data'
+import { getMarketListingsDirect, MarketFilters } from '@/lib/market-data'
 import { getCachedPosts } from '@/lib/community-data'
 import { getCachedFlats, FlatsFilters } from '@/lib/flats-data'
 import { createClient } from '@/lib/supabase-server'
 
 export async function fetchMarketListingsAction(filters: MarketFilters) {
-    return await getCachedMarketListings(filters)
+    return await getMarketListingsDirect(filters)
 }
 
 export async function fetchCommunityPostsAction(category?: string, query?: string) {

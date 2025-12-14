@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase-server'
 
 export type MarketFilters = {
@@ -12,7 +11,6 @@ export type MarketFilters = {
 }
 
 const getListings = async (filters: MarketFilters) => {
-    // We create a fresh client for each request
     const supabase = await createClient()
 
     let query = supabase
@@ -21,30 +19,15 @@ const getListings = async (filters: MarketFilters) => {
         .eq('is_hidden', false)
         .neq('status', 'sold')
 
-    // Apply Filters =========================================
-    if (filters.q) {
-        query = query.ilike('title', `%${filters.q}%`)
-    }
-    if (filters.category) {
-        query = query.eq('category', filters.category)
-    }
-    if (filters.degree) {
-        // NOTE: Filtering by related table field (user.degree) requires specialized setup or !inner join.
-        // Assuming current setup might ignore this or rely on client side if Supabase doesn't support nested filter on select string easily.
-        // For now we keep it, but be aware it might need explicit query builder syntax change.
-        // query = query.filter('user.degree', 'eq', filters.degree) 
-    }
-    if (filters.minPrice) {
-        query = query.gte('price_cents', filters.minPrice * 100)
-    }
-    if (filters.maxPrice) {
-        query = query.lte('price_cents', filters.maxPrice * 100)
-    }
-    if (filters.size) {
-        query = query.eq('size', filters.size)
-    }
+    // Apply Filters
+    if (filters.q) query = query.ilike('title', `%${filters.q}%`)
+    if (filters.category) query = query.eq('category', filters.category)
+    if (filters.degree) query = query.eq('user.degree', filters.degree)
+    if (filters.minPrice) query = query.gte('price_cents', filters.minPrice * 100)
+    if (filters.maxPrice) query = query.lte('price_cents', filters.maxPrice * 100)
+    if (filters.size) query = query.eq('size', filters.size)
 
-    // Sort ==================================================
+    // Sort
     switch (filters.sort) {
         case 'oldest':
             query = query.order('created_at', { ascending: true })
@@ -60,7 +43,7 @@ const getListings = async (filters: MarketFilters) => {
             break
         default:
             // Newest / Discovery
-            // Limit result set for performance
+            // Limit increased to ensure client filtering has enough data if needed, though we filter server side now.
             query = query.order('created_at', { ascending: false }).limit(100)
     }
 
@@ -74,7 +57,7 @@ const getListings = async (filters: MarketFilters) => {
     return data || []
 }
 
-// Previously cached, now direct for accurate filtering.
-export const getCachedMarketListings = async (filters: MarketFilters) => {
+export const getMarketListingsDirect = async (filters: MarketFilters) => {
+    console.log('[MARKET-DATA] Fetching listings with filters:', JSON.stringify(filters))
     return getListings(filters)
 }

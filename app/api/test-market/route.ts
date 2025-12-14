@@ -1,12 +1,12 @@
 
 import { NextResponse } from 'next/server'
-import { getCachedMarketListings } from '@/lib/market-data'
+import { getMarketListingsDirect } from '@/lib/market-data'
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const sort = searchParams.get('sort') || 'newest'
 
-    const listings = await getCachedMarketListings({ sort })
+    const listings = await getMarketListingsDirect({ sort })
 
     const prices = listings.map(l => l.price_cents)
 

@@ -101,69 +101,80 @@ export function MarketFeed({
     })
 
     return (
-        <PullToRefresh onRefresh={async () => { await refetch() }}>
-            <div
-                ref={parentRef}
-                className="min-h-[calc(100vh-10rem)] bg-transparent overflow-auto"
-                style={{ height: '100%' }}
-            >
-                {/* Vinted style grid: tighter gaps, 2 cols on mobile, 5 on desktop */}
+        <>
+            <PullToRefresh onRefresh={async () => { await refetch() }}>
                 <div
-                    style={{
-                        height: `${rowVirtualizer.getTotalSize()}px`,
-                        width: '100%',
-                        position: 'relative',
-                    }}
+                    ref={parentRef}
+                    className="min-h-[calc(100vh-10rem)] bg-transparent overflow-auto"
+                    style={{ height: '100%' }}
                 >
-                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                        const startIndex = virtualRow.index * columnCount
-                        const rowListings = listings?.slice(startIndex, startIndex + columnCount) || []
+                    {/* Vinted style grid: tighter gaps, 2 cols on mobile, 5 on desktop */}
+                    <div
+                        style={{
+                            height: `${rowVirtualizer.getTotalSize()}px`,
+                            width: '100%',
+                            position: 'relative',
+                        }}
+                    >
+                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                            const startIndex = virtualRow.index * columnCount
+                            const rowListings = listings?.slice(startIndex, startIndex + columnCount) || []
 
-                        return (
-                            <div
-                                key={virtualRow.key}
-                                data-index={virtualRow.index}
-                                ref={rowVirtualizer.measureElement}
-                                style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    width: '100%',
-                                    transform: `translateY(${virtualRow.start}px)`,
-                                }}
-                            >
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-4 px-3 py-2">
-                                    {rowListings.map((listing, colIndex) => {
-                                        const index = startIndex + colIndex
-                                        return (
-                                            <motion.div
-                                                key={listing.id}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.3, delay: Math.min(colIndex * 0.02, 0.1) }}
-                                            >
-                                                <ListingCard
-                                                    listing={listing}
-                                                    currentUserId={currentUserId}
-                                                    isFavorited={favoritesSet.has(listing.id)}
-                                                    priority={index < 4}
-                                                    averageLikes={initialAverageLikes}
-                                                />
-                                            </motion.div>
-                                        )
-                                    })}
+                            return (
+                                <div
+                                    key={virtualRow.key}
+                                    data-index={virtualRow.index}
+                                    ref={rowVirtualizer.measureElement}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        transform: `translateY(${virtualRow.start}px)`,
+                                    }}
+                                >
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-4 px-3 py-2">
+                                        {rowListings.map((listing, colIndex) => {
+                                            const index = startIndex + colIndex
+                                            return (
+                                                <motion.div
+                                                    key={listing.id}
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.3, delay: Math.min(colIndex * 0.02, 0.1) }}
+                                                >
+                                                    <ListingCard
+                                                        listing={listing}
+                                                        currentUserId={currentUserId}
+                                                        isFavorited={favoritesSet.has(listing.id)}
+                                                        priority={index < 4}
+                                                        averageLikes={initialAverageLikes}
+                                                    />
+                                                </motion.div>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        )
-                    })}
-                </div>
-
-                {(!listings || listings.length === 0) && (
-                    <div className="text-center py-20 text-muted-foreground">
-                        No hay anuncios todavía.
+                            )
+                        })}
                     </div>
-                )}
+
+                    {(!listings || listings.length === 0) && (
+                        <div className="text-center py-20 text-muted-foreground">
+                            No hay anuncios todavía.
+                        </div>
+                    )}
+                </div>
+            </PullToRefresh>
+
+            {/* CLIENT DEBUG BANNER */}
+            <div className="fixed bottom-20 left-4 z-[9999] bg-black/90 text-red-400 p-4 rounded-lg font-mono text-xs border border-red-500/50 shadow-2xl pointer-events-none opacity-80 hover:opacity-100 transition-opacity">
+                <div className="font-bold mb-1 text-white border-b border-white/20 pb-1">CLIENT SIDE DEBUG</div>
+                <div>Constructed Sort: <span className="text-yellow-400">{filters.sort || 'None'}</span></div>
+                <div>Listings Count: {listings?.length}</div>
+                <div>1st Price: <span className="text-xl font-bold">{listings?.[0]?.price_cents}</span></div>
+                <div className="mt-1 text-muted-foreground">Params Sort: {searchParams.get('sort')}</div>
             </div>
-        </PullToRefresh>
+        </>
     )
 }
