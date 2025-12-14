@@ -20,6 +20,11 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
     const [direction, setDirection] = useState(0)
     const prevPathname = useRef(pathname)
 
+    // Always call useEffect before any conditional returns to maintain hook order
+    useEffect(() => {
+        prevPathname.current = pathname
+    }, [pathname])
+
     // Exclude auth and landing pages from animation
     if (pathname.startsWith('/auth') || pathname === '/landing' || pathname === '/') {
         return <>{children}</>
@@ -51,10 +56,6 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
 
     // Capture the direction in a ref to persist it during the EXIT animation (since pathname changes)
     // Actually Framer Motion 'custom' prop helps here.
-
-    useEffect(() => {
-        prevPathname.current = pathname
-    }, [pathname])
 
     const variants = {
         enter: (direction: number) => ({
