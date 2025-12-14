@@ -108,10 +108,6 @@ export function CommunityFeed({
         )
     }, [postsData, pollsData])
 
-    if (isPending) {
-        return <CommunitySkeleton />
-    }
-
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>
             <div className="space-y-4 min-h-[calc(100vh-10rem)]">

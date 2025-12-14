@@ -9,7 +9,7 @@ import { MarketFilters as MarketFiltersType } from '@/lib/market-data'
 import { useSearchParams } from 'next/navigation'
 import { fetchMarketListingsAction } from '@/app/feed-actions'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 
 interface MarketFeedProps {
     initialListings?: any[]
@@ -100,12 +100,6 @@ export function MarketFeed({
     const columnCount = typeof window !== 'undefined' && window.innerWidth >= 1024 ? 5 :
         typeof window !== 'undefined' && window.innerWidth >= 768 ? 3 : 2
 
-    const [isMounted, setIsMounted] = useState(false)
-
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
-
     const rowVirtualizer = useVirtualizer({
         count: Math.ceil((listings?.length || 0) / columnCount),
         getScrollElement: () => parentRef.current,
@@ -113,13 +107,13 @@ export function MarketFeed({
         overscan: 2,
     })
 
-    // Don't render virtualizer until mounted to avoid hydration mismatch
-    if (!isMounted || !listings || listings.length === 0) {
+    // Show empty state only when truly no listings
+    if (!listings || listings.length === 0) {
         return (
             <PullToRefresh onRefresh={async () => { await refetch() }}>
                 <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center">
                     <div className="text-muted-foreground">
-                        {!isMounted ? 'Cargando...' : 'No hay anuncios todavía.'}
+                        {isPending ? 'Cargando...' : 'No hay anuncios todavía.'}
                     </div>
                 </div>
             </PullToRefresh>

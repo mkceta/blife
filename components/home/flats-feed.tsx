@@ -58,11 +58,6 @@ export function FlatsFeed({ initialFlats, currentUserId }: FlatsFeedProps) {
         placeholderData: (previousData) => previousData, // Keep old data while refetching
     });
 
-    // Only show skeleton on first load
-    if (isPending) {
-        return <FlatsSkeleton />
-    }
-
     // Client-side shuffle for random/discovery if needed (optional)
     const finalFlats = useMemo(() => {
         if (!flats) return [];
