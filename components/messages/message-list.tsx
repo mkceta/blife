@@ -91,7 +91,7 @@ export function MessageList({ searchQuery = '' }: MessageListProps) {
         )
     }) || []
     // Only show skeleton on absolute first load (isPending = no data at all)
-    if (isPending) return <MessagesSkeleton />
+    if (!filteredThreads.length && isPending) return <MessagesSkeleton />
 
     if (error) return (
         <div className="h-full flex flex-col items-center justify-center p-4 text-center">

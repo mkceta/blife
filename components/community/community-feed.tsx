@@ -111,7 +111,7 @@ export function CommunityFeed({
     }, [postsData, pollsData])
 
     // Show skeleton only on absolute first load (isPending = no data at all)
-    if (isPending) return <CommunitySkeleton />
+    if (!combinedFeed.length && isPending) return <CommunitySkeleton />
 
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>

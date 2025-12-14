@@ -98,8 +98,9 @@ export default function ProfilePage() {
     // If query is fetching usage 'isLoading'
     const loading = loadingProfile || !user
 
-    if (loading) return <ProfileSkeleton />
-    if (!profile) return null
+    // Only show skeleton if we don't have profile data yet
+    if (loading && !profile) return <ProfileSkeleton />
+    if (!profile && !loading) return null
 
     const menuItems = [
         { icon: Award, label: 'Insignias ganadas', count: `${badgeStats.earned} de ${badgeStats.total}` },
