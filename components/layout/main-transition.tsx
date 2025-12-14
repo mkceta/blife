@@ -89,7 +89,7 @@ export function MainTransition({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="relative min-h-screen bg-background text-foreground w-full overflow-hidden">
+        <div className="relative min-h-screen bg-background text-foreground w-full overflow-auto">
             <AnimatePresence custom={currentDirection} initial={false}>
                 <motion.div
                     key={pathname}

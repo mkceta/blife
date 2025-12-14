@@ -20,6 +20,12 @@ export function BottomNav() {
     const [mounted, setMounted] = useState(false)
     const { notifications } = useNotifications()
 
+    const [optimisticPath, setOptimisticPath] = useState<string | null>(null)
+
+    useEffect(() => {
+        setOptimisticPath(null)
+    }, [pathname])
+
     // Prefetch hooks for instant navigation
     const marketPrefetch = usePrefetchMarket()
     const communityPrefetch = usePrefetchCommunity()
@@ -82,7 +88,7 @@ export function BottomNav() {
     }
 
     const isChatDetail = pathname.startsWith('/messages/') && pathname !== '/messages'
-    const isMarketDetail = pathname.startsWith('/market/') && pathname !== '/market'
+    const isMarketDetail = pathname.startsWith('/market/') && pathname !== '/market' && pathname !== '/market/new'
 
     return (
         <div className={cn(
@@ -91,7 +97,9 @@ export function BottomNav() {
         )}>
             <nav className="grid grid-cols-5 items-center h-14 max-w-screen-xl mx-auto px-0 w-full">
                 {blifeItems.map((item) => {
-                    const isActive = pathname.startsWith(item.href)
+                    // Use optimistic path if available for instant feedback
+                    const currentPath = optimisticPath || pathname
+                    const isActive = currentPath.startsWith(item.href)
 
                     if (item.isMiddle) {
                         return (
@@ -114,9 +122,9 @@ export function BottomNav() {
                             key={item.href}
                             onClick={() => {
                                 mediumHaptic()
-                                // Use startTransition for instant navigation without waiting
+                                setOptimisticPath(item.href) // Instant visual update
                                 startTransition(() => {
-                                    router.push(item.href)
+                                    router.push(item.href, { scroll: false })
                                 })
                             }}
                             onMouseEnter={item.prefetch?.handleMouseEnter}

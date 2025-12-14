@@ -47,7 +47,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.className} ${openSans.variable}`}>
+      <body className={`${inter.className} ${openSans.variable}`} suppressHydrationWarning>
         <Providers>
           <ThemeProvider
             attribute="class"
