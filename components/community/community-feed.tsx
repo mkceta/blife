@@ -41,6 +41,7 @@ export function CommunityFeed({
         initialData: initialPosts.length > 0 ? initialPosts : undefined,
         initialDataUpdatedAt: initialPosts.length > 0 ? Date.now() : undefined, // Mark as fresh
         staleTime: 1000 * 60 * 10, // 10 minutes
+        gcTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours
         placeholderData: (previousData) => previousData, // Keep old data while refetching
     })
 
@@ -64,6 +65,7 @@ export function CommunityFeed({
         initialData: initialPolls.length > 0 ? initialPolls : undefined,
         initialDataUpdatedAt: initialPolls.length > 0 ? Date.now() : undefined,
         staleTime: 1000 * 60 * 10, // 10 minutes
+        gcTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours
         placeholderData: (previousData) => previousData, // Keep old data while refetching
     })
 
@@ -107,6 +109,9 @@ export function CommunityFeed({
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
     }, [postsData, pollsData])
+
+    // Show skeleton only on absolute first load (isPending = no data at all)
+    if (isPending) return <CommunitySkeleton />
 
     return (
         <PullToRefresh onRefresh={async () => { await refetch() }}>

@@ -75,6 +75,7 @@ export function MarketFeed({
         initialData: initialListings.length > 0 ? initialListings : undefined,
         initialDataUpdatedAt: initialListings.length > 0 ? Date.now() : undefined,
         staleTime: 1000 * 60 * 10, // 10 minutes cache
+        gcTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours
         placeholderData: (previousData) => previousData, // Keep old data while refetching
     })
 
@@ -107,13 +108,16 @@ export function MarketFeed({
         overscan: 2,
     })
 
-    // Show empty state only when truly no listings
+    // Show skeleton only on absolute first load (isPending = no data at all)
+    if (isPending) return <FeedSkeleton />
+
+    // Show empty state when no listings
     if (!listings || listings.length === 0) {
         return (
             <PullToRefresh onRefresh={async () => { await refetch() }}>
                 <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center">
                     <div className="text-muted-foreground">
-                        {isPending ? 'Cargando...' : 'No hay anuncios todavía.'}
+                        No hay anuncios todavía.
                     </div>
                 </div>
             </PullToRefresh>
