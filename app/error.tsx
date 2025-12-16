@@ -44,17 +44,23 @@ export default function Error({
                     </Button>
                 </div>
 
-                {process.env.NODE_ENV === 'development' && (
-                    <div className="mt-8 p-4 bg-muted/50 rounded-lg text-left w-full overflow-auto max-h-48">
-                        <p className="text-xs font-mono font-bold text-destructive mb-1">Debug Info:</p>
-                        <p className="text-xs font-mono text-muted-foreground whitespace-pre-wrap break-all">
-                            {error.message}
-                        </p>
-                        {error.digest && (
-                            <p className="text-xs font-mono text-muted-foreground mt-2">Digest: {error.digest}</p>
-                        )}
-                    </div>
-                )}
+                <div className="mt-8 p-4 bg-muted/50 rounded-lg text-left w-full overflow-auto max-h-96">
+                    <p className="text-xs font-mono font-bold text-destructive mb-1">Debug Info:</p>
+                    <p className="text-xs font-mono text-muted-foreground whitespace-pre-wrap break-all mb-2">
+                        {error.message}
+                    </p>
+                    {error.stack && (
+                        <details>
+                            <summary className="text-xs font-mono font-bold text-muted-foreground cursor-pointer">Stack Trace</summary>
+                            <pre className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap break-all mt-1">
+                                {error.stack}
+                            </pre>
+                        </details>
+                    )}
+                    {error.digest && (
+                        <p className="text-xs font-mono text-muted-foreground mt-2">Digest: {error.digest}</p>
+                    )}
+                </div>
             </div>
         </div>
     )
