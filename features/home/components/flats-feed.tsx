@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { fetchFlatsAction } from '@/app/feed-actions'
-import { FlatsFilters } from '@/lib/flats-data'
+import { FlatsFilters } from '@/lib/services/flats.service'
 
 interface FlatsFeedProps {
     initialFlats: unknown[];

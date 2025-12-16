@@ -61,7 +61,7 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
     const supabase = createClient()
     const queryClient = useQueryClient()
 
-    const form = useForm<ListingSchemaType>({
+    const form = useForm({
         resolver: zodResolver(listingSchema),
         defaultValues: {
             title: initialData?.title || '',
@@ -350,6 +350,7 @@ export function ListingForm({ initialData, listingId }: ListingFormProps) {
                                             placeholder="0.00"
                                             className="w-24 text-right border-none bg-transparent p-0 h-auto text-base font-medium placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0"
                                             {...field}
+                                            value={(field.value as string | number) || ''}
                                         />
                                     </FormControl>
                                     <span className="text-base font-medium">€</span>
