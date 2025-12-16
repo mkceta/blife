@@ -2,8 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import { ListingForm } from '@/components/market/listing-form'
+import { createClient } from '@/lib/supabase/client'
+import { ListingForm } from '@/features/market/components/listing-form'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'

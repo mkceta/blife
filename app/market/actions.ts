@@ -1,13 +1,14 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { listingSchema } from '@/lib/schemas'
 
 // --- LISTINGS (Market Products) ---
 
 export async function deleteListingAction(listingId: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -32,31 +33,40 @@ export async function deleteListingAction(listingId: string) {
         console.error('Error cleaning up listing images:', cleanupError)
     }
 
-    // @ts-ignore
-    revalidateTag('market-listings')
+    revalidateTag('market', 'max')
+    revalidateTag('listings', 'max')
     revalidatePath('/market', 'page')
     revalidatePath('/admin', 'page')
     revalidatePath(`/user/${user.id}`, 'page')
-    redirect('/market')
+    revalidatePath('/market', 'page')
+    revalidatePath('/admin', 'page')
+    revalidatePath(`/user/${user.id}`, 'page')
+    return { success: true }
 }
 
-export async function createListingActionWithRedirect(formData: any, photos: any[]) {
-    const supabase = await createClient()
+export async function createListingAction(formData: Record<string, any>, photos: { url: string }[]) {
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) throw new Error('No autenticado')
+
+    const validation = listingSchema.safeParse(formData)
+    if (!validation.success) {
+        throw new Error(validation.error.issues[0].message)
+    }
+    const safeData = validation.data
 
     const { data, error } = await supabase
         .from('listings')
         .insert({
             user_id: user.id,
-            title: formData.title,
-            description: formData.description,
-            price_cents: Math.round(Number(formData.price) * 100),
-            category: formData.category,
-            brand: formData.brand,
-            size: formData.size,
-            condition: formData.condition,
+            title: safeData.title,
+            description: safeData.description,
+            price_cents: Math.round(Number(safeData.price) * 100),
+            category: safeData.category,
+            brand: safeData.brand,
+            size: safeData.size,
+            condition: safeData.condition,
             photos: photos,
             status: 'active',
         })
@@ -65,29 +75,36 @@ export async function createListingActionWithRedirect(formData: any, photos: any
 
     if (error) throw new Error(error.message)
 
-    // @ts-ignore
-    revalidateTag('market-listings')
+    revalidateTag('market', 'max')
+    revalidateTag('listings', 'max')
     revalidatePath('/market', 'page')
-    redirect(`/market/product?id=${data.id}`)
+    revalidatePath('/market', 'page')
+    return data
 }
 
 
-export async function updateListingAction(listingId: string, formData: any, photos: any[]) {
-    const supabase = await createClient()
+export async function updateListingAction(listingId: string, formData: Record<string, any>, photos: { url: string }[]) {
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) throw new Error('No autenticado')
 
+    const validation = listingSchema.safeParse(formData)
+    if (!validation.success) {
+        throw new Error(validation.error.issues[0].message)
+    }
+    const safeData = validation.data
+
     const { error } = await supabase
         .from('listings')
         .update({
-            title: formData.title,
-            description: formData.description,
-            price_cents: Math.round(Number(formData.price) * 100),
-            category: formData.category,
-            brand: formData.brand,
-            size: formData.size,
-            condition: formData.condition,
+            title: safeData.title,
+            description: safeData.description,
+            price_cents: Math.round(Number(safeData.price) * 100),
+            category: safeData.category,
+            brand: safeData.brand,
+            size: safeData.size,
+            condition: safeData.condition,
             photos: photos,
         })
         .eq('id', listingId)
@@ -99,11 +116,12 @@ export async function updateListingAction(listingId: string, formData: any, phot
     revalidateTag('market-listings')
     revalidatePath('/market', 'page')
     revalidatePath(`/market/product?id=${listingId}`, 'page')
-    redirect(`/market/product?id=${listingId}`)
+
+    return { success: true }
 }
 
 export async function updateListingStatusAction(listingId: string, status: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) throw new Error('No autenticado')
@@ -116,8 +134,8 @@ export async function updateListingStatusAction(listingId: string, status: strin
 
     if (error) throw new Error(error.message)
 
-    // @ts-ignore
-    revalidateTag('market-listings')
+    revalidateTag('market', 'max')
+    revalidateTag('listings', 'max')
     revalidatePath('/market', 'page')
     revalidatePath(`/market/product?id=${listingId}`, 'page')
 }
@@ -125,7 +143,7 @@ export async function updateListingStatusAction(listingId: string, status: strin
 // --- FLATS (Pisos) ---
 
 export async function createFlatAction(formData: any, photos: any[]) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('No autenticado')
 

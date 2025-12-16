@@ -3,13 +3,13 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { fetchMarketListingsAction, fetchCommunityPostsAction } from '@/app/feed-actions'
-import { MarketFilters } from '@/lib/market-data'
+import { MarketFilters } from '@/lib/services/market.service'
 
 /**
  * Hook para prefetch de datos en hover
  */
 export function usePrefetchOnHover(
-    queryKey: any[],
+    queryKey: unknown[],
     queryFn: () => Promise<any>,
     enabled = true
 ) {
@@ -110,3 +110,4 @@ export function usePrefetchCommunity(category: string = 'General') {
 
     return { handleMouseEnter: prefetch, handleTouchStart: prefetch }
 }
+

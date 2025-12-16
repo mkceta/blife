@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,20 +16,21 @@ import Link from 'next/link'
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
 import { deleteFlat } from '@/app/messages/actions'
 import { useQueryClient } from '@tanstack/react-query'
+import type { Flat } from '@/lib/types'
 
 const formSchema = z.object({
     title: z.string().min(10, 'Mínimo 10 caracteres').max(100),
     description: z.string().min(20, 'Describe mejor el piso').max(1500),
-    rent: z.preprocess((val) => Number(val), z.number().min(50, 'Mínimo 50€')),
-    rooms: z.preprocess((val) => Number(val), z.number().min(0).max(20).optional()),
-    baths: z.preprocess((val) => Number(val), z.number().min(0).max(10).optional()),
-    area_m2: z.preprocess((val) => Number(val), z.number().min(0).max(500).optional()),
+    rent: z.coerce.number().min(50, 'Mínimo 50€'),
+    rooms: z.coerce.number().min(0).max(20).optional(),
+    baths: z.coerce.number().min(0).max(10).optional(),
+    area_m2: z.coerce.number().min(0).max(500).optional(),
     location_area: z.string().min(3, 'Indica la zona'),
-    roommates_current: z.preprocess((val) => Number(val), z.number().min(0).max(20).optional()),
+    roommates_current: z.coerce.number().min(0).max(20).optional(),
 })
 
 interface EditFlatFormProps {
-    flat: any
+    flat: Flat
 }
 
 type FormValues = z.infer<typeof formSchema>
@@ -39,8 +40,8 @@ export function EditFlatForm({ flat }: EditFlatFormProps) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const router = useRouter()
     const queryClient = useQueryClient()
-    const form = useForm<any>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema) as any,
         defaultValues: {
             title: flat.title,
             description: flat.description || '',

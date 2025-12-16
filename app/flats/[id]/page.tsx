@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useEffect, useState, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { notFound, useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -9,23 +9,55 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ChevronLeft, MapPin, Home, Bath, Maximize, MessageCircle } from 'lucide-react'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
-import { ContactButton } from '@/components/market/contact-button'
-import { FlatStatusControls } from '@/components/flats/flat-status-controls'
+import { ContactButton } from '@/features/market/components/contact-button'
+import { FlatStatusControls } from '@/features/flats/components/flat-status-controls'
 import { Edit } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { ShareButton } from '@/components/market/share-button'
-import { ReportButton } from '@/components/market/report-button'
-import { FavoriteButton } from '@/components/market/favorite-button'
-import FlatMap from '@/components/flats/flat-map-dynamic'
+import { ShareButton } from '@/features/market/components/share-button'
+import { ReportButton } from '@/features/market/components/report-button'
+import { FavoriteButton } from '@/features/market/components/favorite-button'
+import FlatMap from '@/features/flats/components/flat-map-dynamic'
+import type { Photo } from '@/lib/types'
+
+interface FlatUser {
+    id: string
+    alias_inst: string
+    avatar_url?: string | null
+    rating_avg?: number | null
+}
+
+interface FlatDetail {
+    id: string
+    title: string
+    description?: string | null
+    rent_cents: number
+    photos: Photo[]
+    rooms?: number | null
+    baths?: number | null
+    area_m2?: number | null
+    location_area?: string | null
+    roommates_current?: number | null
+    status: 'available' | 'reserved' | 'rented'
+    user_id: string
+    lat?: number | null
+    lng?: number | null
+    amenities?: string[] | null
+    user: FlatUser | FlatUser[]
+}
+
+interface AuthUser {
+    id: string
+    email?: string
+}
 
 export default function FlatDetailPage() {
     const params = useParams()
     const id = params.id as string
-    const [flat, setFlat] = useState<any>(null)
-    const [user, setUser] = useState<any>(null)
+    const [flat, setFlat] = useState<FlatDetail | null>(null)
+    const [user, setUser] = useState<AuthUser | null>(null)
     const [isFavorite, setIsFavorite] = useState(false)
     const [loading, setLoading] = useState(true)
-    const supabase = createClient()
+    const supabase = useMemo(() => createClient(), [])
 
     useEffect(() => {
         async function loadData() {
@@ -47,7 +79,7 @@ export default function FlatDetailPage() {
                 return
             }
 
-            setFlat(flatData)
+            setFlat(flatData as unknown as FlatDetail)
 
             // Check if favorited
             if (authUser) {
@@ -83,7 +115,7 @@ export default function FlatDetailPage() {
         return null
     }
 
-    const photos = flat.photos as any[] || []
+    const photos = flat.photos || []
     const rent = (flat.rent_cents / 100).toFixed(0)
     const landlord = Array.isArray(flat.user) ? flat.user[0] : flat.user
     const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://blife-udc.vercel.app/flats/${id}`
@@ -157,7 +189,7 @@ export default function FlatDetailPage() {
                                 Reservado
                             </Badge>
                         )}
-                        {flat.status === 'sold' && (
+                        {flat.status === 'rented' && (
                             <Badge variant="secondary" className="ml-2 bg-red-500/10 text-red-500 border-red-500/20">
                                 Alquilado
                             </Badge>
@@ -208,7 +240,7 @@ export default function FlatDetailPage() {
                 <div className="flex items-center gap-2">
                     <Link href={`/user/@${landlord.alias_inst}`} className="flex-1 flex items-center gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
                         <Avatar className="h-12 w-12 border border-border">
-                            <AvatarImage src={landlord.avatar_url} />
+                            <AvatarImage src={landlord.avatar_url || undefined} />
                             <AvatarFallback>{landlord.alias_inst?.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
@@ -228,7 +260,7 @@ export default function FlatDetailPage() {
                             <FlatStatusControls
                                 flatId={flat.id}
                                 flatTitle={flat.title}
-                                currentStatus={flat.status}
+                                currentStatus={flat.status as 'active' | 'reserved' | 'sold'}
                             />
                         </div>
                     ) : (

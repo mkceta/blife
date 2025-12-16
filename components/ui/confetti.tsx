@@ -281,3 +281,4 @@ export function fireConfettiFromElement(element: HTMLElement, colors?: string[])
 export function clearConfetti() {
     confetti.reset()
 }
+

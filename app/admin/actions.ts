@@ -1,10 +1,10 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export async function banUser(userId: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     const { error } = await supabase
         .from('users')
@@ -18,7 +18,7 @@ export async function banUser(userId: string) {
 }
 
 export async function unbanUser(userId: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     const { error } = await supabase
         .from('users')

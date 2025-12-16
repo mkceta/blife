@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
             undefined,
             cryptoProvider
         )
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(`Webhook signature verification failed: ${err.message}`)
         await supabase.from('debug_logs').insert({
             source: 'stripe-webhook',
@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
                 let balanceSufficient = true;
                 try {
                     const balance = await stripe.balance.retrieve()
-                    const availableEur = balance.available.find((b: any) => b.currency === 'eur')?.amount || 0
+                    const availableEur = balance.available.find((b: {currency: string; amount: number}) => b.currency === 'eur')?.amount || 0
                     if (availableEur < transferAmount) {
                         console.log(`Insufficient balance: ${availableEur} < ${transferAmount}. Skipping immediate transfer.`)
                         balanceSufficient = false;
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
                         })
                         transferId = transfer.id
                         console.log(`Transfer created: ${transfer.id}`)
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                         console.error(`Transfer failed: ${err.message}`)
                         transferError = err.message
                         await supabase.from('debug_logs').insert({
@@ -371,9 +371,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ received: true }), {
             headers: { 'Content-Type': 'application/json' },
         })
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(`Webhook processing error: ${err.message}`)
         await supabase.from('debug_logs').insert({ source: 'stripe-webhook', message: 'Processing Error', data: { error: err.message, stack: err.stack } })
         return new Response(JSON.stringify({ error: err.message }), { status: 400 })
     }
 })
+
+

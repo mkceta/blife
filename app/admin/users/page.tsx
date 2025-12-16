@@ -2,8 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import { UserTable } from '@/components/admin/user-table'
+import { createClient } from '@/lib/supabase/client'
+import { UserTable } from '@/features/admin/components/user-table'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, Users } from 'lucide-react'
 import Link from 'next/link'

@@ -24,7 +24,7 @@ export function ImageModal({ src, onClose }: ImageModalProps) {
         return () => { document.body.style.overflow = 'unset' }
     }, [src])
 
-    const handleDragEnd = (event: any, info: PanInfo) => {
+    const handleDragEnd = (event: unknown, info: PanInfo) => {
         // Close if dragged down (positive y) more than 100px
         if (info.offset.y > 100) {
             onClose()
@@ -90,3 +90,4 @@ export function ImageModal({ src, onClose }: ImageModalProps) {
         document.body
     )
 }
+

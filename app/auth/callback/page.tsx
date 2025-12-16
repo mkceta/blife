@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 function AuthCallbackContent() {
     const router = useRouter()
@@ -14,7 +14,7 @@ function AuthCallbackContent() {
         const next = searchParams.get('next') || '/'
 
         if (code) {
-            supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+            supabase.auth.exchangeCodeForSession(code).then(({ error }: { error: Error | null }) => {
                 if (!error) {
                     router.push(next)
                 } else {

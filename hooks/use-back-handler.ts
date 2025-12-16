@@ -9,7 +9,7 @@ export function useBackHandler() {
 
     useEffect(() => {
         const handleBack = async () => {
-            App.addListener('backButton', ({ canGoBack }: any) => {
+            App.addListener('backButton', ({ canGoBack }: { canGoBack: boolean }) => {
                 if (canGoBack) {
                     window.history.back()
                 } else {
@@ -25,3 +25,4 @@ export function useBackHandler() {
         }
     }, [router])
 }
+

@@ -1,9 +1,9 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase/server'
 
 export async function markNotificationsAsReadByType(type: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return

@@ -4,7 +4,7 @@ import { use, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -12,6 +12,7 @@ import { ChevronLeft, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import type { Post } from '@/lib/types'
 
 const formSchema = z.object({
     text: z.string().min(10, 'Mínimo 10 caracteres').max(500, 'Máximo 500 caracteres'),
@@ -20,7 +21,7 @@ const formSchema = z.object({
 export default function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const [isLoading, setIsLoading] = useState(false)
-    const [post, setPost] = useState<any>(null)
+    const [post, setPost] = useState<Post | null>(null)
     const router = useRouter()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -78,9 +79,10 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
             router.push('/profile')
             router.refresh()
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
-            toast.error(error.message || 'Error al actualizar')
+            const errorMessage = error instanceof Error ? error.message : 'Error al actualizar'
+            toast.error(errorMessage)
         } finally {
             setIsLoading(false)
         }

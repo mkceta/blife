@@ -1,13 +1,48 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Routes that REQUIRE authentication
+const PROTECTED_ROUTES = [
+    '/profile',
+    '/messages',
+    '/market/new',
+    '/market/edit',
+    '/flats/edit',
+    '/community/new',
+    '/notifications',
+    '/wishlist',
+    '/admin',
+]
+
+// Routes that should redirect away if already logged in
+const AUTH_ROUTES = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/auth/verify',
+]
+
 export async function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl
+
+    // Check if this route needs auth verification
+    const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route))
+    const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
+
+    // Skip auth check entirely for public routes (saves ~100ms per request!)
+    if (!isProtectedRoute && !isAuthRoute) {
+        return NextResponse.next()
+    }
+
+    // Create response with request headers
     let response = NextResponse.next({
         request: {
             headers: request.headers,
         },
     })
 
+    // Only create Supabase client when we need to check auth
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -26,8 +61,20 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // Refreshing the auth token
-    await supabase.auth.getUser()
+    // Get user (only for protected/auth routes now)
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Redirect to login if accessing protected route without auth
+    if (isProtectedRoute && !user) {
+        const loginUrl = new URL('/auth/login', request.url)
+        loginUrl.searchParams.set('redirectTo', pathname)
+        return NextResponse.redirect(loginUrl)
+    }
+
+    // Redirect authenticated users away from auth pages
+    if (isAuthRoute && user && pathname !== '/auth/callback') {
+        return NextResponse.redirect(new URL('/market', request.url))
+    }
 
     return response
 }
@@ -39,8 +86,9 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
+         * - Static assets (.svg, .png, .jpg, etc.)
          */
         '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 }
+

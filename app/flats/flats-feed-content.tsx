@@ -1,7 +1,7 @@
 'use client'
 
-import { FlatsFeed } from '@/components/home/flats-feed'
-import { FlatsSearchBar } from '@/components/home/flats-search-bar'
+import { FlatsFeed } from '@/features/home/components/flats-feed'
+import { FlatsSearchBar } from '@/features/home/components/flats-search-bar'
 
 export function FlatsFeedContent({
     searchParams,

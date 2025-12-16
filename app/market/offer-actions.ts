@@ -1,10 +1,10 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export async function respondToOffer(offerId: string, accept: boolean, threadId: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     const status = accept ? 'accepted' : 'rejected'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { HomeNav } from '@/components/home/home-nav'
+import { HomeNav } from '@/features/home/components/home-nav'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'

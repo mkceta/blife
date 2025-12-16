@@ -1,6 +1,6 @@
 'use client'
 
-import { MessagesInbox } from '@/components/messages/messages-inbox'
+import { MessagesInbox } from '@/features/messages/components/messages-inbox'
 
 export default function MessagesLayout({
     children,

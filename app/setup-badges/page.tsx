@@ -20,9 +20,10 @@ export default function SetupBadgesPage() {
                 toast.error('Error: ' + res.error)
                 setResult('Error: ' + res.error)
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error('Error inesperado')
-            setResult('Error: ' + e.message)
+            const errorMessage = e instanceof Error ? e.message : 'Error desconocido'
+            setResult('Error: ' + errorMessage)
         } finally {
             setLoading(false)
         }
@@ -45,3 +46,4 @@ export default function SetupBadgesPage() {
         </div>
     )
 }
+

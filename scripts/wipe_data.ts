@@ -2,10 +2,10 @@
 // WARNING: This script will permanently delete ALL listings and messages.
 // Use with extreme caution. Only run if you really want to wipe the data.
 
-import { createClient } from '@/lib/supabase-server';
+import { createServerClient } from '@/lib/supabase/server';
 
 async function wipeAll() {
-    const supabase = await createClient();
+    const supabase = await createServerClient();
     // Delete all listings
     const { error: listingsError } = await supabase.from('listings').delete().neq('id', '');
     if (listingsError) {

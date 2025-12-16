@@ -1,22 +1,28 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { VerifySaleClient } from '@/components/market/verify-sale-client'
+import { VerifySaleClient } from '@/features/market/components/verify-sale-client'
+import type { Listing } from '@/lib/types'
+
+interface AuthUser {
+    id: string
+    email?: string
+}
 
 function VerifySaleContent() {
     const searchParams = useSearchParams()
     const token = searchParams.get('token')
     const router = useRouter()
-    const [listing, setListing] = useState<any>(null)
+    const [listing, setListing] = useState<Listing | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [currentUser, setCurrentUser] = useState<any>(null)
-    const supabase = createClient()
+    const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
+    const supabase = useMemo(() => createClient(), [])
 
     useEffect(() => {
         async function fetchData() {
@@ -88,6 +94,8 @@ function VerifySaleContent() {
             </div>
         )
     }
+
+    if (!listing) return null
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-muted/30 pb-24 md:pb-4">

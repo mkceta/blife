@@ -1,4 +1,4 @@
-import { ListingForm } from '@/components/market/listing-form'
+import { ListingForm } from '@/features/market/components/listing-form'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'

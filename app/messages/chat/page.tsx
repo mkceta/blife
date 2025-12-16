@@ -2,10 +2,10 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import { ChatInput } from '@/components/messages/chat-input'
-import { ChatList } from '@/components/messages/chat-list'
-import { ChatHeader } from '@/components/messages/chat-header'
+import { createClient } from '@/lib/supabase/client'
+import { ChatInput } from '@/features/messages/components/chat-input'
+import { ChatList } from '@/features/messages/components/chat-list'
+import { ChatHeader } from '@/features/messages/components/chat-header'
 
 function ChatContent() {
     const searchParams = useSearchParams()

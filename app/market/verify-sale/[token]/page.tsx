@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import { getListingByToken } from '@/app/market/sale-actions'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { VerifySaleClient } from '@/components/market/verify-sale-client'
+import { VerifySaleClient } from '@/features/market/components/verify-sale-client'
 
 export default function VerifySalePage() {
     const params = useParams()

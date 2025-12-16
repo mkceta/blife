@@ -1,9 +1,10 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { lightHaptic } from '@/lib/haptics'
+import type { Post } from '@/lib/types'
 
 interface OptimisticReactionParams {
     postId: string
@@ -79,8 +80,8 @@ export function useOptimisticReaction() {
             // También actualizar el contador en el post si está en cache
             const category = queryClient.getQueryData<string>(['current-category'])
             if (category) {
-                queryClient.setQueryData(['community', category, ''], (old: any[] = []) => {
-                    return old.map(post => {
+                queryClient.setQueryData<Post[]>(['community', category, ''], (old: Post[] = []) => {
+                    return old.map((post: Post) => {
                         if (post.id === postId) {
                             return {
                                 ...post,
@@ -111,3 +112,4 @@ export function useOptimisticReaction() {
         },
     })
 }
+

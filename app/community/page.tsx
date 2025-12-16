@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { markNotificationsAsReadByType } from '../notifications/mark-read-helpers';
-import { CommunitySearchBar } from '@/components/community/community-search-bar';
+import { CommunitySearchBar } from '@/features/community/components/community-search-bar';
 import { CommunityFeedContent } from './community-feed-content';
-import { CommunityReadMarker } from '@/components/community/community-read-marker';
-import { CreateContentButton } from '@/components/community/create-content-button';
+import { CommunityReadMarker } from '@/features/community/components/community-read-marker';
+import { CreateContentButton } from '@/features/community/components/create-content-button';
+import { getCommunityPostsCached, getCommunityPollsCached, CommunityFilters } from '@/lib/services/community.service';
+import { createServerClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 
 const CATEGORIES = [
     { id: 'General', label: '🔥 General' },
@@ -17,10 +18,39 @@ const CATEGORIES = [
     { id: 'Offtopic', label: '🤡 Offtopic' },
 ]
 
-export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ category?: string, q?: string }> }) {
+export default async function CommunityPage({
+    searchParams
+}: {
+    searchParams: Promise<{ category?: string, q?: string }>
+}) {
     const params = await searchParams
     const currentCategory = params.category || 'General'
     const searchQuery = params.q || ''
+
+    // Check for auth cookie BEFORE creating supabase client
+    const cookieStore = await cookies()
+    const hasAuthCookie = cookieStore.getAll().some(c => c.name.includes('auth'))
+
+    let userId: string | undefined
+
+    // Only check auth if cookie exists
+    if (hasAuthCookie) {
+        const supabase = await createServerClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        userId = user?.id
+    }
+
+    // Build filters
+    const filters: CommunityFilters = {
+        category: currentCategory,
+        q: searchQuery,
+    }
+
+    // Fetch posts and polls server-side in parallel
+    const [posts, polls] = await Promise.all([
+        getCommunityPostsCached(filters),
+        getCommunityPollsCached(filters),
+    ])
 
     return (
         <div className="min-h-screen bg-background pb-20">
@@ -61,7 +91,13 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
             </div>
 
             <div className="max-w-3xl mx-auto p-4 space-y-4">
-                <CommunityFeedContent searchParams={searchParams} />
+                <CommunityFeedContent
+                    initialPosts={posts}
+                    initialPolls={polls}
+                    category={currentCategory}
+                    searchQuery={searchQuery}
+                    currentUserId={userId}
+                />
             </div>
 
             {/* Unified create button */}
@@ -69,3 +105,4 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
         </div>
     );
 }
+

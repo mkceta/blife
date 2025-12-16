@@ -2,17 +2,38 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Home, MoveLeft } from 'lucide-react'
+import { Home, ArrowLeft } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { SnakeGame } from '@/components/snake-game'
+import { SnakeGame } from '@/components/shared/snake-game'
+
+interface Particle {
+    id: number
+    x: number
+    y: number
+    size: number
+    duration: number
+}
 
 export default function NotFound() {
     const [clickCount, setClickCount] = useState(0)
     const [foundEasterEgg, setFoundEasterEgg] = useState(false)
     const [showSnake, setShowSnake] = useState(false)
+    const [particles, setParticles] = useState<Particle[]>([])
     const router = useRouter()
+
+    // Generate particles only on client to avoid hydration mismatch
+    useEffect(() => {
+        const newParticles: Particle[] = [...Array(20)].map((_, i) => ({
+            id: i,
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            size: Math.random() * 4 + 1,
+            duration: Math.random() * 10 + 10,
+        }))
+        setParticles(newParticles)
+    }, [])
 
     const handleGlitch = () => {
         const newCount = clickCount + 1
@@ -28,29 +49,29 @@ export default function NotFound() {
     return (
         <div className="h-screen w-full flex flex-col items-center justify-center bg-black text-white relative overflow-hidden p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]">
 
-            {/* Background Stars - Simple CSS or SVG */}
+            {/* Background Stars - Client-only to avoid hydration errors */}
             <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
-                {[...Array(20)].map((_, i) => (
+                {particles.map((particle) => (
                     <motion.div
-                        key={i}
+                        key={particle.id}
                         className="absolute bg-white rounded-full"
                         initial={{
-                            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
-                            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1000),
-                            scale: Math.random() * 0.5 + 0.5
+                            x: particle.x,
+                            y: particle.y,
+                            scale: particle.size / 4
                         }}
                         animate={{
-                            y: [null, Math.random() * -100],
+                            y: [particle.y, particle.y - 100],
                             opacity: [0.2, 0.8, 0.2]
                         }}
                         transition={{
-                            duration: Math.random() * 10 + 10,
+                            duration: particle.duration,
                             repeat: Infinity,
                             ease: "linear"
                         }}
                         style={{
-                            width: Math.random() * 4 + 1 + 'px',
-                            height: Math.random() * 4 + 1 + 'px',
+                            width: particle.size + 'px',
+                            height: particle.size + 'px',
                         }}
                     />
                 ))}
@@ -95,7 +116,7 @@ export default function NotFound() {
                         Ir al Inicio
                     </Button>
                     <Button variant="outline" className="border-white/20 text-white hover:bg-white/10" onClick={() => router.back()}>
-                        <MoveLeft className="mr-2 h-4 w-4" />
+                        <ArrowLeft className="mr-2 h-4 w-4" />
                         Volver
                     </Button>
                 </div>

@@ -1,16 +1,49 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { AdminStats } from '@/components/admin/admin-stats'
-import { RecentActivity } from '@/components/admin/recent-activity'
+import { AdminStats } from '@/features/admin/components/admin-stats'
+import { RecentActivity } from '@/features/admin/components/recent-activity'
 import { Button } from '@/components/ui/button'
 import { Users, FileText, Shield } from 'lucide-react'
+import type { Photo } from '@/lib/types'
+
+interface AdminStatsData {
+    usersCount: number
+    listingsCount: number
+    soldCount: number
+    reportsCount: number
+    flatsCount: number
+    postsCount: number
+}
+
+interface RecentUser {
+    id: string
+    alias_inst: string
+    avatar_url?: string | null
+    created_at: string
+}
+
+interface RecentListing {
+    id: string
+    title: string
+    price_cents: number
+    photos: Photo[]
+    created_at: string
+}
+
+interface RecentFlat {
+    id: string
+    title: string
+    rent_cents: number
+    photos: Photo[]
+    created_at: string
+}
 
 export default function AdminPage() {
-    const [stats, setStats] = useState<any>({
+    const [stats, setStats] = useState<AdminStatsData>({
         usersCount: 0,
         listingsCount: 0,
         soldCount: 0,
@@ -18,12 +51,12 @@ export default function AdminPage() {
         flatsCount: 0,
         postsCount: 0,
     })
-    const [newUsers, setNewUsers] = useState<any[]>([])
-    const [newListings, setNewListings] = useState<any[]>([])
-    const [newFlats, setNewFlats] = useState<any[]>([])
+    const [newUsers, setNewUsers] = useState<RecentUser[]>([])
+    const [newListings, setNewListings] = useState<RecentListing[]>([])
+    const [newFlats, setNewFlats] = useState<RecentFlat[]>([])
     const [loading, setLoading] = useState(true)
     const router = useRouter()
-    const supabase = createClient()
+    const supabase = useMemo(() => createClient(), [])
 
     useEffect(() => {
         async function fetchData() {

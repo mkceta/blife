@@ -1,97 +1,64 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { createServerClient } from '@/lib/supabase/server'
+import { Suspense } from 'react'
+import { WishlistContent } from './wishlist-content'
 
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import { Heart } from 'lucide-react'
-import { ListingCard } from '@/components/market/listing-card'
-import { PullToRefresh } from '@/components/ui/pull-to-refresh'
-import { useQuery } from '@tanstack/react-query'
-import { WishlistSkeleton } from '@/components/wishlist/wishlist-skeleton'
+/**
+ * Wishlist Page - Server Component
+ * 
+ * Fetches user's favorited listings server-side
+ */
+export default async function WishlistPage() {
+    const supabase = await createServerClient()
 
-export default function WishlistPage() {
-    const router = useRouter()
-    const supabase = createClient()
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    const { data: wishlistItems = [], isLoading, refetch } = useQuery({
-        queryKey: ['wishlist'],
-        queryFn: async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
-                // Return empty if no user, usually middleware/layout handles this
-                return []
-            }
+    // Redirect to login if not authenticated
+    if (authError || !user) {
+        redirect('/auth/login?redirectTo=/wishlist')
+    }
 
-            const { data: favorites } = await supabase
-                .from('favorites')
-                .select(`
-                    listing_id,
-                    created_at,
-                    listings:listings (
-                        id,
-                        title,
-                        price_cents,
-                        photos,
-                        status,
-                        created_at,
-                        user_id,
-                        user:users!listings_user_id_fkey(alias_inst, rating_avg, degree, avatar_url),
-                        favorites_count
-                    )
-                `)
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
+    // Fetch wishlist items
+    const { data: favorites } = await supabase
+        .from('favorites')
+        .select(`
+            listing_id,
+            created_at,
+            listings:listings (
+                id,
+                title,
+                price_cents,
+                photos,
+                status,
+                created_at,
+                user_id,
+                user:users!listings_user_id_fkey(alias_inst, rating_avg, degree, avatar_url),
+                favorites_count
+            )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
 
-            return favorites?.filter(f => f.listings) || []
-        },
-        staleTime: 1000 * 60 * 5, // 5 minutes stale time
-    })
+    const wishlistItems = favorites?.filter(f => f.listings).map(item => {
+        const transformListing = (l: any) => ({
+            ...l,
+            photos: Array.isArray(l.photos) ? l.photos.map((p: any) => typeof p === 'string' ? { url: p } : p) : []
+        })
 
-    if (isLoading) return <WishlistSkeleton />
+        const listings = Array.isArray(item.listings)
+            ? item.listings.map(transformListing)
+            : item.listings ? transformListing(item.listings) : null
+
+        return {
+            ...item,
+            listings
+        }
+    }) || []
 
     return (
-        <div className="flex flex-col h-full bg-background min-h-screen pb-20 md:pb-0">
-            {/* Header matching Messages/Notifications style */}
-            <div className="flex flex-col border-b border-border/50 bg-background pt-[calc(env(safe-area-inset-top)+1rem)] sticky top-0 z-30">
-                <div className="px-4 pb-4">
-                    <h2 className="text-xl font-bold">Favoritos ({wishlistItems.length})</h2>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-hidden">
-                <PullToRefresh onRefresh={async () => { await refetch() }}>
-                    <div className="h-full overflow-y-auto p-4 scrollbar-thin">
-                        {wishlistItems.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                                <Heart className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                                <p className="text-lg mb-2">Tu lista de favoritos está vacía</p>
-                                <p className="text-sm">Guarda lo que te guste para verlo aquí</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {wishlistItems.map((item: any) => {
-                                        const listing = item.listings
-                                        const formattedListing = {
-                                            ...listing,
-                                            user: Array.isArray(listing.user) ? listing.user[0] : listing.user
-                                        }
-
-                                        return (
-                                            <ListingCard
-                                                key={listing.id}
-                                                listing={formattedListing}
-                                                isFavorited={true}
-                                            />
-                                        )
-                                    })}
-                                </div>
-                                <div className="h-24 md:h-0" /> {/* Spacer */}
-                            </>
-                        )}
-                    </div>
-                </PullToRefresh>
-            </div>
-        </div>
+        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+            <WishlistContent initialWishlistItems={wishlistItems} />
+        </Suspense>
     )
 }

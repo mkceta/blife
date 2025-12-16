@@ -2,8 +2,8 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
-import { createClient } from '@/lib/supabase'
-import { PostCard } from '@/components/community/post-card'
+import { createClient } from '@/lib/supabase/client'
+import { PostCard } from '@/features/community/components/post-card'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'

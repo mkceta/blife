@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { EditFlatForm } from './edit-flat-form' // Ensure this component is client-side compatible
 
 function EditFlatContent() {

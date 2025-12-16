@@ -1,9 +1,9 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase/server'
 
 export async function getListingByToken(token: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     // First try 'listings' table if it exists (for generic market items)
     const { data: listing, error } = await supabase
@@ -27,7 +27,7 @@ export async function getListingByToken(token: string) {
 }
 
 export async function verifySaleCode(code: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     // Check listings
     const { data: listing } = await supabase
@@ -55,7 +55,7 @@ export async function verifySaleCode(code: string) {
 }
 
 export async function generateSaleToken(listingId: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return { error: 'No autorizado', token: undefined, code: undefined }

@@ -82,8 +82,11 @@ export function SuccessCelebration({
             return () => clearTimeout(timer)
         } else {
             setShowContent(false)
+            return undefined
         }
     }, [show, type, duration, onComplete])
+
+
 
     if (!show) return null
 
@@ -229,6 +232,7 @@ export function SuccessToast({
                 return () => clearTimeout(timer)
             }
         }
+        return undefined
     }, [show, duration, onClose])
 
     return (
@@ -271,7 +275,7 @@ export function SuccessButton({
     successMessage?: string
     successDuration?: number
     className?: string
-    [key: string]: any
+    [key: string]: unknown
 }) {
     const [showSuccess, setShowSuccess] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -283,6 +287,7 @@ export function SuccessButton({
             const timer = setTimeout(() => setShowSuccess(false), successDuration)
             return () => clearTimeout(timer)
         }
+        return undefined
     }, [isSuccess, successDuration])
 
     const handleClick = async () => {
@@ -336,3 +341,4 @@ export function SuccessButton({
         </motion.button>
     )
 }
+

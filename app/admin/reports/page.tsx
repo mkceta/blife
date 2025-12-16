@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -10,10 +10,33 @@ import { Button } from '@/components/ui/button'
 import { formatRelativeTime } from '@/lib/format'
 import { CheckCircle, ChevronLeft, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
-import { ReportActions } from '@/components/admin/report-actions'
+import { ReportActions } from '@/features/admin/components/report-actions'
+
+// Report type definition
+interface Report {
+    id: string
+    created_at: string
+    reporter_id: string
+    target_type: 'listing' | 'post' | 'user' | 'flat'
+    target_id: string
+    reason: string
+    details?: string
+    status: 'open' | 'resolved'
+    reporter?: {
+        alias_inst: string
+        avatar_url?: string
+    }
+    targetInfo?: {
+        id: string
+        title?: string
+        content?: string
+        alias_inst?: string
+        user?: { alias_inst: string }
+    }
+}
 
 export default function ReportsPage() {
-    const [reports, setReports] = useState<any[]>([])
+    const [reports, setReports] = useState<Report[]>([])
     const [loading, setLoading] = useState(true)
     const router = useRouter()
     const supabase = createClient()
@@ -42,7 +65,7 @@ export default function ReportsPage() {
 
             if (reportsData) {
                 const enrichedReports = await Promise.all(
-                    reportsData.map(async (report) => {
+                    reportsData.map(async (report: Omit<Report, 'targetInfo'>) => {
                         let targetInfo = null
 
                         if (report.target_type === 'listing') {

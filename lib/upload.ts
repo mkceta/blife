@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { v4 as uuidv4 } from 'uuid'
 
 // Helper to lazy load compression library
@@ -7,7 +7,9 @@ const getCompressionLib = async () => {
     return imageCompression
 }
 
-export async function compressImage(file: File, customOptions?: any) {
+import type { Options } from 'browser-image-compression'
+
+export async function compressImage(file: File, customOptions?: Partial<Options>) {
     const imageCompression = await getCompressionLib()
     const options = {
         maxSizeMB: 1,
@@ -47,8 +49,15 @@ export async function createThumbnail(file: File) {
     }
 }
 
+import { SupabaseClient } from '@supabase/supabase-js'
+
 // Internal helper to handle single image processing and upload
-async function processAndUploadImage(file: File, bucket: string, folderId: string, supabase: any) {
+async function processAndUploadImage(
+    file: File,
+    bucket: string,
+    folderId: string,
+    supabase: SupabaseClient
+) {
     try {
         // Parallelize compression and thumbnail generation
         const [compressed, thumb] = await Promise.all([
@@ -82,9 +91,10 @@ async function processAndUploadImage(file: File, bucket: string, folderId: strin
             thumb_url: thumbUrl,
             size_bytes: compressed.size
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Error al procesar imagen'
         console.error('Error processing image:', error)
-        throw new Error(error.message || 'Error al procesar imagen')
+        throw new Error(errorMessage)
     }
 }
 
@@ -132,8 +142,9 @@ export async function uploadPostImage(file: File, postId: string) {
         const { data: { publicUrl } } = supabase.storage.from(bucketName).getPublicUrl(`${postId}/${filename}`)
 
         return publicUrl
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Error al procesar imagen'
         console.error('Error processing post image:', error)
-        throw new Error(error.message || 'Error al procesar imagen')
+        throw new Error(errorMessage)
     }
 }

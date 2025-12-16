@@ -1,11 +1,11 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 export async function createPostAction(content: string, categories: string[], photoUrl?: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) throw new Error('No autenticado')
@@ -26,7 +26,7 @@ export async function createPostAction(content: string, categories: string[], ph
 }
 
 export async function deletePostAction(postId: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) throw new Error('No autenticado')

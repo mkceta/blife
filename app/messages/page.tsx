@@ -1,8 +1,12 @@
-'use client'
-
 import { MessageSquare } from 'lucide-react'
-import { MessagesInbox } from '@/components/messages/messages-inbox'
+import { MessagesInbox } from '@/features/messages/components/messages-inbox'
 
+/**
+ * Messages Page - Server Component
+ * 
+ * Static page with client components for interactivity
+ * No server-side data fetching needed (MessagesInbox handles it)
+ */
 export default function MessagesPage() {
     return (
         <>

@@ -2,21 +2,21 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ChevronLeft, MapPin, Home, Bath, Maximize, MessageCircle } from 'lucide-react'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
-import { ContactButton } from '@/components/market/contact-button'
-import { FlatStatusControls } from '@/components/flats/flat-status-controls'
+import { ContactButton } from '@/features/market/components/contact-button'
+import { FlatStatusControls } from '@/features/flats/components/flat-status-controls'
 import { Edit } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { ShareButton } from '@/components/market/share-button'
-import { ReportButton } from '@/components/market/report-button'
-import { FavoriteButton } from '@/components/market/favorite-button'
-import FlatMap from '@/components/flats/flat-map-dynamic'
+import { ShareButton } from '@/features/market/components/share-button'
+import { ReportButton } from '@/features/market/components/report-button'
+import { FavoriteButton } from '@/features/market/components/favorite-button'
+import FlatMap from '@/features/flats/components/flat-map-dynamic'
 
 function FlatDetailContent() {
     const searchParams = useSearchParams()

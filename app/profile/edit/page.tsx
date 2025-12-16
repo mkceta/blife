@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { compressAvatar } from '@/lib/upload'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,7 +17,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
-import { NotificationPermission } from '@/components/notifications/notification-permission'
+import { NotificationPermission } from '@/features/notifications/components/notification-permission'
 
 const formSchema = z.object({
     bio: z.string().max(200, 'Máximo 200 caracteres').optional(),
@@ -88,9 +88,10 @@ export default function EditProfilePage() {
             router.push('/profile')
             router.refresh()
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
-            toast.error(error.message || 'Error al actualizar perfil')
+            const errorMessage = error instanceof Error ? error.message : 'Error al actualizar perfil'
+            toast.error(errorMessage)
         } finally {
             setIsLoading(false)
         }
@@ -155,7 +156,7 @@ export default function EditProfilePage() {
             setAvatarUrl(publicUrl)
             router.refresh()
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error uploading avatar:', error)
             toast.error('Error al subir la imagen')
             setAvatarUrl(user?.avatar_url || null)
@@ -377,3 +378,4 @@ export default function EditProfilePage() {
         </div>
     )
 }
+

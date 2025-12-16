@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -76,11 +76,12 @@ export default function NewPostPage() {
 
             toast.success('Post publicado')
             // Redirect handled by action
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
             // If redirect, it's not an error in Next logic, but we can't easily distinguish unless we check message or use transition
-            if (error.message !== 'NEXT_REDIRECT') {
-                toast.error(error.message || 'Error al publicar')
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+            if (errorMessage !== 'NEXT_REDIRECT') {
+                toast.error(errorMessage)
                 setIsLoading(false)
             }
         }

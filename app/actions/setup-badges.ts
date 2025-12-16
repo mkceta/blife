@@ -1,6 +1,6 @@
 'use server'
 
-import { createAdminClient } from "@/lib/supabase-admin"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 const BADGES = [
     { code: 'verified_udc', name: 'Verificado UDC', description: 'Cuenta verificada con correo institucional UDC', icon_name: 'ShieldCheck' },

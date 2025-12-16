@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Lambda Error:', error)
         // Return 200 with error property to surface it to client cleanly
         return new Response(
@@ -149,3 +149,4 @@ Deno.serve(async (req) => {
         )
     }
 })
+

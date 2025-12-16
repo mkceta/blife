@@ -1,0 +1,475 @@
+'use client'
+
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Loader2, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { uploadListingImages } from '@/lib/upload'
+import { ImageUpload } from '@/components/ui/image-upload'
+import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog'
+import { StripeConnectModalWrapper as StripeConnectModal } from '@/features/payment/components/stripe-connect-modal-wrapper'
+import { SuccessCelebration } from '@/components/ui/success-celebration'
+import { useQueryClient } from '@tanstack/react-query'
+
+const CATEGORIES = ['Electronica', 'LibrosApuntes', 'Material', 'Ropa', 'Muebles', 'Transporte', 'Servicios', 'Ocio', 'Otros']
+
+import { listingSchema, type ListingSchemaType } from '@/lib/schemas'
+import type { Listing } from '@/lib/types'
+
+// Removed local schema definition
+
+interface ListingFormProps {
+    initialData?: Partial<Listing>
+    listingId?: string
+}
+
+import { useListingImages } from '../hooks/use-listing-images'
+
+// ...
+
+export function ListingForm({ initialData, listingId }: ListingFormProps) {
+    const [isLoading, setIsLoading] = useState(false)
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+    // Extracted Image Logic
+    const {
+        files,
+        existingPhotos,
+        handleFilesChange,
+        removeNewFile,
+        removeExistingPhoto
+    } = useListingImages((initialData?.photos as { url: string }[]) || [])
+
+    // Stripe States
+    const [showStripeInfoDialog, setShowStripeInfoDialog] = useState(false)
+    const [showConnectModal, setShowConnectModal] = useState(false)
+
+    // Celebration state
+    const [showCelebration, setShowCelebration] = useState(false)
+
+    const router = useRouter()
+    const supabase = createClient()
+    const queryClient = useQueryClient()
+
+    const form = useForm<ListingSchemaType>({
+        resolver: zodResolver(listingSchema),
+        defaultValues: {
+            title: initialData?.title || '',
+            description: initialData?.description || '',
+            price: initialData?.price_cents ? (initialData.price_cents / 100).toString() : '',
+            category: initialData?.category || '',
+            brand: initialData?.brand || '',
+            size: initialData?.size || '',
+            condition: initialData?.condition || '',
+        },
+    })
+
+    // Handlers removed - using hook
+
+
+    async function onSubmit(values: z.infer<typeof listingSchema>) {
+        if (files.length === 0 && existingPhotos.length === 0) {
+            toast.error('Añade al menos una foto')
+            return
+        }
+
+        // Clean up optional fields if category is not 'Ropa'
+        if (values.category !== 'Ropa') {
+            values.brand = undefined
+            values.size = undefined
+            values.condition = undefined
+        }
+
+        setIsLoading(true)
+        try {
+            // STRIPE CHECK FOR PAID ITEMS
+            if (Number(values.price) > 0) {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                    const { data: stripeAccount } = await supabase
+                        .from('stripe_accounts')
+                        .select('charges_enabled')
+                        .eq('user_id', user.id)
+                        .single()
+
+                    if (!stripeAccount?.charges_enabled) {
+                        setShowStripeInfoDialog(true)
+                        setIsLoading(false)
+                        return
+                    }
+                }
+            }
+
+            const { createListingAction, updateListingAction, deleteListingAction } = await import('@/app/market/actions')
+
+            const storageId = listingId || crypto.randomUUID()
+
+            // Upload New Images
+            let uploadedPhotos: any[] = []
+            if (files.length > 0) {
+                uploadedPhotos = await uploadListingImages(files, storageId)
+            }
+
+            const finalPhotos = [...existingPhotos, ...uploadedPhotos]
+
+            if (listingId) {
+                // Update
+                await updateListingAction(listingId, values, finalPhotos)
+                // Start refetching instantly so user sees update
+                queryClient.invalidateQueries({ queryKey: ['market-listings'] })
+                toast.success('Anuncio actualizado')
+                router.push(`/market/product?id=${listingId}`)
+            } else {
+                // Create
+                const result = await createListingAction(values, finalPhotos)
+                // Start refetching instantly so user sees update
+                queryClient.invalidateQueries({ queryKey: ['market-listings'] })
+
+                setShowCelebration(true)
+                // Toast will show after celebration
+                setTimeout(() => {
+                    toast.success('¡Anuncio publicado con éxito!')
+                    router.push(`/market/product?id=${result.id}`)
+                }, 2000)
+            }
+
+        } catch (error: any) {
+            console.error(error)
+            toast.error(error.message || 'Error al guardar')
+            setIsLoading(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!listingId) return
+
+        // Optimistic UI: Remove confirmation dialog immediately if open
+        setShowDeleteDialog(false)
+
+        // Show success immediately
+        toast.success('Anuncio eliminado')
+
+        setIsLoading(true)
+
+        // Optimistic Cache Update: Remove from list immediately
+        queryClient.setQueriesData({ queryKey: ['market-listings'] }, (oldData: unknown) => {
+            if (!oldData) return oldData
+            if (Array.isArray(oldData)) {
+                return oldData.filter((item: { id: string }) => item.id !== listingId)
+            }
+            return oldData
+        })
+
+        try {
+            const { deleteListingAction } = await import('@/app/market/actions')
+            await deleteListingAction(listingId)
+            router.push('/market')
+        } catch (error: unknown) {
+            console.error('Error deleting listing:', error)
+            toast.error('Error al eliminar el anuncio')
+            setIsLoading(false)
+            // Revert cache if error
+            queryClient.invalidateQueries({ queryKey: ['market-listings'] })
+        }
+    }
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-32 pb-safe">
+
+                {/* Visual Section: Photos */}
+                <div className="space-y-4">
+                    <ImageUpload
+                        value={files}
+                        onChange={handleFilesChange}
+                        onRemove={removeNewFile}
+                        maxFiles={20}
+                        existingImages={existingPhotos.map(p => p.url)}
+                        onRemoveExisting={removeExistingPhoto}
+                    />
+                </div>
+
+                {/* Details Section */}
+                <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border/50">
+                    <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col p-4">
+                                <FormLabel className="text-base font-normal text-muted-foreground mb-1">Título</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Indica claramente qué vendes"
+                                        className="border-none bg-transparent p-0 h-auto text-base placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col p-4 pt-2">
+                                <FormLabel className="text-base font-normal text-muted-foreground mb-1">Describe tu artículo</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        placeholder="Añade información detallada"
+                                        className="min-h-[120px] border-none bg-transparent p-0 resize-none text-base placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                {/* Categorization Section */}
+                <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border/50">
+                    <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                            <FormItem className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                                <FormLabel className="text-base font-normal text-muted-foreground cursor-pointer flex-1">Categoría</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className="w-[180px] border-none bg-transparent shadow-none p-0 h-auto justify-end focus:ring-0 text-right text-base font-medium">
+                                            <SelectValue placeholder="Seleccionar" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent align="end">
+                                        {CATEGORIES.map((cat) => (
+                                            <SelectItem key={cat} value={cat}>
+                                                {cat}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground ml-2" />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                {/* Conditional Fields for 'Ropa' */}
+                {form.watch('category') === 'Ropa' && (
+                    <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border/50 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <FormField
+                            control={form.control}
+                            name="brand"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col p-4">
+                                    <FormLabel className="text-base font-normal text-muted-foreground mb-1">Marca</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Ej. Zara, Nike..."
+                                            className="border-none bg-transparent p-0 h-auto text-base placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="size"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4">
+                                    <FormLabel className="text-base font-normal text-muted-foreground flex-1">Talla</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Ej. M, 38..."
+                                            className="w-32 text-right border-none bg-transparent p-0 h-auto text-base placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="condition"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                                    <FormLabel className="text-base font-normal text-muted-foreground cursor-pointer flex-1">Estado</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger className="w-[180px] border-none bg-transparent shadow-none p-0 h-auto justify-end focus:ring-0 text-right text-base font-medium">
+                                                <SelectValue placeholder="Seleccionar" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent align="end">
+                                            {['Nuevo con etiquetas', 'Nuevo sin etiquetas', 'Muy bueno', 'Bueno', 'Satisfactorio'].map((cond) => (
+                                                <SelectItem key={cond} value={cond}>
+                                                    {cond}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <ChevronRight className="h-5 w-5 text-muted-foreground ml-2" />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                )}
+
+                {/* Price Section */}
+                <div className="bg-card rounded-xl border overflow-hidden divide-y divide-border/50">
+                    <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                            <FormItem className="flex items-center justify-between p-4">
+                                <FormLabel className="text-base font-normal text-muted-foreground flex-1">Precio</FormLabel>
+                                <div className="flex items-center gap-2">
+                                    <FormControl>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            className="w-24 text-right border-none bg-transparent p-0 h-auto text-base font-medium placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <span className="text-base font-medium">€</span>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                {/* Submit Actions */}
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t pb-[calc(1rem+env(safe-area-inset-bottom))] z-[60]">
+                    <div className="container max-w-md mx-auto">
+                        <Button type="submit" className="w-full h-12 text-base font-semibold rounded-xl shadow-lg shadow-primary/20" disabled={isLoading}>
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    {listingId ? 'Guardando...' : 'Publicando...'}
+                                </>
+                            ) : (
+                                listingId ? 'Guardar Cambios' : 'Publicar Anuncio'
+                            )}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Delete Button (if editing) */}
+                {listingId && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setShowDeleteDialog(true)}
+                        disabled={isLoading}
+                    >
+                        Eliminar anuncio
+                    </Button>
+                )}
+
+                <DeleteConfirmationDialog
+                    open={showDeleteDialog}
+                    onOpenChange={setShowDeleteDialog}
+                    title={form.getValues('title')}
+                    itemType="anuncio"
+                    onConfirm={handleDelete}
+                />
+            </form>
+
+            <Dialog open={showStripeInfoDialog} onOpenChange={setShowStripeInfoDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Recibir pagos</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <p className="text-muted-foreground text-sm">
+                            Para poder vender artículos y recibir el dinero, necesitamos que conectes tu cuenta bancaria. Solo te llevará un minuto.
+                        </p>
+                        <div className="flex justify-end gap-2 text-sm text-foreground bg-muted p-2 rounded">
+                            <span>🔒 Tus datos están protegidos por Stripe</span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <Button
+                            onClick={() => {
+                                setShowStripeInfoDialog(false)
+                                setShowConnectModal(true)
+                            }}
+                            className="w-full"
+                        >
+                            Configurar cuenta bancaria
+                        </Button>
+                        <Button variant="ghost" onClick={() => setShowStripeInfoDialog(false)} className="w-full">
+                            Cancelar
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <StripeConnectModal
+                open={showConnectModal}
+                onOpenChange={setShowConnectModal}
+                onExit={async () => {
+                    setShowConnectModal(false)
+                    setIsLoading(true)
+                    // Poll for verification for up to 10 seconds
+                    let verified = false
+                    for (let i = 0; i < 10; i++) {
+                        // Force check with Stripe directly via Edge Function to bypass Webhook latency
+                        const { data: status, error } = await supabase.functions.invoke('stripe-status')
+
+                        if (!error && status?.charges_enabled) {
+                            verified = true
+                            break
+                        }
+                        await new Promise(r => setTimeout(r, 1000))
+                    }
+                    setIsLoading(false)
+
+                    if (verified) {
+                        toast.success('Cuenta verificada correctamente')
+                        // Auto-submit form
+                        form.handleSubmit(onSubmit)()
+                    } else {
+                        toast.error('No se ha podido verificar la cuenta. Inténtalo de nuevo en unos segundos.')
+                    }
+                }}
+            />
+
+            {/* Success Celebration */}
+            <SuccessCelebration
+                show={showCelebration}
+                title="¡Publicado!"
+                description="Tu anuncio ya está visible para todos"
+                type="default"
+                confettiType="default"
+                duration={3000}
+                onComplete={() => setShowCelebration(false)}
+            />
+        </Form>
+    )
+}
+
+

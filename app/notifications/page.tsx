@@ -1,19 +1,11 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-
+/**
+ * Notifications Page - Server Component (Redirect)
+ * 
+ * Redirects to unified inbox with notifications tab
+ */
 export default function NotificationsPage() {
-    const router = useRouter()
-
-    useEffect(() => {
-        // Redirect to unified inbox
-        router.replace('/messages?tab=notifications')
-    }, [router])
-
-    return (
-        <div className="flex bg-background h-screen items-center justify-center">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-        </div>
-    )
+    // Server-side redirect (more efficient than client-side)
+    redirect('/messages?tab=notifications')
 }

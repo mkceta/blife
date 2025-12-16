@@ -1,8 +1,5 @@
-'use client'
-
-import { useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { Search, Camera, Home, Shirt, User, Baby, Lamp, Smartphone, Book, Coins, Trophy, ChevronRight, Car, Briefcase, Package, Pencil } from 'lucide-react'
+import { Search, Home, Shirt, Smartphone, Book, Briefcase, Trophy, Package, Pencil } from 'lucide-react'
 import Link from 'next/link'
 
 const CATEGORIES = [
@@ -16,6 +13,12 @@ const CATEGORIES = [
     { id: 'Otros', label: 'Otros', icon: Package, color: 'text-primary' },
 ]
 
+/**
+ * Search Page - Server Component
+ * 
+ * Static page for browsing categories
+ * Input is client-side but categories are static
+ */
 export default function SearchPage() {
     return (
         <div className="min-h-screen bg-background pb-20">

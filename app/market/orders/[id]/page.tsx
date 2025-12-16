@@ -1,5 +1,5 @@
 
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { formatCurrency } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import Image from 'next/image'
 export const dynamic = 'force-dynamic'
 
 export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

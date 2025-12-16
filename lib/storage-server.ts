@@ -1,5 +1,5 @@
 
-import { createClient } from '@/lib/supabase-server'
+import { createServerClient } from '@/lib/supabase/server'
 
 /**
  * Deletes all files within a folder recursively (simulated by listing).
@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase-server'
  * We must list files and delete them.
  */
 export async function deleteFolder(bucket: string, folderPath: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     try {
         // List all files in the folder
