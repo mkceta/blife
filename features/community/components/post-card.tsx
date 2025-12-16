@@ -16,7 +16,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useQueryClient, InfiniteData } from '@tanstack/react-query'
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { SimpleAlertDialog } from '@/components/shared/simple-alert-dialog'
 import type { Post, User } from '@/lib/types'
 

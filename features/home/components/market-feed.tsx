@@ -177,8 +177,8 @@ export function MarketFeed({
             <div
                 ref={parentRef}
                 // FIXED: Valid height for virtualization (was min-h before, breaking virtualizer)
-                className="h-[calc(100dvh-120px)] bg-transparent overflow-y-auto no-scrollbar"
-                style={{ height: 'calc(100dvh - 120px)' }}
+                className="h-[calc(100vh-120px)] bg-transparent overflow-y-auto no-scrollbar"
+                style={{ height: 'calc(100vh - 120px)' }}
             >
                 <div
                     style={{
