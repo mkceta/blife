@@ -30,7 +30,17 @@ import { cookies } from 'next/headers'
  * Do NOT use in client components - use client.ts instead
  */
 export const createServerClient = async () => {
-    const cookieStore = await cookies()
+    let cookieStore
+    try {
+        cookieStore = await cookies()
+    } catch (e) {
+        // Fallback for when cookies() is not available (e.g. static generation)
+        // We can't really return a functional client in this case if it depends on cookies,
+        // but we can return a dummy one or re-throw.
+        // Given the error is "Server Components render", let's re-throw but log it.
+        console.error('Error in createServerClient accessing cookies:', e)
+        throw e
+    }
 
     return createSupabaseServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,

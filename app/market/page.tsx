@@ -36,20 +36,26 @@ export default async function MarketPage({
 
     // Check for auth cookie BEFORE creating supabase client
     // This saves ~100ms if user is not logged in
-    const cookieStore = await cookies()
-    const hasAuthCookie = cookieStore.getAll().some(c => c.name.includes('auth'))
-
     let userId: string | undefined
     let favorites: string[] = []
 
-    // Only check auth if cookie exists
-    if (hasAuthCookie) {
-        const supabase = await createServerClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        userId = user?.id
-        if (userId) {
-            favorites = await getUserFavorites(userId)
+    try {
+        // Check for auth cookie BEFORE creating supabase client
+        // This saves ~100ms if user is not logged in
+        const cookieStore = await cookies()
+        const hasAuthCookie = cookieStore.getAll().some(c => c.name.includes('auth'))
+
+        // Only check auth if cookie exists
+        if (hasAuthCookie) {
+            const supabase = await createServerClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            userId = user?.id
+            if (userId) {
+                favorites = await getUserFavorites(userId)
+            }
         }
+    } catch (e) {
+        console.error('Error in MarketPage auth check:', e)
     }
 
     // Fetch public data in parallel (always) with error handling

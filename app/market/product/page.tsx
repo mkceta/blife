@@ -27,16 +27,21 @@ export default async function ListingDetailPage({ searchParams }: PageProps) {
     // We check cookie first to avoid auth call for anon users (perf optimization)
 
     // Check for auth cookie BEFORE creating supabase client
-    const cookieStore = await cookies()
-    const hasAuthCookie = cookieStore.getAll().some(c => c.name.includes('auth'))
-
+    // Check for auth cookie BEFORE creating supabase client
     let currentUserId: string | undefined
+    try {
+        const cookieStore = await cookies()
+        const hasAuthCookie = cookieStore.getAll().some(c => c.name.includes('auth'))
 
-    // Only check auth if cookie exists
-    if (hasAuthCookie) {
-        const supabase = await createServerClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        currentUserId = user?.id
+        // Only check auth if cookie exists
+        if (hasAuthCookie) {
+            const supabase = await createServerClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            currentUserId = user?.id
+        }
+    } catch (authError) {
+        console.error('Error checking auth state in product page:', authError)
+        // Continue as anonymous if auth fails
     }
 
     // Fetch listing with Edge Cache

@@ -11,15 +11,18 @@ import { createServerClient } from '@/lib/supabase/server'
  * @performance No loading spinner shown to user - instant redirect
  */
 export default async function RootPage() {
-  const supabase = await createServerClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  try {
+    const supabase = await createServerClient()
+    const { data: { session } } = await supabase.auth.getSession()
 
-  if (session) {
-    // User is authenticated, redirect to market
-    redirect('/market')
-  } else {
-    // User is not authenticated, redirect to landing
-    redirect('/landing')
+    if (session) {
+      redirect('/market')
+    }
+  } catch (error) {
+    console.error('RootPage Error:', error)
+    // Fallback to landing if anything fails
   }
+
+  redirect('/landing')
 }
 
