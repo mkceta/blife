@@ -10,24 +10,33 @@ import { getMyProfileFullData } from '@/lib/services/profile.service'
  * Uses Service Layer for data fetching
  */
 export default async function ProfilePage() {
-    const supabase = await createServerClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    let user: any = null
+    let profileData: any = { profile: null, activeListings: [], soldListings: [], flats: [] }
 
-    if (authError || !user) {
+    try {
+        const supabase = await createServerClient()
+        const { data, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !data.user) {
+            redirect('/auth/login?redirectTo=/profile')
+        }
+
+        user = data.user
+        profileData = await getMyProfileFullData(user.id)
+    } catch (error) {
+        console.error('ProfilePage error:', error)
+        // Redirect to login on any error
         redirect('/auth/login?redirectTo=/profile')
     }
-
-    // Use Service Layer - Cleaner, testable, and robust
-    const { profile, activeListings, soldListings, flats } = await getMyProfileFullData(user.id)
 
     return (
         <Suspense fallback={<div className="min-h-screen bg-background" />}>
             <ProfileContent
-                initialProfile={profile}
-                initialActiveListings={activeListings}
-                initialSoldListings={soldListings}
-                initialFlats={flats}
-                userId={user.id}
+                initialProfile={profileData.profile}
+                initialActiveListings={profileData.activeListings}
+                initialSoldListings={profileData.soldListings}
+                initialFlats={profileData.flats}
+                userId={user!.id}
             />
         </Suspense>
     )
