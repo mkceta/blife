@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.blife.app",
+            "sha256_cert_fingerprints": [
+                "3C:F2:6C:59:33:FB:A8:83:10:CA:B2:F5:D7:54:E7:A4:13:FA:3D:C8:03:9D:CC:6F:19:2A:E0:7E:23:83:FF:07"
+            ]
+        }
+    }
+]

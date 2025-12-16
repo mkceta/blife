@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'BLife',
   webDir: 'out',
   server: {
-    url: 'https://blife-udc.vercel.app',
+    url: 'https://b-life.app',
     cleartext: true
   },
   android: {
@@ -26,6 +26,10 @@ const config: CapacitorConfig = {
       androidScaleType: "FIT_CENTER",
       splashFullScreen: true,
       splashImmersive: true,
+    },
+    StatusBar: {
+      style: "DARK",
+      backgroundColor: "#000000",
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],

@@ -14,6 +14,8 @@ import { NotificationHandler } from '@/components/shared/notification-handler'
 import Providers from '@/app/providers'
 import { RoutePrefetcher } from '@/components/shared/route-prefetcher'
 import { MainTransition } from '@/components/shared/main-transition'
+import { CapacitorInitializer } from '@/components/shared/capacitor-initializer'
+import { OfflineBanner } from '@/components/shared/offline-banner'
 
 const inter = Inter({ subsets: ['latin'] })
 export const openSans = Open_Sans({
@@ -57,10 +59,12 @@ export default function RootLayout({
             themes={['light', 'dark', 'midnight', 'gold']}
           >
             <PresenceUpdater />
+            <CapacitorInitializer />
             <PwaRegister />
             <BackButtonHandler />
             <NotificationHandler />
             <RoutePrefetcher />
+            <OfflineBanner />
             <Suspense fallback={<div className="h-16" />}>
               <DesktopHeader />
             </Suspense>
