@@ -40,7 +40,12 @@ export default async function ListingDetailPage({ searchParams }: PageProps) {
     }
 
     // Fetch listing with Edge Cache
-    const listing = await getListingById(id)
+    let listing = null
+    try {
+        listing = await getListingById(id)
+    } catch (error) {
+        console.error('Error fetching listing details:', error)
+    }
 
     if (!listing) {
         notFound()

@@ -52,11 +52,21 @@ export default async function MarketPage({
         }
     }
 
-    // Fetch public data in parallel (always)
-    const [listings, averageLikes] = await Promise.all([
-        getMarketListingsCached(filters),
-        getAverageLikes(),
-    ])
+    // Fetch public data in parallel (always) with error handling
+    let listings: any[] = []
+    let averageLikes = 0
+
+    try {
+        const [fetchedListings, fetchedLikes] = await Promise.all([
+            getMarketListingsCached(filters),
+            getAverageLikes(),
+        ])
+        listings = fetchedListings
+        averageLikes = fetchedLikes
+    } catch (error) {
+        console.error('Error in MarketPage data fetch:', error)
+        // Fallback to empty states to prevent page crash
+    }
 
     return (
         <ProductFeedLayout>
