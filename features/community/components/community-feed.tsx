@@ -69,6 +69,8 @@ export function CommunityFeed({
         },
         initialData: initialDataConfig,
         staleTime: 1000 * 60 * 5, // 5 minutes
+        // Crucial: Always refetch on mount if no initial data
+        refetchOnMount: !initialDataConfig ? 'always' : false,
     })
 
     // 2. Fetch Polls (Standard Query - Top 20)

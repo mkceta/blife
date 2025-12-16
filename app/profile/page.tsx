@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { ProfileContent } from './profile-content'
+import { ProfileSkeleton } from '@/features/profile/components/profile-skeleton'
 import { getMyProfileFullData } from '@/lib/services/profile.service'
 
 /**
@@ -30,7 +31,7 @@ export default async function ProfilePage() {
     }
 
     return (
-        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <Suspense fallback={<ProfileSkeleton />}>
             <ProfileContent
                 initialProfile={profileData.profile}
                 initialActiveListings={profileData.activeListings}

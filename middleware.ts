@@ -23,15 +23,19 @@ const AUTH_ROUTES = [
     '/auth/verify',
 ]
 
+// Routes that need auth-based redirects
+const CONDITIONAL_ROUTES = ['/', '/landing']
+
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
-    // Check if this route needs auth verification
+    // Check route types
     const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route))
     const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
+    const isConditionalRoute = CONDITIONAL_ROUTES.includes(pathname)
 
     // Skip auth check entirely for public routes (saves ~100ms per request!)
-    if (!isProtectedRoute && !isAuthRoute) {
+    if (!isProtectedRoute && !isAuthRoute && !isConditionalRoute) {
         return NextResponse.next()
     }
 
@@ -61,8 +65,21 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // Get user (only for protected/auth routes now)
+    // Get user (only for protected/auth/conditional routes now)
     const { data: { user } } = await supabase.auth.getUser()
+
+    // Handle conditional routes (/, /landing)
+    if (isConditionalRoute) {
+        if (user) {
+            // Logged in users should go to market, not landing
+            return NextResponse.redirect(new URL('/market', request.url))
+        } else if (pathname === '/') {
+            // Non-logged users at root should see landing
+            return NextResponse.redirect(new URL('/landing', request.url))
+        }
+        // Non-logged users at /landing just see the page
+        return response
+    }
 
     // Redirect to login if accessing protected route without auth
     if (isProtectedRoute && !user) {

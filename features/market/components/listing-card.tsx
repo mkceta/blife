@@ -100,7 +100,7 @@ export const ListingCard = memo(function ListingCard({
     return (
         <div className="group relative flex flex-col gap-2 bg-transparent hover:bg-muted/10 p-2 rounded-xl transition-all duration-300 active:scale-[0.98]">
             {/* Image Container - Premium Shader Effect */}
-            <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted/20 shadow-sm group-hover:shadow-md transition-shadow duration-300">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800 shadow-sm group-hover:shadow-md transition-shadow duration-300">
                 <Link href={`/market/product?id=${listing.id}`} className="absolute inset-0 z-10">
                     <span className="sr-only">Ver {listing.title}</span>
                 </Link>
@@ -113,10 +113,12 @@ export const ListingCard = memo(function ListingCard({
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                         priority={priority}
+                        placeholder="blur"
+                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBEQCEAwEPwAB//9k="
                     />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                        <Package className="h-10 w-10 opacity-20" />
+                    <div className="flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-700">
+                        <Package className="h-10 w-10 text-neutral-400 dark:text-neutral-500" />
                     </div>
                 )}
 

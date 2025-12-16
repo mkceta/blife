@@ -93,12 +93,15 @@ export function MarketFeed({
             // If last page has fewer than limit items, we reached the end
             return lastPage.length === 20 ? allPages.length + 1 : undefined
         },
-        // We use initialListings only for the first page if provided
-        initialData: (initialListings.length > 0 && !filters.q && !filters.category) ? {
+        // Always provide initialData if we have server data, regardless of filters
+        // This prevents blank screens when server cache fails
+        initialData: initialListings.length > 0 ? {
             pages: [initialListings],
             pageParams: [1]
         } : undefined,
         staleTime: 1000 * 60 * 5, // 5 minutes cache
+        // Crucial: Always refetch on mount if no initial data
+        refetchOnMount: initialListings.length === 0 ? 'always' : false,
     })
 
     // Flatten pages into a single array
@@ -157,7 +160,8 @@ export function MarketFeed({
 
 
     // Show skeleton initially if no data
-    if ((!data && isPending) && initialListings.length === 0) return <FeedSkeleton />
+    // Show skeleton if loading and no data available yet (neither initial nor cached)
+    if (isPending && listings.length === 0) return <FeedSkeleton />
 
     // Show empty state
     if (filteredListings.length === 0 && !isPending) {
@@ -227,13 +231,8 @@ export function MarketFeed({
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-4 gap-x-3 px-3 py-2">
                                     {rowListings.map((listing: Listing, colIndex: number) => {
                                         const index = startIndex + colIndex
-                                        const delay = (colIndex % columnCount) * 50
                                         return (
-                                            <div
-                                                key={listing.id}
-                                                className="animate-in fade-in zoom-in-95 duration-500 fill-mode-both"
-                                                style={{ animationDelay: `${delay}ms` }}
-                                            >
+                                            <div key={listing.id}>
                                                 <ListingCard
                                                     listing={listing}
                                                     currentUserId={actualCurrentUserId}

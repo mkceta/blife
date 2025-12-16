@@ -1,28 +1,17 @@
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@/lib/supabase/server'
 
 /**
- * Root page - handles automatic routing based on authentication status
+ * Root page - Fallback redirect
  * 
- * Server Component that performs instant server-side redirect:
- * - Authenticated users → /market
- * - Unauthenticated users → /landing
+ * The actual auth-based redirect happens in middleware.ts for better performance.
+ * This page only runs if middleware somehow doesn't redirect (edge case).
  * 
- * @performance No loading spinner shown to user - instant redirect
+ * Flow:
+ * - User visits "/" → Middleware checks auth
+ *   - If logged in → redirect to /market
+ *   - If not logged in → redirect to /landing
  */
-export default async function RootPage() {
-  try {
-    const supabase = await createServerClient()
-    const { data: { session } } = await supabase.auth.getSession()
-
-    if (session) {
-      redirect('/market')
-    }
-  } catch (error) {
-    console.error('RootPage Error:', error)
-    // Fallback to landing if anything fails
-  }
-
+export default function RootPage() {
+  // Fallback: redirect to landing (middleware should have already handled this)
   redirect('/landing')
 }
-
