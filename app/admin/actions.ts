@@ -17,11 +17,11 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createServerClie
     // Verify admin role from database
     const { data: profile, error } = await supabase
         .from('users')
-        .select('is_admin')
+        .select('role')
         .eq('id', user.id)
         .single()
 
-    if (error || !profile?.is_admin) {
+    if (error || profile?.role !== 'admin') {
         throw new Error('No autorizado: se requiere rol de administrador')
     }
 
