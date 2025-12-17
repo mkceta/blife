@@ -16,7 +16,11 @@ import { AnimatedBackground } from '@/components/ui/animated-background'
 import { Eye, EyeOff } from 'lucide-react'
 
 const formSchema = z.object({
-    password: z.string().min(6, 'Mínimo 6 caracteres'),
+    password: z.string()
+        .min(8, 'Mínimo 8 caracteres')
+        .regex(/[a-z]/, 'Debe contener al menos una minúscula')
+        .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
+        .regex(/[0-9]/, 'Debe contener al menos un número'),
     confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
@@ -41,25 +45,58 @@ export default function ResetPasswordPage() {
     })
 
     useEffect(() => {
+        let cleanup: (() => void) | undefined
+
         // Check if user has a valid session (should have been set by callback)
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession()
 
             if (session) {
-                console.log('[Reset Password] Session found, showing form')
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('[Reset Password] Session found, showing form')
+                }
                 setHasSession(true)
                 setIsChecking(false)
             } else {
-                console.log('[Reset Password] No session found')
-                toast.error('Enlace inválido o expirado. Solicita uno nuevo.')
-                router.push('/auth/forgot-password?error=invalid_link')
+                // Wait for potential auth state change instead of using arbitrary delay
+                const { data: { subscription } } = supabase.auth.onAuthStateChange(
+                    (_event: string, newSession: unknown) => {
+                        if (newSession) {
+                            if (process.env.NODE_ENV === 'development') {
+                                console.log('[Reset Password] Session established via auth change')
+                            }
+                            setHasSession(true)
+                            setIsChecking(false)
+                            subscription.unsubscribe()
+                        }
+                    }
+                )
+
+                // Timeout fallback - redirect if no session after 3 seconds
+                const timeout = setTimeout(() => {
+                    subscription.unsubscribe()
+                    if (!hasSession) {
+                        if (process.env.NODE_ENV === 'development') {
+                            console.log('[Reset Password] No session found after timeout')
+                        }
+                        toast.error('Enlace inválido o expirado. Solicita uno nuevo.')
+                        router.push('/auth/forgot-password?error=invalid_link')
+                    }
+                }, 3000)
+
+                cleanup = () => {
+                    clearTimeout(timeout)
+                    subscription.unsubscribe()
+                }
             }
         }
 
-        // Small delay to ensure session is fully established after redirect
-        const timer = setTimeout(checkSession, 300)
-        return () => clearTimeout(timer)
-    }, [router, supabase.auth])
+        checkSession()
+
+        return () => {
+            if (cleanup) cleanup()
+        }
+    }, [router, supabase.auth, hasSession])
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)

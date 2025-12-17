@@ -9,6 +9,22 @@ import type { User, Listing, Flat } from '@/lib/types'
  * Implements Edge Caching for public data
  */
 
+/**
+ * Safe user fields that can be exposed publicly.
+ * Use allowlist instead of denylist to prevent accidental exposure of new sensitive fields.
+ */
+const SAFE_PUBLIC_USER_FIELDS = [
+    'id',
+    'alias_inst',
+    'alias_custom',
+    'avatar_url',
+    'bio',
+    'uni',
+    'stripe_connected',
+    'is_banned',
+    'created_at',
+] as const
+
 export const getProfileByUsername = unstable_cache(
     async (username: string) => {
         const supabase = createAdminClient()
@@ -32,18 +48,20 @@ export const getProfileByUsername = unstable_cache(
             return null
         }
 
-        // Sanitize sensitive data since we are using Admin Client
+        // SECURITY: Use allowlist pattern to sanitize data - only include explicitly safe fields
         if (data) {
-            const unsafe = data as any
-            delete unsafe.email
-            delete unsafe.phone
-            delete unsafe.billing_address
-            delete unsafe.metadata
+            const sanitizedUser: Record<string, unknown> = {}
+            for (const field of SAFE_PUBLIC_USER_FIELDS) {
+                if ((data as Record<string, unknown>)[field] !== undefined) {
+                    sanitizedUser[field] = (data as Record<string, unknown>)[field]
+                }
+            }
+            return sanitizedUser as unknown as User
         }
 
-        return data as unknown as User
+        return null
     },
-    ['profile-by-username-v4'],
+    ['profile-by-username-v5'],
     {
         revalidate: 300, // Cache for 5 minutes
         tags: ['profile'],

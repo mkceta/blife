@@ -1,20 +1,27 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { validateRedirectUrl } from '@/lib/auth-utils'
 
 export async function GET(request: Request) {
     const requestUrl = new URL(request.url)
     const code = requestUrl.searchParams.get('code')
-    const next = requestUrl.searchParams.get('next') ?? '/market'
+    // SECURITY: Validate redirect URL to prevent open redirect attacks
+    const next = validateRedirectUrl(requestUrl.searchParams.get('next'))
     const error = requestUrl.searchParams.get('error')
     const errorCode = requestUrl.searchParams.get('error_code')
     const errorDescription = requestUrl.searchParams.get('error_description')
 
-    console.log('[Auth Confirm] Received:', { code: !!code, next, error, errorCode })
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+        console.log('[Auth Confirm] Received:', { code: !!code, next, error, errorCode })
+    }
 
     // Handle errors from Supabase
     if (error) {
-        console.error('[Auth Confirm] Error:', error, errorCode, errorDescription)
+        if (process.env.NODE_ENV === 'development') {
+            console.error('[Auth Confirm] Error:', error, errorCode, errorDescription)
+        }
 
         if (errorCode === 'otp_expired') {
             return NextResponse.redirect(new URL('/auth/forgot-password?error=expired', requestUrl.origin))
@@ -51,13 +58,17 @@ export async function GET(request: Request) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
         if (exchangeError) {
-            console.error('[Auth Confirm] Exchange error:', exchangeError)
+            if (process.env.NODE_ENV === 'development') {
+                console.error('[Auth Confirm] Exchange error:', exchangeError)
+            }
             return NextResponse.redirect(new URL('/auth/forgot-password?error=invalid_link', requestUrl.origin))
         }
 
-        console.log('[Auth Confirm] Code exchanged successfully, redirecting to:', next)
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[Auth Confirm] Code exchanged successfully, redirecting to:', next)
+        }
 
-        // For password reset, redirect to reset-password page
+        // For password reset, redirect to reset-password page (next is already validated)
         if (next.includes('reset-password')) {
             return NextResponse.redirect(new URL('/auth/reset-password', requestUrl.origin))
         }
@@ -66,6 +77,8 @@ export async function GET(request: Request) {
     }
 
     // No code - redirect to home
-    console.log('[Auth Confirm] No code found, redirecting to home')
+    if (process.env.NODE_ENV === 'development') {
+        console.log('[Auth Confirm] No code found, redirecting to home')
+    }
     return NextResponse.redirect(new URL('/', requestUrl.origin))
 }

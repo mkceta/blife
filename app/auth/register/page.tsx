@@ -21,7 +21,11 @@ const formSchema = z.object({
     email: z.string().email().refine((val) => val.endsWith('@udc.es') || val.endsWith('@udc.gal'), {
         message: 'Solo se permiten correos @udc.es o @udc.gal',
     }),
-    password: z.string().min(6, 'Mínimo 6 caracteres'),
+    password: z.string()
+        .min(8, 'Mínimo 8 caracteres')
+        .regex(/[a-z]/, 'Debe contener al menos una minúscula')
+        .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
+        .regex(/[0-9]/, 'Debe contener al menos un número'),
     confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",

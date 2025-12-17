@@ -3,6 +3,7 @@
 import { useEffect, Suspense, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { validateRedirectUrl, authLog, authError } from '@/lib/auth-utils'
 
 const TIMEOUT_MS = 15000 // 15 second timeout
 
@@ -24,7 +25,7 @@ function AuthCallbackContent() {
         // Timeout fallback - redirect to home if nothing happens
         const timeout = setTimeout(() => {
             if (hasRedirected.current) return
-            console.warn('[Auth Callback] Timeout reached, redirecting to home')
+            authLog('[Auth Callback]', 'Timeout reached, redirecting to home')
             setStatus('error')
             setErrorMessage('La operación ha tardado demasiado. Inténtalo de nuevo.')
             setTimeout(() => router.push('/'), 2000)
@@ -32,11 +33,11 @@ function AuthCallbackContent() {
 
         // Handle auth state changes (this catches PASSWORD_RECOVERY from hash)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: unknown) => {
-            console.log('[Auth Callback] Auth state change:', event, !!session)
+            authLog('[Auth Callback]', 'Auth state change:', event, !!session)
 
             // Prevent multiple redirects
             if (hasRedirected.current) {
-                console.log('[Auth Callback] Already redirected, ignoring event:', event)
+                authLog('[Auth Callback]', 'Already redirected, ignoring event:', event)
                 return
             }
 
@@ -44,7 +45,7 @@ function AuthCallbackContent() {
             if (event === 'PASSWORD_RECOVERY') {
                 hasRedirected.current = true
                 clearTimeout(timeout)
-                console.log('[Auth Callback] PASSWORD_RECOVERY event - redirecting to reset-password')
+                authLog('[Auth Callback]', 'PASSWORD_RECOVERY event - redirecting to reset-password')
                 setStatus('success')
                 router.push('/auth/reset-password')
                 return
@@ -57,9 +58,10 @@ function AuthCallbackContent() {
                     if (hasRedirected.current) return
                     hasRedirected.current = true
                     clearTimeout(timeout)
-                    console.log('[Auth Callback] SIGNED_IN event - redirecting')
+                    authLog('[Auth Callback]', 'SIGNED_IN event - redirecting')
                     setStatus('success')
-                    const next = searchParams.get('next') || '/market'
+                    // SECURITY: Validate redirect URL to prevent open redirect attacks
+                    const next = validateRedirectUrl(searchParams.get('next'))
                     router.push(next)
                 }, 100)
                 return
@@ -72,9 +74,10 @@ function AuthCallbackContent() {
             const error = searchParams.get('error')
             const errorCode = searchParams.get('error_code')
             const errorDescription = searchParams.get('error_description')
-            const next = searchParams.get('next') || '/market'
+            // SECURITY: Validate redirect URL to prevent open redirect attacks
+            const next = validateRedirectUrl(searchParams.get('next'))
 
-            console.log('[Auth Callback] Processing:', {
+            authLog('[Auth Callback]', 'Processing:', {
                 hasCode: !!code,
                 hasError: !!error,
                 hasHash: !!window.location.hash,
@@ -84,7 +87,7 @@ function AuthCallbackContent() {
             // Handle explicit errors from Supabase
             if (error) {
                 clearTimeout(timeout)
-                console.error('[Auth Callback] Error from Supabase:', errorCode, errorDescription)
+                authError('[Auth Callback]', 'Error from Supabase:', errorCode, errorDescription)
 
                 setStatus('error')
 
@@ -100,12 +103,12 @@ function AuthCallbackContent() {
 
             // Handle code exchange (email confirmation, magic links)
             if (code) {
-                console.log('[Auth Callback] Exchanging code for session...')
+                authLog('[Auth Callback]', 'Exchanging code for session...')
                 const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
                 if (exchangeError) {
                     clearTimeout(timeout)
-                    console.error('[Auth Callback] Exchange error:', exchangeError)
+                    authError('[Auth Callback]', 'Exchange error:', exchangeError)
                     setStatus('error')
                     setErrorMessage('Error al verificar. El enlace puede haber caducado.')
                     setTimeout(() => router.push('/auth/login?error=verification_failed'), 2000)
@@ -113,14 +116,14 @@ function AuthCallbackContent() {
                 }
 
                 // Exchange successful - the onAuthStateChange will handle redirect
-                console.log('[Auth Callback] Code exchanged successfully, waiting for auth event...')
+                authLog('[Auth Callback]', 'Code exchanged successfully, waiting for auth event...')
                 return
             }
 
             // If there's a hash, Supabase SDK should process it automatically
             // The onAuthStateChange listener will catch the result
             if (window.location.hash && window.location.hash.includes('access_token')) {
-                console.log('[Auth Callback] Hash detected, waiting for SDK to process...')
+                authLog('[Auth Callback]', 'Hash detected, waiting for SDK to process...')
                 // Give Supabase SDK time to process the hash
                 return
             }
@@ -129,7 +132,7 @@ function AuthCallbackContent() {
             const { data: { session } } = await supabase.auth.getSession()
             if (session) {
                 clearTimeout(timeout)
-                console.log('[Auth Callback] Existing session found, redirecting...')
+                authLog('[Auth Callback]', 'Existing session found, redirecting...')
                 setStatus('success')
 
                 // Check if this is a recovery redirect
@@ -142,7 +145,7 @@ function AuthCallbackContent() {
             }
 
             // Nothing to process - this shouldn't happen normally
-            console.warn('[Auth Callback] No auth data found')
+            authLog('[Auth Callback]', 'No auth data found')
             // Let the timeout handle it
         }
 
