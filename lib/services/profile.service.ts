@@ -20,6 +20,8 @@ const SAFE_PUBLIC_USER_FIELDS = [
     'avatar_url',
     'bio',
     'uni',
+    'degree',
+    'rating_avg',
     'stripe_connected',
     'is_banned',
     'created_at',
