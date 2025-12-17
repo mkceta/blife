@@ -1,189 +1,351 @@
-
 'use client'
 
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
-import { ArrowRight, ShoppingBag, Home, MessageCircle, Users, Smartphone } from 'lucide-react'
-import { ThemeProvider } from 'next-themes'
+import { ArrowRight, ShoppingBag, Home, MessageCircle, Users } from 'lucide-react'
 
 export default function LandingPage() {
     return (
-        // Force dark theme look for the landing page
-        // overflow-x-hidden prevents horizontal scroll
-        <div className="dark min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 selection:text-white">
+        <div className="min-h-screen bg-black text-white">
 
-            {/* Background Gradients & Floating Elements */}
-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full opacity-50 animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 blur-[120px] rounded-full opacity-50 animate-pulse" style={{ animationDelay: '1s' }} />
+            {/* Desktop Version */}
+            <div className="hidden md:block">
+                {/* Simple gradient background */}
+                <div className="fixed inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20" />
 
-                {/* Floating decorative elements */}
-                <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDuration: '3s', animationDelay: '0.5s' }} />
-                <div className="absolute top-1/3 left-1/3 w-3 h-3 bg-purple-500/30 rounded-full animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }} />
-                <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-blue-500/30 rounded-full animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1.5s' }} />
-            </div>
+                <div className="relative z-10">
+                    {/* Navbar */}
+                    <nav className="flex items-center justify-between px-12 py-6">
+                        <h1 className="text-3xl font-bold">BLife</h1>
+                        <div className="flex gap-4">
+                            <Link href="/auth/login">
+                                <Button variant="ghost" className="text-gray-400 hover:text-white">
+                                    Iniciar sesión
+                                </Button>
+                            </Link>
+                            <Link href="/auth/register">
+                                <Button className="bg-white text-black hover:bg-gray-200">
+                                    Registrarse
+                                </Button>
+                            </Link>
+                        </div>
+                    </nav>
 
-            {/* Navbar */}
-            <nav className="relative z-50 flex items-center justify-between px-6 py-6 max-w-7xl mx-auto">
-                <Link href="/" className="flex items-center gap-2">
-                    <span className="text-3xl font-bold tracking-tight text-primary" style={{ fontFamily: 'var(--font-open-sans)' }}>BLife</span>
-                </Link>
-                <div className="flex items-center gap-4">
-                    <Link href="/auth/login">
-                        <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                            Iniciar Sesión
-                        </Button>
-                    </Link>
-                    <Link href="/market">
-                        <Button className="font-semibold shadow-glow-primary hover:scale-105 transition-transform">
-                            Entrar a la App
-                        </Button>
-                    </Link>
-                </div>
-            </nav>
+                    {/* Hero Section */}
+                    <div className="max-w-7xl mx-auto px-12 py-20">
+                        <div className="grid lg:grid-cols-2 gap-16 items-center">
 
-            {/* Hero Section */}
-            <main className="relative z-10 pt-12 pb-24 lg:pt-20 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+                            {/* Left - Text */}
+                            <div className="space-y-8">
+                                <div className="space-y-4">
+                                    <h2 className="text-6xl font-bold leading-tight">
+                                        Tu vida universitaria
+                                        <br />
+                                        <span className="text-purple-400">en una app</span>
+                                    </h2>
+                                    <p className="text-xl text-gray-400">
+                                        Compra, vende, encuentra piso y conecta con otros estudiantes de la UDC.
+                                    </p>
+                                </div>
 
-                {/* Text Content */}
-                <div className="flex-1 text-center lg:text-left space-y-8 max-w-2xl mx-auto lg:mx-0">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                    >
+                                <div className="flex gap-4">
+                                    <Link href="/auth/register">
+                                        <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white px-8">
+                                            Empezar ahora
+                                            <ArrowRight className="ml-2 w-5 h-5" />
+                                        </Button>
+                                    </Link>
+                                    <Link href="/market">
+                                        <Button size="lg" variant="outline" className="border-gray-700 text-white hover:bg-gray-900">
+                                            Ver demo
+                                        </Button>
+                                    </Link>
+                                </div>
 
-
-                        <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-                            Tu vida universitaria, <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-blue-500 animate-gradient-x">
-                                Subida de nivel.
-                            </span>
-                        </h1>
-
-                        <p className="text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0">
-                            Compra y vende libros, encuentra el piso perfecto, chatea con compañeros y no te pierdas ni una fiesta. Todo BLife en tu bolsillo.
-                        </p>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
-                    >
-                        <Link href="/market" className="w-full sm:w-auto">
-                            <Button size="lg" className="h-14 px-8 w-full sm:w-auto text-lg rounded-full shadow-glow-primary hover:scale-105 transition-transform gap-2 bg-white text-black hover:bg-white/90">
-                                Ir a BLife Web
-                                <ArrowRight className="h-5 w-5" />
-                            </Button>
-                        </Link>
-
-                        <a href="#" className="w-full sm:w-auto group">
-                            <Button size="lg" variant="outline" className="h-14 px-8 w-full sm:w-auto text-lg rounded-full border-white/20 bg-black/40 backdrop-blur-sm hover:bg-black/60 gap-3 group-hover:border-primary/50 transition-colors">
-                                <Smartphone className="h-5 w-5 group-hover:text-primary transition-colors" />
-                                <span>Descargar App</span>
-                            </Button>
-                        </a>
-                    </motion.div>
-
-                    {/* Feature Pills */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.8, delay: 0.3 }}
-                        className="pt-8 flex flex-wrap justify-center lg:justify-start gap-3"
-                    >
-                        {[
-                            { icon: ShoppingBag, label: "Mercadillo" },
-                            { icon: Home, label: "Pisos" },
-                            { icon: MessageCircle, label: "Chat" },
-                            { icon: Users, label: "Comunidad" },
-                        ].map((feature, i) => (
-                            <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/30 border border-white/5 backdrop-blur-sm">
-                                <feature.icon className="h-4 w-4 text-primary" />
-                                <span className="text-sm font-medium">{feature.label}</span>
+                                {/* Features */}
+                                <div className="grid grid-cols-2 gap-4 pt-8">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-purple-600/20 rounded-lg">
+                                            <ShoppingBag className="w-5 h-5 text-purple-400" />
+                                        </div>
+                                        <span>Mercadillo</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-blue-600/20 rounded-lg">
+                                            <Home className="w-5 h-5 text-blue-400" />
+                                        </div>
+                                        <span>Pisos</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-green-600/20 rounded-lg">
+                                            <MessageCircle className="w-5 h-5 text-green-400" />
+                                        </div>
+                                        <span>Chat</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-orange-600/20 rounded-lg">
+                                            <Users className="w-5 h-5 text-orange-400" />
+                                        </div>
+                                        <span>Comunidad</span>
+                                    </div>
+                                </div>
                             </div>
-                        ))}
-                    </motion.div>
-                </div>
 
-                {/* Hero Visuals / Mockups */}
-                <div className="flex-1 relative w-full max-w-[500px] lg:max-w-none">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        transition={{ duration: 0.6, type: "spring" }}
-                        className="relative z-10"
-                    >
-                        {/* Phone Mockup Container */}
-                        <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-900 border-[14px] rounded-[2.5rem] h-[600px] w-[300px] shadow-xl overflow-hidden ring-4 ring-white/10">
-                            <div className="h-[32px] w-[3px] bg-gray-800 absolute -start-[17px] top-[72px] rounded-s-lg"></div>
-                            <div className="h-[46px] w-[3px] bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg"></div>
-                            <div className="h-[46px] w-[3px] bg-gray-800 absolute -start-[17px] top-[178px] rounded-s-lg"></div>
-                            <div className="h-[64px] w-[3px] bg-gray-800 absolute -end-[17px] top-[142px] rounded-e-lg"></div>
+                            {/* Right - Instagram-style Stacked Photos */}
+                            <div className="relative h-[600px] flex items-center justify-center">
 
-                            {/* Screen Content - Placeholder for User Upload */}
-                            <div className="rounded-[2rem] overflow-hidden w-full h-full bg-background relative flex flex-col">
-                                {/* Status Bar */}
-                                <div className="h-8 w-full bg-background flex items-center justify-between px-6 py-2 z-20">
-                                    <span className="text-[10px] font-bold">14:27</span>
+                                {/* Floating Reaction Emojis */}
+                                <div className="absolute -top-12 left-1/4 bg-white rounded-full p-3 shadow-2xl">
                                     <div className="flex gap-1">
-                                        <div className="h-2 w-2 rounded-full bg-foreground"></div>
-                                        <div className="h-2 w-2 rounded-full bg-foreground"></div>
+                                        <span className="text-2xl">🔥</span>
+                                        <span className="text-2xl">👍</span>
+                                        <span className="text-2xl">💜</span>
                                     </div>
                                 </div>
 
-                                {/* App UI Simulation */}
-                                <div className="flex-1 p-4 space-y-4">
-                                    {/* App Header */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="h-8 w-24 bg-muted/50 rounded-md animate-pulse"></div>
-                                        <div className="h-8 w-8 bg-muted/50 rounded-full animate-pulse"></div>
+                                <div className="absolute top-1/3 -left-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full p-4 shadow-2xl">
+                                    <div className="flex items-center gap-1 text-white">
+                                        <span className="text-xl">⭐</span>
+                                    </div>
+                                </div>
+
+                                <div className="absolute bottom-1/4 -left-8 bg-gradient-to-br from-pink-500 to-red-500 rounded-full w-16 h-16 flex items-center justify-center shadow-2xl">
+                                    <span className="text-3xl">❤️</span>
+                                </div>
+
+                                <div className="absolute top-1/2 -right-12 rounded-full p-1 shadow-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                                        <span className="text-xl">♻️</span>
+                                    </div>
+                                </div>
+
+                                {/* Stacked Photos - Only 3 */}
+                                <div className="relative w-[350px] h-[450px]">
+
+                                    {/* Photo 3 - Back right (smaller, half visible) */}
+                                    <div
+                                        className="absolute w-[200px] h-[280px] rounded-3xl shadow-2xl overflow-hidden"
+                                        style={{
+                                            transform: 'rotate(12deg) translateX(150px) translateY(80px)',
+                                            zIndex: 1
+                                        }}
+                                    >
+                                        <img
+                                            src="/student_books.png"
+                                            alt="Students studying"
+                                            className="w-full h-full object-cover"
+                                            style={{ filter: 'brightness(0.9)' }}
+                                        />
                                     </div>
 
-                                    {/* Stories / Highlights */}
-                                    <div className="flex gap-2 overflow-hidden">
-                                        <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-yellow-400 to-primary p-[2px]">
-                                            <div className="h-full w-full rounded-full bg-background border-2 border-background" />
-                                        </div>
-                                        <div className="h-16 w-16 rounded-full bg-muted/50 animate-pulse"></div>
-                                        <div className="h-16 w-16 rounded-full bg-muted/50 animate-pulse"></div>
+                                    {/* Photo 2 - Back left (smaller, half visible) */}
+                                    <div
+                                        className="absolute w-[200px] h-[280px] rounded-3xl shadow-2xl overflow-hidden"
+                                        style={{
+                                            transform: 'rotate(-15deg) translateX(-100px) translateY(60px)',
+                                            zIndex: 2
+                                        }}
+                                    >
+                                        <img
+                                            src="/student_apartment.png"
+                                            alt="Student apartment"
+                                            className="w-full h-full object-cover"
+                                            style={{ filter: 'brightness(0.9)' }}
+                                        />
                                     </div>
 
-                                    {/* Feed Item 1 */}
-                                    <div className="space-y-2">
-                                        <div className="h-40 w-full bg-muted/30 rounded-xl relative overflow-hidden group">
-                                            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/40 font-medium text-sm">
-                                                Captura App Aquí
+                                    {/* Photo 1 - Front center (full size) */}
+                                    <div
+                                        className="absolute w-[300px] h-[400px] rounded-3xl shadow-2xl overflow-hidden hover:scale-105 transition-transform cursor-pointer"
+                                        style={{
+                                            transform: 'rotate(2deg) translateX(25px)',
+                                            zIndex: 3
+                                        }}
+                                    >
+                                        <img
+                                            src="/student_party.png"
+                                            alt="Students at party"
+                                            className="w-full h-full object-cover"
+                                        />
+
+                                        {/* Instagram-style bottom bar */}
+                                        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                                            <div className="flex gap-2">
+                                                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                                                    <span className="text-xl">💬</span>
+                                                </div>
+                                                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                                                    <span className="text-xl">❤️</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="h-4 w-3/4 bg-muted/50 rounded animate-pulse"></div>
-                                        <div className="h-4 w-1/2 bg-muted/50 rounded animate-pulse"></div>
                                     </div>
 
-                                    {/* Bottom Nav Placeholder */}
-                                    <div className="absolute bottom-4 left-4 right-4 h-14 bg-card/80 backdrop-blur-md rounded-2xl flex items-center justify-around border border-white/5 shadow-2xl">
-                                        <div className="h-6 w-6 bg-primary/20 rounded-md"></div>
-                                        <div className="h-6 w-6 bg-muted/40 rounded-md"></div>
-                                        <div className="h-6 w-6 bg-muted/40 rounded-md"></div>
-                                        <div className="h-6 w-6 bg-muted/40 rounded-md"></div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Second Phone (Tilted behind) */}
-                        <div className="absolute top-12 -right-16 -z-10 border-gray-800 dark:border-gray-800 bg-gray-900 border-[14px] rounded-[2.5rem] h-[550px] w-[280px] opacity-40 blur-[1px] rotate-12 scale-95 hidden lg:block">
-                            <div className="rounded-[2rem] overflow-hidden w-full h-full bg-background/50" />
-                        </div>
-                    </motion.div>
+                    </div>
                 </div>
+            </div>
 
-            </main>
+            {/* Mobile Version - Scrollable */}
+            <div className="md:hidden min-h-screen">
+                {/* Navbar */}
+                <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+                    <h1 className="text-2xl font-bold">BLife</h1>
+                    <Link href="/auth/login">
+                        <Button variant="ghost" size="sm" className="text-gray-400">
+                            Entrar
+                        </Button>
+                    </Link>
+                </nav>
 
+                {/* Hero */}
+                <div className="px-6 py-12 space-y-8">
+                    <div className="space-y-4">
+                        <h2 className="text-4xl font-bold leading-tight">
+                            Tu vida universitaria
+                            <br />
+                            <span className="text-purple-400">en una app</span>
+                        </h2>
+                        <p className="text-lg text-gray-400">
+                            Todo lo que necesitas como estudiante de la UDC en un solo lugar.
+                        </p>
+                    </div>
+
+                    {/* Stacked Photos - Mobile */}
+                    <div className="relative h-[500px] flex items-center justify-center">
+
+                        {/* Floating Reactions */}
+                        <div className="absolute -top-8 left-1/4 bg-white rounded-full p-2 shadow-xl">
+                            <div className="flex gap-1">
+                                <span className="text-lg">🔥</span>
+                                <span className="text-lg">💜</span>
+                            </div>
+                        </div>
+
+                        <div className="absolute top-1/4 -left-8 bg-gradient-to-br from-pink-500 to-red-500 rounded-full w-12 h-12 flex items-center justify-center shadow-xl">
+                            <span className="text-2xl">❤️</span>
+                        </div>
+
+                        <div className="absolute top-1/2 -right-8 rounded-full p-1 shadow-xl bg-gradient-to-r from-purple-500 to-pink-500">
+                            <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
+                                <span className="text-lg">👤</span>
+                            </div>
+                        </div>
+
+                        {/* Stacked Photos */}
+                        <div className="relative w-[280px] h-[360px]">
+
+                            {/* Photo 3 - Back (smaller, half visible) */}
+                            <div
+                                className="absolute w-[160px] h-[220px] rounded-3xl shadow-xl overflow-hidden"
+                                style={{
+                                    transform: 'rotate(12deg) translateX(120px) translateY(60px)',
+                                    zIndex: 1
+                                }}
+                            >
+                                <img
+                                    src="/api/placeholder/160/220"
+                                    alt="Students studying"
+                                    className="w-full h-full object-cover"
+                                    style={{ filter: 'brightness(0.9)' }}
+                                />
+                            </div>
+
+                            {/* Photo 2 - Back left (smaller, half visible) */}
+                            <div
+                                className="absolute w-[160px] h-[220px] rounded-3xl shadow-xl overflow-hidden"
+                                style={{
+                                    transform: 'rotate(-12deg) translateX(-80px) translateY(50px)',
+                                    zIndex: 2
+                                }}
+                            >
+                                <img
+                                    src="/api/placeholder/160/220"
+                                    alt="Student apartment"
+                                    className="w-full h-full object-cover"
+                                    style={{ filter: 'brightness(0.9)' }}
+                                />
+                            </div>
+
+                            {/* Photo 1 - Front */}
+                            <div
+                                className="absolute w-[240px] h-[320px] rounded-3xl shadow-xl overflow-hidden"
+                                style={{
+                                    transform: 'rotate(2deg) translateX(20px)',
+                                    zIndex: 3
+                                }}
+                            >
+                                <img
+                                    src="/api/placeholder/240/320"
+                                    alt="Students at party"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {/* Features */}
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-semibold">¿Qué puedes hacer?</h3>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3 p-4 bg-gray-900 rounded-xl">
+                                <div className="p-2 bg-purple-600/20 rounded-lg">
+                                    <ShoppingBag className="w-5 h-5 text-purple-400" />
+                                </div>
+                                <div>
+                                    <p className="font-medium">Mercadillo</p>
+                                    <p className="text-sm text-gray-400">Compra y vende libros, apuntes...</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-4 bg-gray-900 rounded-xl">
+                                <div className="p-2 bg-blue-600/20 rounded-lg">
+                                    <Home className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <div>
+                                    <p className="font-medium">Pisos</p>
+                                    <p className="text-sm text-gray-400">Encuentra tu piso ideal</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-4 bg-gray-900 rounded-xl">
+                                <div className="p-2 bg-green-600/20 rounded-lg">
+                                    <MessageCircle className="w-5 h-5 text-green-400" />
+                                </div>
+                                <div>
+                                    <p className="font-medium">Chat</p>
+                                    <p className="text-sm text-gray-400">Habla con otros estudiantes</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-4 bg-gray-900 rounded-xl">
+                                <div className="p-2 bg-orange-600/20 rounded-lg">
+                                    <Users className="w-5 h-5 text-orange-400" />
+                                </div>
+                                <div>
+                                    <p className="font-medium">Comunidad</p>
+                                    <p className="text-sm text-gray-400">Comparte y descubre eventos</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* CTA */}
+                    <div className="space-y-3 pb-8">
+                        <Link href="/auth/register" className="block">
+                            <Button size="lg" className="w-full bg-purple-600 hover:bg-purple-700">
+                                Crear cuenta gratis
+                            </Button>
+                        </Link>
+                        <Link href="/auth/login" className="block">
+                            <Button size="lg" variant="outline" className="w-full border-gray-700">
+                                Ya tengo cuenta
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }
