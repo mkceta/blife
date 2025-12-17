@@ -26,7 +26,7 @@ function ForgotPasswordContent() {
     const [isLoading, setIsLoading] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
     const [sentToEmail, setSentToEmail] = useState('')
-    const [otpCode, setOtpCode] = useState(['', '', '', '', '', ''])
+    const [otpCode, setOtpCode] = useState(['', '', '', '', '', '', '', ''])
     const [isVerifying, setIsVerifying] = useState(false)
     const inputRefs = useRef<(HTMLInputElement | null)[]>([])
     const searchParams = useSearchParams()
@@ -84,7 +84,7 @@ function ForgotPasswordContent() {
         setOtpCode(newOtp)
 
         // Auto-focus next input
-        if (value && index < 5) {
+        if (value && index < 7) {
             inputRefs.current[index + 1]?.focus()
         }
     }
@@ -98,18 +98,18 @@ function ForgotPasswordContent() {
 
     const handleOtpPaste = (e: React.ClipboardEvent) => {
         e.preventDefault()
-        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-        if (pastedData.length === 6) {
+        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 8)
+        if (pastedData.length === 8) {
             const newOtp = pastedData.split('')
             setOtpCode(newOtp)
-            inputRefs.current[5]?.focus()
+            inputRefs.current[7]?.focus()
         }
     }
 
     async function verifyOtp() {
         const code = otpCode.join('')
-        if (code.length !== 6) {
-            toast.error('Introduce el código de 6 dígitos')
+        if (code.length !== 8) {
+            toast.error('Introduce el código de 8 dígitos')
             return
         }
 
@@ -149,7 +149,7 @@ function ForgotPasswordContent() {
             toast.error(error.message)
         } else {
             toast.success('Nuevo código enviado')
-            setOtpCode(['', '', '', '', '', ''])
+            setOtpCode(['', '', '', '', '', '', '', ''])
             inputRefs.current[0]?.focus()
         }
         setIsLoading(false)
@@ -196,7 +196,7 @@ function ForgotPasswordContent() {
                                     value={digit}
                                     onChange={(e) => handleOtpChange(index, e.target.value)}
                                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                    className="w-12 h-14 text-center text-2xl font-bold border-white/30"
+                                    className="w-10 h-12 text-center text-xl font-bold border-white/30"
                                     disabled={isVerifying}
                                 />
                             ))}
@@ -205,7 +205,7 @@ function ForgotPasswordContent() {
                         <Button
                             onClick={verifyOtp}
                             className="w-full h-11 text-base font-medium transition-all hover:scale-[1.02]"
-                            disabled={isVerifying || otpCode.join('').length !== 6}
+                            disabled={isVerifying || otpCode.join('').length !== 8}
                         >
                             {isVerifying ? 'Verificando...' : 'Verificar código'}
                         </Button>
