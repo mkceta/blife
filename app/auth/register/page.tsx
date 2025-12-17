@@ -50,7 +50,7 @@ export default function RegisterPage() {
             email: values.email,
             password: values.password,
             options: {
-                emailRedirectTo: `${location.origin}/auth/callback`,
+                emailRedirectTo: `${location.origin}/auth/confirm`,
                 data: {
                     alias_inst: instAlias,
                     uni: values.email.split('@')[1],

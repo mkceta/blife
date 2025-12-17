@@ -52,9 +52,9 @@ function ForgotPasswordContent() {
         const supabase = createClient()
 
         const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-            // PKCE flow: Supabase will redirect to callback with ?code=xxx
-            // Callback will exchange code and then redirect to reset-password
-            redirectTo: `${location.origin}/auth/callback?next=/auth/reset-password`,
+            // Use server-side route for PKCE code exchange
+            // The code_verifier is stored in cookies and must be exchanged server-side
+            redirectTo: `${location.origin}/auth/confirm?next=/auth/reset-password`,
         })
 
         if (error) {

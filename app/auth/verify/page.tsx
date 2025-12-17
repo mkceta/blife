@@ -35,7 +35,7 @@ function VerifyContent() {
             type: 'signup',
             email: email,
             options: {
-                emailRedirectTo: `${location.origin}/auth/callback`
+                emailRedirectTo: `${location.origin}/auth/confirm`
             }
         })
 
