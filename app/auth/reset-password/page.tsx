@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { AnimatedBackground } from '@/components/ui/animated-background'
+import { Eye, EyeOff } from 'lucide-react'
 
 const formSchema = z.object({
     password: z.string().min(6, 'Mínimo 6 caracteres'),
@@ -26,6 +27,8 @@ export default function ResetPasswordPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [isChecking, setIsChecking] = useState(true)
     const [hasSession, setHasSession] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const router = useRouter()
     const supabase = createClient()
 
@@ -153,7 +156,16 @@ export default function ResetPasswordPage() {
                                     <FormItem>
                                         <FormLabel className="text-base">Nueva Contraseña</FormLabel>
                                         <FormControl>
-                                            <Input className="border-white/30 h-11" type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                                            <div className="relative">
+                                                <Input className="border-white/30 h-11 pr-10" type={showPassword ? "text" : "password"} placeholder="Mínimo 6 caracteres" {...field} />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -166,7 +178,16 @@ export default function ResetPasswordPage() {
                                     <FormItem>
                                         <FormLabel className="text-base">Confirmar Contraseña</FormLabel>
                                         <FormControl>
-                                            <Input className="border-white/30 h-11" type="password" placeholder="Repite la contraseña" {...field} />
+                                            <div className="relative">
+                                                <Input className="border-white/30 h-11 pr-10" type={showConfirmPassword ? "text" : "password"} placeholder="Repite la contraseña" {...field} />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                >
+                                                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

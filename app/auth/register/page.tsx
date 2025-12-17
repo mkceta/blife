@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { generateInstitutionalAlias } from '@/lib/generators'
 import { AnimatedBackground } from '@/components/ui/animated-background'
+import { Eye, EyeOff } from 'lucide-react'
 
 const formSchema = z.object({
     email: z.string().email().refine((val) => val.endsWith('@udc.es') || val.endsWith('@udc.gal'), {
@@ -29,6 +30,8 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const router = useRouter()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -120,7 +123,16 @@ export default function RegisterPage() {
                                         <FormItem>
                                             <FormLabel className="text-base">Contraseña</FormLabel>
                                             <FormControl>
-                                                <Input className="border-white/30 h-11" type="password" {...field} />
+                                                <div className="relative">
+                                                    <Input className="border-white/30 h-11 pr-10" type={showPassword ? "text" : "password"} {...field} />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                    >
+                                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                    </button>
+                                                </div>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -133,7 +145,16 @@ export default function RegisterPage() {
                                         <FormItem>
                                             <FormLabel className="text-base">Confirmar</FormLabel>
                                             <FormControl>
-                                                <Input className="border-white/30 h-11" type="password" {...field} />
+                                                <div className="relative">
+                                                    <Input className="border-white/30 h-11 pr-10" type={showConfirmPassword ? "text" : "password"} {...field} />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                    >
+                                                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                    </button>
+                                                </div>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

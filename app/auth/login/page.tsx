@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { AnimatedBackground } from '@/components/ui/animated-background'
+import { Eye, EyeOff } from 'lucide-react'
 
 const formSchema = z.object({
     email: z.string().email(),
@@ -22,6 +23,7 @@ const formSchema = z.object({
 
 function LoginContent() {
     const [isLoading, setIsLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const router = useRouter()
     const searchParams = useSearchParams()
     const form = useForm<z.infer<typeof formSchema>>({
@@ -119,7 +121,16 @@ function LoginContent() {
                                             </Link>
                                         </div>
                                         <FormControl>
-                                            <Input className="border-white/30 h-11" type="password" {...field} />
+                                            <div className="relative">
+                                                <Input className="border-white/30 h-11 pr-10" type={showPassword ? "text" : "password"} {...field} />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

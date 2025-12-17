@@ -25,6 +25,7 @@ const formSchema = z.object({
 function ForgotPasswordContent() {
     const [isLoading, setIsLoading] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
+    const [sentToEmail, setSentToEmail] = useState('')
     const searchParams = useSearchParams()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -64,6 +65,7 @@ function ForgotPasswordContent() {
             return
         }
 
+        setSentToEmail(values.email)
         setEmailSent(true)
         setIsLoading(false)
     }
@@ -96,7 +98,7 @@ function ForgotPasswordContent() {
                     </CardHeader>
                     <CardContent className="text-center space-y-4 px-8 pb-8">
                         <p className="text-base text-muted-foreground">
-                            Hemos enviado un enlace de recuperación a tu correo.
+                            Correo enviado a <span className="font-semibold text-foreground">{sentToEmail}</span>
                             <br />
                             Revisa tu bandeja de entrada y sigue las instrucciones.
                         </p>
