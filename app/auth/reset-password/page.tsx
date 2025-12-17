@@ -35,31 +35,68 @@ export default function ResetPasswordPage() {
     })
 
     useEffect(() => {
-        // Verify that we have a valid session
-        // Retry a few times since session might not be immediately available after redirect
-        const checkSession = async (retries = 3): Promise<void> => {
-            const supabase = createClient()
+        const supabase = createClient()
+        let isMounted = true
+
+        // Listen for PASSWORD_RECOVERY event (triggered when Supabase processes the hash)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: unknown) => {
+            console.log('[Reset Password] Auth state change:', event)
+
+            if (!isMounted) return
+
+            if (event === 'PASSWORD_RECOVERY') {
+                console.log('[Reset Password] PASSWORD_RECOVERY event received!')
+                setIsValid(true)
+            } else if (event === 'SIGNED_IN' && session) {
+                // Might also get SIGNED_IN during recovery
+                console.log('[Reset Password] SIGNED_IN event received')
+                setIsValid(true)
+            }
+        })
+
+        // Also check for existing session (in case event was already processed)
+        const checkSession = async () => {
+            // Give SDK time to process any hash fragment
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+            if (!isMounted) return
+
             const { data: { session } } = await supabase.auth.getSession()
 
             if (session) {
+                console.log('[Reset Password] Session found!')
                 setIsValid(true)
                 return
             }
 
-            if (retries > 0) {
-                // Wait and retry
-                await new Promise(resolve => setTimeout(resolve, 500))
-                return checkSession(retries - 1)
+            // If there's a hash, wait a bit more for SDK to process
+            if (typeof window !== 'undefined' && window.location.hash) {
+                console.log('[Reset Password] Hash present, waiting for SDK...')
+                await new Promise(resolve => setTimeout(resolve, 1000))
+
+                const { data: { session: retrySession } } = await supabase.auth.getSession()
+                if (retrySession) {
+                    setIsValid(true)
+                    return
+                }
             }
 
-            // No session after retries
-            toast.error('Enlace inválido o expirado')
-            router.push('/auth/forgot-password?error=invalid_link')
-            setIsValid(false)
+            // Still no session - invalid link
+            if (isMounted && isValid === null) {
+                console.log('[Reset Password] No session found, invalid link')
+                toast.error('Enlace inválido o expirado. Solicita uno nuevo.')
+                router.push('/auth/forgot-password?error=invalid_link')
+                setIsValid(false)
+            }
         }
 
         checkSession()
-    }, [router])
+
+        return () => {
+            isMounted = false
+            subscription.unsubscribe()
+        }
+    }, [router, isValid])
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
