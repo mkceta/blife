@@ -1,10 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr'
 
 /**
- * Singleton Supabase client for Client Components.
+ * Supabase client for Client Components.
  * 
- * The client is created once and reused across all components,
- * avoiding the overhead of creating new instances on every render.
+ * Uses a singleton pattern that survives HMR in development.
+ * The client is stored on the window object to persist across module reloads.
  * 
  * @example
  * ```tsx
@@ -21,18 +21,40 @@ import { createBrowserClient } from '@supabase/ssr'
  * Do NOT use in server components or server actions - use server.ts instead
  */
 
-let clientInstance: ReturnType<typeof createBrowserClient> | null = null
+// Symbol to store the client on window (avoids collisions)
+const SUPABASE_CLIENT_KEY = '__supabase_client__'
 
-export const createClient = () => {
-    if (clientInstance) {
-        return clientInstance
+// Type for the client
+type SupabaseClient = ReturnType<typeof createBrowserClient>
+
+// Extend window type
+declare global {
+    interface Window {
+        [SUPABASE_CLIENT_KEY]?: SupabaseClient
+    }
+}
+
+export const createClient = (): SupabaseClient => {
+    // Only run on client
+    if (typeof window === 'undefined') {
+        // Return a new instance for SSR (won't be used for mutations)
+        return createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
     }
 
-    clientInstance = createBrowserClient(
+    // Check if we already have a client on window
+    if (window[SUPABASE_CLIENT_KEY]) {
+        return window[SUPABASE_CLIENT_KEY]
+    }
+
+    // Create and store the client
+    const client = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    return clientInstance
+    window[SUPABASE_CLIENT_KEY] = client
+    return client
 }
-

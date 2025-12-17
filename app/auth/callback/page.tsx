@@ -1,140 +1,167 @@
 'use client'
 
-import { useEffect, Suspense, useState } from 'react'
+import { useEffect, Suspense, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+const TIMEOUT_MS = 15000 // 15 second timeout
 
 function AuthCallbackContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const supabase = createClient()
-    const [isProcessing, setIsProcessing] = useState(true)
+    const [status, setStatus] = useState<'processing' | 'error' | 'success'>('processing')
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const hasProcessed = useRef(false)
 
     useEffect(() => {
+        // Prevent double execution in React StrictMode
+        if (hasProcessed.current) return
+        hasProcessed.current = true
+
+        const supabase = createClient()
+
+        // Timeout fallback - redirect to home if nothing happens
+        const timeout = setTimeout(() => {
+            console.warn('[Auth Callback] Timeout reached, redirecting to home')
+            setStatus('error')
+            setErrorMessage('La operación ha tardado demasiado. Inténtalo de nuevo.')
+            setTimeout(() => router.push('/'), 2000)
+        }, TIMEOUT_MS)
+
+        // Handle auth state changes (this catches PASSWORD_RECOVERY from hash)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: unknown) => {
+            console.log('[Auth Callback] Auth state change:', event, !!session)
+
+            if (event === 'PASSWORD_RECOVERY') {
+                clearTimeout(timeout)
+                console.log('[Auth Callback] PASSWORD_RECOVERY event - redirecting to reset-password')
+                setStatus('success')
+                router.push('/auth/reset-password')
+                return
+            }
+
+            if (event === 'SIGNED_IN' && session) {
+                clearTimeout(timeout)
+                console.log('[Auth Callback] SIGNED_IN event - redirecting')
+                setStatus('success')
+                const next = searchParams.get('next') || '/market'
+                router.push(next)
+                return
+            }
+        })
+
+        // Process URL parameters
         const handleCallback = async () => {
             const code = searchParams.get('code')
-            const next = searchParams.get('next') || '/'
             const error = searchParams.get('error')
             const errorCode = searchParams.get('error_code')
             const errorDescription = searchParams.get('error_description')
-            const type = searchParams.get('type')
+            const next = searchParams.get('next') || '/market'
 
-            console.log('[Auth Callback] Params:', { code: !!code, next, error, errorCode, type })
+            console.log('[Auth Callback] Processing:', {
+                hasCode: !!code,
+                hasError: !!error,
+                hasHash: !!window.location.hash,
+                next
+            })
 
-            // Handle error from Supabase
+            // Handle explicit errors from Supabase
             if (error) {
-                console.error('[Auth Callback] Error:', error, errorCode, errorDescription)
+                clearTimeout(timeout)
+                console.error('[Auth Callback] Error from Supabase:', errorCode, errorDescription)
 
-                // For expired OTP, redirect to forgot-password with helpful message
+                setStatus('error')
+
                 if (errorCode === 'otp_expired' || errorDescription?.includes('expired')) {
-                    router.push('/auth/forgot-password?error=expired')
-                    return
+                    setErrorMessage('El enlace ha caducado. Solicita uno nuevo.')
+                    setTimeout(() => router.push('/auth/forgot-password?error=expired'), 2000)
+                } else {
+                    setErrorMessage(errorDescription || error)
+                    setTimeout(() => router.push('/auth/login?error=' + encodeURIComponent(errorDescription || error)), 2000)
                 }
-
-                // For other errors, go to login
-                router.push('/auth/login?error=' + encodeURIComponent(errorDescription || error))
                 return
             }
 
-            // If type is recovery, redirect to reset password
-            if (type === 'recovery') {
-                console.log('[Auth Callback] Recovery type detected, redirecting to reset-password')
-                router.push('/auth/reset-password')
-                return
-            }
-
-            // Handle code exchange (for email confirmation, magic links, recovery)
+            // Handle code exchange (email confirmation, magic links)
             if (code) {
                 console.log('[Auth Callback] Exchanging code for session...')
-                const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+                const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
                 if (exchangeError) {
+                    clearTimeout(timeout)
                     console.error('[Auth Callback] Exchange error:', exchangeError)
-                    router.push('/auth/auth-code-error')
+                    setStatus('error')
+                    setErrorMessage('Error al verificar. El enlace puede haber caducado.')
+                    setTimeout(() => router.push('/auth/login?error=verification_failed'), 2000)
                     return
                 }
 
-                console.log('[Auth Callback] Session established, next:', next)
-
-                // Check if this is a recovery flow
-                if (next === '/auth/reset-password' || next.includes('reset-password')) {
-                    console.log('[Auth Callback] Recovery flow detected via next param')
-                    router.push('/auth/reset-password')
-                    return
-                }
-
-                router.push(next)
+                // Exchange successful - the onAuthStateChange will handle redirect
+                console.log('[Auth Callback] Code exchanged successfully, waiting for auth event...')
                 return
             }
 
-            // Check for hash-based tokens (used in some recovery flows)
-            if (typeof window !== 'undefined' && window.location.hash) {
-                const hashParams = new URLSearchParams(window.location.hash.substring(1))
-                const accessToken = hashParams.get('access_token')
-                const hashType = hashParams.get('type')
-
-                console.log('[Auth Callback] Hash params:', { hasAccessToken: !!accessToken, type: hashType })
-
-                if (accessToken && hashType === 'recovery') {
-                    console.log('[Auth Callback] Recovery token in hash, setting session...')
-                    const { error: sessionError } = await supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: hashParams.get('refresh_token') || '',
-                    })
-
-                    if (sessionError) {
-                        console.error('[Auth Callback] Session error:', sessionError)
-                        router.push('/auth/forgot-password?error=invalid_link')
-                        return
-                    }
-
-                    router.push('/auth/reset-password')
-                    return
-                }
+            // If there's a hash, Supabase SDK should process it automatically
+            // The onAuthStateChange listener will catch the result
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+                console.log('[Auth Callback] Hash detected, waiting for SDK to process...')
+                // Give Supabase SDK time to process the hash
+                return
             }
 
-            // Check if there's already a session (Supabase might have auto-handled the token)
+            // No code, no hash, no error - check if there's an existing session
             const { data: { session } } = await supabase.auth.getSession()
             if (session) {
-                console.log('[Auth Callback] Session exists, checking for recovery...')
-                // If we have a session but no code, might be auto-handled recovery
-                // Redirect to appropriate page
-                if (next === '/auth/reset-password' || next.includes('reset-password')) {
+                clearTimeout(timeout)
+                console.log('[Auth Callback] Existing session found, redirecting...')
+                setStatus('success')
+
+                // Check if this is a recovery redirect
+                if (next.includes('reset-password')) {
                     router.push('/auth/reset-password')
-                    return
+                } else {
+                    router.push(next)
                 }
-                router.push(next)
                 return
             }
 
-            // No code, no hash, no session - redirect to home
-            console.log('[Auth Callback] No auth data found, redirecting to home')
-            setIsProcessing(false)
-            router.push('/')
+            // Nothing to process - this shouldn't happen normally
+            console.warn('[Auth Callback] No auth data found')
+            // Let the timeout handle it
         }
-
-        // Also listen for auth state changes (for auto-handled recovery)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
-            console.log('[Auth Callback] Auth state change:', event)
-
-            if (event === 'PASSWORD_RECOVERY') {
-                console.log('[Auth Callback] PASSWORD_RECOVERY event detected!')
-                router.push('/auth/reset-password')
-            }
-        })
 
         handleCallback()
 
         return () => {
+            clearTimeout(timeout)
             subscription.unsubscribe()
         }
-    }, [searchParams, router, supabase])
+    }, [router, searchParams])
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background">
-            <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">{isProcessing ? 'Procesando...' : 'Redirigiendo...'}</p>
+            <div className="text-center max-w-sm mx-auto px-4">
+                {status === 'processing' && (
+                    <>
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-muted-foreground">Procesando...</p>
+                        <p className="text-xs text-muted-foreground/60 mt-2">Esto solo toma unos segundos</p>
+                    </>
+                )}
+                {status === 'error' && (
+                    <>
+                        <div className="text-destructive text-4xl mb-4">⚠️</div>
+                        <p className="text-destructive font-medium">{errorMessage || 'Ha ocurrido un error'}</p>
+                        <p className="text-xs text-muted-foreground mt-2">Redirigiendo...</p>
+                    </>
+                )}
+                {status === 'success' && (
+                    <>
+                        <div className="text-primary text-4xl mb-4">✓</div>
+                        <p className="text-primary font-medium">¡Verificado!</p>
+                        <p className="text-xs text-muted-foreground mt-2">Redirigiendo...</p>
+                    </>
+                )}
             </div>
         </div>
     )
@@ -142,9 +169,11 @@ function AuthCallbackContent() {
 
 export default function AuthCallbackPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>}>
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+            </div>
+        }>
             <AuthCallbackContent />
         </Suspense>
     )

@@ -24,7 +24,7 @@ const formSchema = z.object({
 
 export default function ResetPasswordPage() {
     const [isLoading, setIsLoading] = useState(false)
-    const [isValid, setIsValid] = useState(true)
+    const [isValid, setIsValid] = useState<boolean | null>(null) // null = checking
     const router = useRouter()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -36,16 +36,28 @@ export default function ResetPasswordPage() {
 
     useEffect(() => {
         // Verify that we have a valid session
-        const checkSession = async () => {
+        // Retry a few times since session might not be immediately available after redirect
+        const checkSession = async (retries = 3): Promise<void> => {
             const supabase = createClient()
             const { data: { session } } = await supabase.auth.getSession()
 
-            if (!session) {
-                toast.error('Enlace inválido o expirado')
-                router.push('/auth/forgot-password?error=invalid_link')
-                setIsValid(false)
+            if (session) {
+                setIsValid(true)
+                return
             }
+
+            if (retries > 0) {
+                // Wait and retry
+                await new Promise(resolve => setTimeout(resolve, 500))
+                return checkSession(retries - 1)
+            }
+
+            // No session after retries
+            toast.error('Enlace inválido o expirado')
+            router.push('/auth/forgot-password?error=invalid_link')
+            setIsValid(false)
         }
+
         checkSession()
     }, [router])
 
@@ -67,7 +79,8 @@ export default function ResetPasswordPage() {
         router.push('/auth/login')
     }
 
-    if (!isValid) {
+    // Still checking session
+    if (isValid === null) {
         return (
             <>
                 <AnimatedBackground
@@ -78,7 +91,7 @@ export default function ResetPasswordPage() {
                     }}
                 />
 
-                <Card className="border-white/20 backdrop-blur-sm bg-card/50">
+                <Card className="border-white/20 backdrop-blur-sm bg-card/50 w-full max-w-md mx-auto">
                     <div className="flex justify-center pt-8 pb-4">
                         <Image
                             src="/BLife.webp"
@@ -90,8 +103,33 @@ export default function ResetPasswordPage() {
                         />
                     </div>
                     <CardHeader className="space-y-1">
+                        <div className="flex justify-center mb-2">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
                         <CardTitle className="text-2xl text-center">Verificando...</CardTitle>
                         <CardDescription className="text-center">Comprobando el enlace de recuperación</CardDescription>
+                    </CardHeader>
+                </Card>
+            </>
+        )
+    }
+
+    // Invalid session - will redirect
+    if (isValid === false) {
+        return (
+            <>
+                <AnimatedBackground
+                    colors={{
+                        primary: 'from-red-500/10',
+                        secondary: 'via-orange-500/10',
+                        tertiary: 'to-yellow-500/10'
+                    }}
+                />
+
+                <Card className="border-white/20 backdrop-blur-sm bg-card/50 w-full max-w-md mx-auto">
+                    <CardHeader className="space-y-1 pt-8">
+                        <CardTitle className="text-2xl text-center text-destructive">Enlace Inválido</CardTitle>
+                        <CardDescription className="text-center">Redirigiendo...</CardDescription>
                     </CardHeader>
                 </Card>
             </>
