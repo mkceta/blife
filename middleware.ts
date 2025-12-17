@@ -88,8 +88,8 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl)
     }
 
-    // Redirect authenticated users away from auth pages
-    if (isAuthRoute && user && pathname !== '/auth/callback') {
+    // Redirect authenticated users away from auth pages (except reset-password which needs auth)
+    if (isAuthRoute && user && pathname !== '/auth/callback' && pathname !== '/auth/reset-password') {
         return NextResponse.redirect(new URL('/market', request.url))
     }
 
