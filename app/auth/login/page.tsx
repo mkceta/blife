@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { AnimatedBackground } from '@/components/ui/animated-background'
 
@@ -20,9 +20,10 @@ const formSchema = z.object({
     password: z.string().min(6),
 })
 
-export default function LoginPage() {
+function LoginContent() {
     const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
+    const searchParams = useSearchParams()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -30,6 +31,21 @@ export default function LoginPage() {
             password: '',
         },
     })
+
+    // Show error from URL params (e.g., from expired recovery link)
+    useEffect(() => {
+        const error = searchParams.get('error')
+        if (error) {
+            // Translate common errors to Spanish
+            const errorMessages: Record<string, string> = {
+                'Email link is invalid or has expired': 'El enlace ha caducado. Solicita uno nuevo.',
+                'access_denied': 'Acceso denegado',
+                'otp_expired': 'El código ha caducado. Solicita uno nuevo.',
+            }
+            const message = errorMessages[error] || error
+            toast.error(message)
+        }
+    }, [searchParams])
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
@@ -128,5 +144,14 @@ export default function LoginPage() {
     )
 }
 
-
-
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
+    )
+}

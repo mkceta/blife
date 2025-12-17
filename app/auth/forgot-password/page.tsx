@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { AnimatedBackground } from '@/components/ui/animated-background'
+import { useSearchParams } from 'next/navigation'
 
 const formSchema = z.object({
     email: z.string().email().refine((val) => val.endsWith('@udc.es') || val.endsWith('@udc.gal'), {
@@ -21,15 +22,30 @@ const formSchema = z.object({
     }),
 })
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordContent() {
     const [isLoading, setIsLoading] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
+    const searchParams = useSearchParams()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             email: '',
         },
     })
+
+    // Show error if redirected from expired link
+    useEffect(() => {
+        const error = searchParams.get('error')
+        if (error === 'expired') {
+            toast.error('El enlace ha caducado. Solicita uno nuevo.', {
+                duration: 5000,
+            })
+        } else if (error === 'invalid_link') {
+            toast.error('El enlace no es válido. Solicita uno nuevo.', {
+                duration: 5000,
+            })
+        }
+    }, [searchParams])
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
@@ -154,5 +170,14 @@ export default function ForgotPasswordPage() {
     )
 }
 
-
-
+export default function ForgotPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        }>
+            <ForgotPasswordContent />
+        </Suspense>
+    )
+}

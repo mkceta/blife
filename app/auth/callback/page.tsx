@@ -15,14 +15,23 @@ function AuthCallbackContent() {
             const code = searchParams.get('code')
             const next = searchParams.get('next') || '/'
             const error = searchParams.get('error')
+            const errorCode = searchParams.get('error_code')
             const errorDescription = searchParams.get('error_description')
             const type = searchParams.get('type')
 
-            console.log('[Auth Callback] Params:', { code: !!code, next, error, type })
+            console.log('[Auth Callback] Params:', { code: !!code, next, error, errorCode, type })
 
             // Handle error from Supabase
             if (error) {
-                console.error('[Auth Callback] Error:', error, errorDescription)
+                console.error('[Auth Callback] Error:', error, errorCode, errorDescription)
+
+                // For expired OTP, redirect to forgot-password with helpful message
+                if (errorCode === 'otp_expired' || errorDescription?.includes('expired')) {
+                    router.push('/auth/forgot-password?error=expired')
+                    return
+                }
+
+                // For other errors, go to login
                 router.push('/auth/login?error=' + encodeURIComponent(errorDescription || error))
                 return
             }
