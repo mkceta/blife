@@ -35,35 +35,38 @@ export function PullToRefresh({ onRefresh, children, scrollContainerRef }: PullT
     }
 
     const handleTouchStart = (e: React.TouchEvent) => {
-        if (getScrollTop() <= 0) {
+        // Only start tracking if we're at the very top
+        if (getScrollTop() <= 0 && !isRefreshing) {
             startY.current = e.touches[0].clientY
             isDragging.current = true
         }
     }
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging.current) return
+        if (!isDragging.current || isRefreshing) return
 
-        // If user scrolls down, stop tracking pull
-        if (getScrollTop() > 0) {
+        const currentY = e.touches[0].clientY
+        const diff = currentY - startY.current
+
+        // If user scrolls down (negative diff) or if page scrolled, stop tracking
+        if (diff < 0 || getScrollTop() > 0) {
             isDragging.current = false
             setPullY(0)
             contentControls.start({ y: 0 })
             return
         }
 
-        const currentY = e.touches[0].clientY
-        const diff = currentY - startY.current
-
+        // Only track pull-down when diff is positive (pulling down)
         if (diff > 0) {
             // Add resistance
             const damped = Math.min(diff * 0.5, THRESHOLD * 1.5)
             setPullY(damped)
             contentControls.start({ y: damped, transition: { duration: 0 } })
 
-            // Prevent default only if we are pulling down significantly to avoid interfering with horizontal swipes
-            if (diff > 10 && e.cancelable) {
-                // e.preventDefault()
+            // Only prevent default if we're actively pulling to refresh (not just touching)
+            // This allows normal scrolling to work
+            if (damped > 20 && e.cancelable) {
+                e.preventDefault()
             }
         }
     }
