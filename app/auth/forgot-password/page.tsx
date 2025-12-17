@@ -57,22 +57,14 @@ function ForgotPasswordContent() {
         setIsLoading(true)
         const supabase = createClient()
 
-        // Use signInWithOtp with shouldCreateUser: false for password recovery
-        const { error } = await supabase.auth.signInWithOtp({
-            email: values.email,
-            options: {
-                shouldCreateUser: false,
-            },
+        // Use resetPasswordForEmail - this uses the "Reset Password" email template
+        const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+            // Don't use redirectTo - we want the user to use the OTP code instead
         })
 
         if (error) {
             console.error('Error sending recovery email:', error)
-            // If user doesn't exist, show generic message for security
-            if (error.message.includes('Signups not allowed')) {
-                toast.error('No existe ninguna cuenta con ese email')
-            } else {
-                toast.error(error.message)
-            }
+            toast.error(error.message)
             setIsLoading(false)
             return
         }
@@ -124,10 +116,11 @@ function ForgotPasswordContent() {
         setIsVerifying(true)
         const supabase = createClient()
 
+        // Use 'recovery' type for password reset OTP
         const { error } = await supabase.auth.verifyOtp({
             email: sentToEmail,
             token: code,
-            type: 'email',
+            type: 'recovery',
         })
 
         if (error) {
@@ -149,12 +142,7 @@ function ForgotPasswordContent() {
         setIsLoading(true)
         const supabase = createClient()
 
-        const { error } = await supabase.auth.signInWithOtp({
-            email: sentToEmail,
-            options: {
-                shouldCreateUser: false,
-            },
-        })
+        const { error } = await supabase.auth.resetPasswordForEmail(sentToEmail)
 
         if (error) {
             console.error('Error resending code:', error)
