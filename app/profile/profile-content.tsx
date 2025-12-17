@@ -58,7 +58,8 @@ export function ProfileContent({
                 return { total: 0, earned: 0 }
             }
         },
-        staleTime: 1000 * 60 * 5 // 5 minutes
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        gcTime: 1000 * 60 * 60 * 24, // 24 hours - keep in memory
     })
 
     const menuItems = [
