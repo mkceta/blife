@@ -52,9 +52,9 @@ function ForgotPasswordContent() {
         const supabase = createClient()
 
         const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-            // Go directly to reset-password page
-            // Supabase will append tokens as hash fragment which the SDK processes automatically
-            redirectTo: `${location.origin}/auth/reset-password`,
+            // PKCE flow: Supabase will redirect to callback with ?code=xxx
+            // Callback will exchange code and then redirect to reset-password
+            redirectTo: `${location.origin}/auth/callback?next=/auth/reset-password`,
         })
 
         if (error) {

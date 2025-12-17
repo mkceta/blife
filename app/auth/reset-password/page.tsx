@@ -24,8 +24,11 @@ const formSchema = z.object({
 
 export default function ResetPasswordPage() {
     const [isLoading, setIsLoading] = useState(false)
-    const [isValid, setIsValid] = useState<boolean | null>(null) // null = checking
+    const [isChecking, setIsChecking] = useState(true)
+    const [hasSession, setHasSession] = useState(false)
     const router = useRouter()
+    const supabase = createClient()
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -35,72 +38,28 @@ export default function ResetPasswordPage() {
     })
 
     useEffect(() => {
-        const supabase = createClient()
-        let isMounted = true
-
-        // Listen for PASSWORD_RECOVERY event (triggered when Supabase processes the hash)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: unknown) => {
-            console.log('[Reset Password] Auth state change:', event)
-
-            if (!isMounted) return
-
-            if (event === 'PASSWORD_RECOVERY') {
-                console.log('[Reset Password] PASSWORD_RECOVERY event received!')
-                setIsValid(true)
-            } else if (event === 'SIGNED_IN' && session) {
-                // Might also get SIGNED_IN during recovery
-                console.log('[Reset Password] SIGNED_IN event received')
-                setIsValid(true)
-            }
-        })
-
-        // Also check for existing session (in case event was already processed)
+        // Check if user has a valid session (should have been set by callback)
         const checkSession = async () => {
-            // Give SDK time to process any hash fragment
-            await new Promise(resolve => setTimeout(resolve, 500))
-
-            if (!isMounted) return
-
             const { data: { session } } = await supabase.auth.getSession()
 
             if (session) {
-                console.log('[Reset Password] Session found!')
-                setIsValid(true)
-                return
-            }
-
-            // If there's a hash, wait a bit more for SDK to process
-            if (typeof window !== 'undefined' && window.location.hash) {
-                console.log('[Reset Password] Hash present, waiting for SDK...')
-                await new Promise(resolve => setTimeout(resolve, 1000))
-
-                const { data: { session: retrySession } } = await supabase.auth.getSession()
-                if (retrySession) {
-                    setIsValid(true)
-                    return
-                }
-            }
-
-            // Still no session - invalid link
-            if (isMounted && isValid === null) {
-                console.log('[Reset Password] No session found, invalid link')
+                console.log('[Reset Password] Session found, showing form')
+                setHasSession(true)
+                setIsChecking(false)
+            } else {
+                console.log('[Reset Password] No session found')
                 toast.error('Enlace inválido o expirado. Solicita uno nuevo.')
                 router.push('/auth/forgot-password?error=invalid_link')
-                setIsValid(false)
             }
         }
 
-        checkSession()
-
-        return () => {
-            isMounted = false
-            subscription.unsubscribe()
-        }
-    }, [router, isValid])
+        // Small delay to ensure session is fully established after redirect
+        const timer = setTimeout(checkSession, 300)
+        return () => clearTimeout(timer)
+    }, [router, supabase.auth])
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
-        const supabase = createClient()
 
         const { error } = await supabase.auth.updateUser({
             password: values.password,
@@ -113,11 +72,14 @@ export default function ResetPasswordPage() {
         }
 
         toast.success('Contraseña actualizada correctamente')
+
+        // Sign out and redirect to login
+        await supabase.auth.signOut()
         router.push('/auth/login')
     }
 
-    // Still checking session
-    if (isValid === null) {
+    // Loading state while checking session
+    if (isChecking) {
         return (
             <>
                 <AnimatedBackground
@@ -151,26 +113,9 @@ export default function ResetPasswordPage() {
         )
     }
 
-    // Invalid session - will redirect
-    if (isValid === false) {
-        return (
-            <>
-                <AnimatedBackground
-                    colors={{
-                        primary: 'from-red-500/10',
-                        secondary: 'via-orange-500/10',
-                        tertiary: 'to-yellow-500/10'
-                    }}
-                />
-
-                <Card className="border-white/20 backdrop-blur-sm bg-card/50 w-full max-w-md mx-auto">
-                    <CardHeader className="space-y-1 pt-8">
-                        <CardTitle className="text-2xl text-center text-destructive">Enlace Inválido</CardTitle>
-                        <CardDescription className="text-center">Redirigiendo...</CardDescription>
-                    </CardHeader>
-                </Card>
-            </>
-        )
+    // Only show form if we have a valid session
+    if (!hasSession) {
+        return null // Will redirect via useEffect
     }
 
     return (
@@ -237,6 +182,3 @@ export default function ResetPasswordPage() {
         </>
     )
 }
-
-
-
