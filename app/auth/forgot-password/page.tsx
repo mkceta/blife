@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -14,9 +14,9 @@ import Image from 'next/image'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { AnimatedBackground } from '@/components/ui/animated-background'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 
-const formSchema = z.object({
+const emailFormSchema = z.object({
     email: z.string().email().refine((val) => val.endsWith('@udc.es') || val.endsWith('@udc.gal'), {
         message: 'Solo se permiten correos @udc.es o @udc.gal',
     }),
@@ -26,9 +26,14 @@ function ForgotPasswordContent() {
     const [isLoading, setIsLoading] = useState(false)
     const [emailSent, setEmailSent] = useState(false)
     const [sentToEmail, setSentToEmail] = useState('')
+    const [otpCode, setOtpCode] = useState(['', '', '', '', '', ''])
+    const [isVerifying, setIsVerifying] = useState(false)
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([])
     const searchParams = useSearchParams()
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+    const router = useRouter()
+
+    const form = useForm<z.infer<typeof emailFormSchema>>({
+        resolver: zodResolver(emailFormSchema),
         defaultValues: {
             email: '',
         },
@@ -38,35 +43,127 @@ function ForgotPasswordContent() {
     useEffect(() => {
         const error = searchParams.get('error')
         if (error === 'expired') {
-            toast.error('El enlace ha caducado. Solicita uno nuevo.', {
+            toast.error('El código ha caducado. Solicita uno nuevo.', {
                 duration: 5000,
             })
-        } else if (error === 'invalid_link') {
-            toast.error('El enlace no es válido. Solicita uno nuevo.', {
+        } else if (error === 'invalid_link' || error === 'invalid_code') {
+            toast.error('El código no es válido. Solicita uno nuevo.', {
                 duration: 5000,
             })
         }
     }, [searchParams])
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmitEmail(values: z.infer<typeof emailFormSchema>) {
         setIsLoading(true)
         const supabase = createClient()
 
-        const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-            // Use server-side route for PKCE code exchange
-            // The code_verifier is stored in cookies and must be exchanged server-side
-            redirectTo: `${location.origin}/auth/confirm?next=/auth/reset-password`,
+        // Use signInWithOtp with shouldCreateUser: false for password recovery
+        const { error } = await supabase.auth.signInWithOtp({
+            email: values.email,
+            options: {
+                shouldCreateUser: false,
+            },
         })
 
         if (error) {
             console.error('Error sending recovery email:', error)
-            toast.error(error.message)
+            // If user doesn't exist, show generic message for security
+            if (error.message.includes('Signups not allowed')) {
+                toast.error('No existe ninguna cuenta con ese email')
+            } else {
+                toast.error(error.message)
+            }
             setIsLoading(false)
             return
         }
 
         setSentToEmail(values.email)
         setEmailSent(true)
+        setIsLoading(false)
+        toast.success(`Código enviado a ${values.email}`)
+    }
+
+    const handleOtpChange = (index: number, value: string) => {
+        // Only allow digits
+        if (value && !/^\d$/.test(value)) return
+
+        const newOtp = [...otpCode]
+        newOtp[index] = value
+        setOtpCode(newOtp)
+
+        // Auto-focus next input
+        if (value && index < 5) {
+            inputRefs.current[index + 1]?.focus()
+        }
+    }
+
+    const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Handle backspace
+        if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus()
+        }
+    }
+
+    const handleOtpPaste = (e: React.ClipboardEvent) => {
+        e.preventDefault()
+        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+        if (pastedData.length === 6) {
+            const newOtp = pastedData.split('')
+            setOtpCode(newOtp)
+            inputRefs.current[5]?.focus()
+        }
+    }
+
+    async function verifyOtp() {
+        const code = otpCode.join('')
+        if (code.length !== 6) {
+            toast.error('Introduce el código de 6 dígitos')
+            return
+        }
+
+        setIsVerifying(true)
+        const supabase = createClient()
+
+        const { error } = await supabase.auth.verifyOtp({
+            email: sentToEmail,
+            token: code,
+            type: 'email',
+        })
+
+        if (error) {
+            console.error('Error verifying OTP:', error)
+            if (error.message.includes('expired')) {
+                toast.error('El código ha caducado. Solicita uno nuevo.')
+            } else {
+                toast.error('Código incorrecto. Inténtalo de nuevo.')
+            }
+            setIsVerifying(false)
+            return
+        }
+
+        toast.success('Código verificado correctamente')
+        router.push('/auth/reset-password')
+    }
+
+    async function resendCode() {
+        setIsLoading(true)
+        const supabase = createClient()
+
+        const { error } = await supabase.auth.signInWithOtp({
+            email: sentToEmail,
+            options: {
+                shouldCreateUser: false,
+            },
+        })
+
+        if (error) {
+            console.error('Error resending code:', error)
+            toast.error(error.message)
+        } else {
+            toast.success('Nuevo código enviado')
+            setOtpCode(['', '', '', '', '', ''])
+            inputRefs.current[0]?.focus()
+        }
         setIsLoading(false)
     }
 
@@ -92,23 +189,54 @@ function ForgotPasswordContent() {
                             className="object-contain"
                         />
                     </div>
-                    <CardHeader className="space-y-2 px-8 pt-0 pb-6">
-                        <CardTitle className="text-3xl text-center font-bold tracking-tight">Email Enviado</CardTitle>
-                        <CardDescription className="text-center text-base">Revisa tu bandeja de entrada</CardDescription>
+                    <CardHeader className="space-y-2 px-8 pt-0 pb-4">
+                        <CardTitle className="text-3xl text-center font-bold tracking-tight">Introduce el código</CardTitle>
+                        <CardDescription className="text-center text-base">
+                            Código enviado a <span className="font-semibold text-foreground">{sentToEmail}</span>
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent className="text-center space-y-4 px-8 pb-8">
-                        <p className="text-base text-muted-foreground">
-                            Correo enviado a <span className="font-semibold text-foreground">{sentToEmail}</span>
-                            <br />
-                            Revisa tu bandeja de entrada y sigue las instrucciones.
-                        </p>
+                    <CardContent className="space-y-6 px-8 pb-6">
+                        {/* OTP Input */}
+                        <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
+                            {otpCode.map((digit, index) => (
+                                <Input
+                                    key={index}
+                                    ref={(el) => { inputRefs.current[index] = el }}
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={1}
+                                    value={digit}
+                                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                                    className="w-12 h-14 text-center text-2xl font-bold border-white/30"
+                                    disabled={isVerifying}
+                                />
+                            ))}
+                        </div>
+
+                        <Button
+                            onClick={verifyOtp}
+                            className="w-full h-11 text-base font-medium transition-all hover:scale-[1.02]"
+                            disabled={isVerifying || otpCode.join('').length !== 6}
+                        >
+                            {isVerifying ? 'Verificando...' : 'Verificar código'}
+                        </Button>
+
+                        <div className="text-center">
+                            <button
+                                type="button"
+                                onClick={resendCode}
+                                disabled={isLoading}
+                                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                            >
+                                {isLoading ? 'Enviando...' : '¿No recibiste el código? Reenviar'}
+                            </button>
+                        </div>
                     </CardContent>
                     <CardFooter className="flex justify-center px-8 pb-8">
-                        <Link href="/auth/login">
-                            <Button variant="outline" className="gap-2 h-11 px-6">
-                                <ArrowLeft className="h-4 w-4" />
-                                Volver al login
-                            </Button>
+                        <Link href="/auth/login" className="text-sm text-muted-foreground hover:text-primary flex items-center gap-2 font-medium">
+                            <ArrowLeft className="h-4 w-4" />
+                            Volver al login
                         </Link>
                     </CardFooter>
                 </Card>
@@ -139,11 +267,11 @@ function ForgotPasswordContent() {
                 </div>
                 <CardHeader className="space-y-2 px-8 pt-0 pb-6">
                     <CardTitle className="text-3xl text-center font-bold tracking-tight">Recuperar Contraseña</CardTitle>
-                    <CardDescription className="text-center text-base">Introduce tu email de la UDC para recibir un enlace de recuperación</CardDescription>
+                    <CardDescription className="text-center text-base">Te enviaremos un código de 6 dígitos a tu email</CardDescription>
                 </CardHeader>
                 <CardContent className="px-8 pb-8">
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <form onSubmit={form.handleSubmit(onSubmitEmail)} className="space-y-6">
                             <FormField
                                 control={form.control}
                                 name="email"
@@ -158,7 +286,7 @@ function ForgotPasswordContent() {
                                 )}
                             />
                             <Button type="submit" className="w-full h-11 text-base font-medium transition-all hover:scale-[1.02]" disabled={isLoading}>
-                                {isLoading ? 'Enviando...' : 'Enviar enlace de recuperación'}
+                                {isLoading ? 'Enviando...' : 'Enviar código'}
                             </Button>
                         </form>
                     </Form>
