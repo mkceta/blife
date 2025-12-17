@@ -12,6 +12,7 @@ function AuthCallbackContent() {
     const [status, setStatus] = useState<'processing' | 'error' | 'success'>('processing')
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const hasProcessed = useRef(false)
+    const hasRedirected = useRef(false)
 
     useEffect(() => {
         // Prevent double execution in React StrictMode
@@ -22,6 +23,7 @@ function AuthCallbackContent() {
 
         // Timeout fallback - redirect to home if nothing happens
         const timeout = setTimeout(() => {
+            if (hasRedirected.current) return
             console.warn('[Auth Callback] Timeout reached, redirecting to home')
             setStatus('error')
             setErrorMessage('La operación ha tardado demasiado. Inténtalo de nuevo.')
@@ -32,7 +34,15 @@ function AuthCallbackContent() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: unknown) => {
             console.log('[Auth Callback] Auth state change:', event, !!session)
 
+            // Prevent multiple redirects
+            if (hasRedirected.current) {
+                console.log('[Auth Callback] Already redirected, ignoring event:', event)
+                return
+            }
+
+            // PASSWORD_RECOVERY takes priority - this is what we need for reset password flow
             if (event === 'PASSWORD_RECOVERY') {
+                hasRedirected.current = true
                 clearTimeout(timeout)
                 console.log('[Auth Callback] PASSWORD_RECOVERY event - redirecting to reset-password')
                 setStatus('success')
@@ -40,12 +50,18 @@ function AuthCallbackContent() {
                 return
             }
 
+            // SIGNED_IN for regular login/registration (but not if we're in recovery flow)
             if (event === 'SIGNED_IN' && session) {
-                clearTimeout(timeout)
-                console.log('[Auth Callback] SIGNED_IN event - redirecting')
-                setStatus('success')
-                const next = searchParams.get('next') || '/market'
-                router.push(next)
+                // Small delay to allow PASSWORD_RECOVERY to fire first if this is a recovery flow
+                setTimeout(() => {
+                    if (hasRedirected.current) return
+                    hasRedirected.current = true
+                    clearTimeout(timeout)
+                    console.log('[Auth Callback] SIGNED_IN event - redirecting')
+                    setStatus('success')
+                    const next = searchParams.get('next') || '/market'
+                    router.push(next)
+                }, 100)
                 return
             }
         })
